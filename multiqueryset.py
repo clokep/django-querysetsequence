@@ -38,3 +38,12 @@ class MultiQuerySet(object):
                     offset = 0
                     stop = total_len - len(items)
                     continue
+
+    def __add__(self, other):
+        if isinstance(other, QuerySet):
+            return MultiQuerySet(self, other)
+        elif isinstance(other, MultiQuerySet):
+            querysets = other._clone().querysets
+            return MultiQuerySet(self, *querysets)
+        else:
+            raise TypeError
