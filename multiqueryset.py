@@ -31,12 +31,11 @@ class MultiQuerySet(object):
             if len(qs) < offset:
                 offset -= len(qs)
             else:
-                items += list(qs[offset:stop])
+                items += list(qs[offset:offset + total_len - len(items)])
                 if len(items) >= total_len:
                     return items
                 else:
                     offset = 0
-                    stop = total_len - len(items)
                     continue
 
     def __add__(self, other):
