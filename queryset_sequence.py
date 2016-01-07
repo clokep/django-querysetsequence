@@ -117,7 +117,7 @@ class QuerySequence(object):
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
         field_names = self.order_by
-        reverses = [1] * len(field_names)  # Note that this is reverse sorting!
+        reverses = [1] * len(field_names)
         for i, field_name in enumerate(field_names):
             if field_name[0] == '-':
                 reverses[i] = -1
@@ -132,40 +132,53 @@ class QuerySequence(object):
                 field_values = (field_values, )
             return field_values
 
-        # Construct a comparator function based on the field names prefixes.
-        # comparator gets the first non-zero value of the field comparison
-        # results taking into account reverse order for fields prefixed with '-'
         def comparator(i1, i2):
+            """
+            Construct a comparator function based on the field names. Returns
+            the first non-zero comparison value.
+            """
             # Compare each field for the two items, reversing if necessary.
             order = multiply_iterables(map(cmp, fields_getter(i1), fields_getter(i2)), reverses)
+            # TODO  This ordering is broken when fields_getter returns
+            #       sub-classes of Model.
 
             try:
+                # The first non-zero element.
                 return dropwhile(__not__, order).next()
             except StopIteration:
+                # Everything was equivalent.
                 return 0
 
-        # A list of index to items. Prepopulate with the first in each iterable.
-        # (Remember that each iterable is already sorted.)
+        # A mapping of iterable to the current item in that iterable. (Remember
+        # that each iterable is already sorted.)
         not_empty_qss = map(iter, filter(None, self._querysets))
-        cur_values = enumerate(map(lambda it: next(it), not_empty_qss))
+        values = {it: it.next() for it in not_empty_qss}
 
-        while cur_values:
-            # Sort the current values.
-            cur_values = sorted(cur_values, cmp=comparator, key=lambda x: x[1])
+        # Iterate until there's only one iterator left.
+        while len(values) > 1:
+            # Sort the current values for each iterable.
+            ordered_values = sorted(values.items(), cmp=comparator, key=lambda x: x[1])
 
-            # The 'minimum' value is now in the last position!
-            index, value = cur_values.pop()
-
-            # Return this item.
+            # The 'minimum' value is now in the last position! Return it.
+            qss, value = ordered_values.pop(0)
             yield value
 
-            # Pull the next value from the iterable that just lost a value.
+            # Iterate the iterable that just lost a value.
             try:
-                value = not_empty_qss[index].next()
-                cur_values.append((index, value))
+                values[qss] = qss.next()
             except StopIteration:
-                # No new value to add!
-                pass
+                # This iterator is done, remove it.
+                del values[qss]
+
+        # Finally, iterate completely through the last iterator.
+        it, value = values.items()[0]
+        # Don't forget the current value.
+        yield value
+        while True:
+            try:
+                yield it.next()
+            except StopIteration:
+                break
 
     ##########################################################
     # METHODS DIRECTLY FROM django.db.models.sql.query.Query #

@@ -1,3 +1,5 @@
+import unittest
+
 from django.db.models import QuerySet
 from django.test import TestCase
 
@@ -105,6 +107,27 @@ class TestQuerySetSequence(TestCase):
         self.assertIsInstance(alice_qss, QuerySet)
 
     def test_order_by(self):
+        """Ensure that order_by() propagates to QuerySets and iteration."""
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Order by author and ensure it takes.
+        qss = qss.order_by('title')
+        self.assertEqual(qss.query.order_by, ['title'])
+
+        # Check the titles are properly ordered.
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data[0], 'Alice in Django-land')
+        self.assertEqual(data[1], 'Biography')
+        self.assertEqual(data[2], 'Django Rocks')
+        self.assertEqual(data[3], 'Fiction')
+        self.assertEqual(data[4], 'Some Article')
+
+    @unittest.skip('Currently not supported.')
+    def test_order_by_model(self):
+        """Apply order_by() with a field that returns a model."""
         qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
 
         # Check that everything is in the current list.
