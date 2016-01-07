@@ -2,6 +2,7 @@ from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
 from django.db.models.query import EmptyQuerySet, QuerySet
+from django.db.models.sql.query import ORDER_PATTERN
 
 
 def multiply_iterables(it1, it2):
@@ -12,6 +13,7 @@ def multiply_iterables(it1, it2):
            "Can not element-wise multiply iterables of different length."
     return map(mul, it1, it2)
 
+
 class QuerySequence(object):
     """
     A Query that handles multiple QuerySets.
@@ -21,11 +23,14 @@ class QuerySequence(object):
     """
 
     def __init__(self, *args):
-        self._iterables = args
-        self._ordering = ['pk']
+        self._querysets = args
 
         # Below is copied from django.db.models.sql.query.Query.
+        self.filter_is_sticky = False
+
+        self.order_by = []
         self.low_mark, self.high_mark = 0, None
+
 
     #####################################################
     # METHODS TO MATCH django.db.models.sql.query.Query #
@@ -37,29 +42,11 @@ class QuerySequence(object):
     # add_distinct_fields,
     # add_extra
     # add_immediate_loading
-    # add_ordering
     # add_q
     # add_select_related
     # add_update_fields
     # annotations
     # clear_deferred_loading
-    # clear_ordering
-    # clone
-
-    def clone(self, klass=None, memo=None, **kwargs):
-        """
-        Creates a copy of the current instance. The 'kwargs' parameter can be
-        used by clients to update attributes after copying has taken place.
-        """
-        obj = QuerySequence()
-
-        # Copy important properties.
-        obj._iterables = map(lambda it: it._clone(), self._iterables)
-        obj._ordering = list(self._ordering)
-
-        obj.__dict__.update(kwargs)
-        return obj
-
     # combine
     # default_ordering
     # distinct_Fields
@@ -67,52 +54,6 @@ class QuerySequence(object):
     # filter_is_sticky
     # get_aggregation
     # get_compiler
-
-    def get_count(self, using):
-        """Request count on each sub-query."""
-        return sum(map(lambda it: it.count(), self._iterables))
-
-    def set_limits(self, low=None, high=None):
-        """
-        Adjusts the limits on the rows retrieved. We use low/high to set these,
-        as it makes it more Pythonic to read and write. When the SQL query is
-        created, they are converted to the appropriate offset and limit values.
-
-        Any limits passed in here are applied relative to the existing
-        constraints. So low is added to the current low value and both will be
-        clamped to any existing high value.
-
-        Directly copied from django.db.models.sql.query.Query.
-        """
-        if high is not None:
-            if self.high_mark is not None:
-                self.high_mark = min(self.high_mark, self.low_mark + high)
-            else:
-                self.high_mark = self.low_mark + high
-        if low is not None:
-            if self.high_mark is not None:
-                self.low_mark = min(self.high_mark, self.low_mark + low)
-            else:
-                self.low_mark = self.low_mark + low
-
-    def clear_limits(self):
-        """
-        Clears any existing limits.
-
-        Directly copied from django.db.models.sql.query.Query.
-        """
-        self.low_mark, self.high_mark = 0, None
-
-    def can_filter(self):
-        """
-        Returns True if adding filters to this instance is still possible.
-
-        Typically, this means no limits or offsets have been put on the results.
-
-        Directly copied from django.db.models.sql.query.Query.
-        """
-        return not self.low_mark and self.high_mark is None
-
     # get_meta
     # group_by
     # has_filters
@@ -126,21 +67,60 @@ class QuerySequence(object):
     # set_empty
     # standard_ordering
 
+    def clone(self, klass=None, memo=None, **kwargs):
+        """
+        Creates a copy of the current instance. The 'kwargs' parameter can be
+        used by clients to update attributes after copying has taken place.
+        """
+        obj = QuerySequence()
+
+        # Copy important properties.
+        obj._querysets = map(lambda it: it._clone(), self._querysets)
+        obj.filter_is_sticky = self.filter_is_sticky
+        obj.order_by = self.order_by[:]
+        obj.low_mark, obj.high_mark = self.low_mark, self.high_mark
+
+        obj.__dict__.update(kwargs)
+        return obj
+
+    def get_count(self, using):
+        """Request count on each sub-query."""
+        return sum(map(lambda it: it.count(), self._querysets))
+
+    def add_ordering(self, *ordering):
+        """
+        Propagate ordering to each QuerySet and save it for iteration.
+        """
+        # TODO Roll-up errors.
+        self._querysets = map(lambda it: it.order_by(*ordering), self._querysets)
+
+        if ordering:
+            self.order_by.extend(ordering)
+
+    def clear_ordering(self, force_empty):
+        """
+        Removes any ordering settings.
+
+        Does not propagate to each QuerySet since their is no appropriate API.
+        """
+        self.order_by = []
+
     def __iter__(self):
-        return self.__generator__()
+        # If there is no ordering, just chain the QuerySets together.
+        if not self.order_by:
+            return chain(*self._querysets)
 
-    def __generator__(self):
-        # TODO Error checking.
+        # Otherwise, handle the ordering in a lazy way.
+        return self._ordered_iterator()
 
-        # TODO This breaks if there's no ordering.
-
+    def _ordered_iterator(self):
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
-        field_names = self._ordering
-        reverses = [-1] * len(field_names)  # Note that this is reverse sorting!
+        field_names = self.order_by
+        reverses = [1] * len(field_names)  # Note that this is reverse sorting!
         for i, field_name in enumerate(field_names):
             if field_name[0] == '-':
-                reverses[i] = -1 * reverses[i]
+                reverses[i] = -1
                 field_names[i] = field_name[1:]
 
         def fields_getter(i):
@@ -166,7 +146,7 @@ class QuerySequence(object):
 
         # A list of index to items. Prepopulate with the first in each iterable.
         # (Remember that each iterable is already sorted.)
-        not_empty_qss = map(iter, filter(None, self._iterables))
+        not_empty_qss = map(iter, filter(None, self._querysets))
         cur_values = enumerate(map(lambda it: next(it), not_empty_qss))
 
         while cur_values:
@@ -186,6 +166,45 @@ class QuerySequence(object):
             except StopIteration:
                 # No new value to add!
                 pass
+
+    ##########################################################
+    # METHODS DIRECTLY FROM django.db.models.sql.query.Query #
+    ##########################################################
+
+    def set_limits(self, low=None, high=None):
+        """
+        Adjusts the limits on the rows retrieved. We use low/high to set these,
+        as it makes it more Pythonic to read and write. When the SQL query is
+        created, they are converted to the appropriate offset and limit values.
+
+        Any limits passed in here are applied relative to the existing
+        constraints. So low is added to the current low value and both will be
+        clamped to any existing high value.
+        """
+        if high is not None:
+            if self.high_mark is not None:
+                self.high_mark = min(self.high_mark, self.low_mark + high)
+            else:
+                self.high_mark = self.low_mark + high
+        if low is not None:
+            if self.high_mark is not None:
+                self.low_mark = min(self.high_mark, self.low_mark + low)
+            else:
+                self.low_mark = self.low_mark + low
+
+    def clear_limits(self):
+        """
+        Clears any existing limits.
+        """
+        self.low_mark, self.high_mark = 0, None
+
+    def can_filter(self):
+        """
+        Returns True if adding filters to this instance is still possible.
+
+        Typically, this means no limits or offsets have been put on the results.
+        """
+        return not self.low_mark and self.high_mark is None
 
 
 class QuerySetSequence(QuerySet):
@@ -236,9 +255,9 @@ class QuerySetSequence(QuerySet):
         clone = self._clone()
 
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
-        clone.query._iterables = \
+        clone.query._querysets = \
             map(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs),
-                clone.query._iterables)
+                clone.query._querysets)
 
         return self._simplify(clone)
 
@@ -250,7 +269,7 @@ class QuerySetSequence(QuerySet):
 
         Does not modify original QuerySetSequence.
         """
-        not_empty_qss = filter(None, qss.query._iterables)
+        not_empty_qss = filter(None, qss.query._querysets)
         if not len(not_empty_qss):
             return EmptyQuerySet()
         if len(not_empty_qss) == 1:
@@ -272,13 +291,7 @@ class QuerySetSequence(QuerySet):
     def annotate(self, *args, **kwargs):
         raise NotImplementedError("QuerySetSequence does not implement annotate()")
 
-    def order_by(self, *field_names):
-        """
-        Returns a new QuerySetSequence or instance with the ordering changed.
-        """
-        self._ordering = list(field_names)
-        clone = self._clone(lambda qs: qs.order_by(*field_names))
-        return clone
+    # def order_by(self, *field_names): inherits from QuerySet.
 
     def distinct(self, *field_names):
         raise NotImplementedError("QuerySetSequence does not implement distinct()")

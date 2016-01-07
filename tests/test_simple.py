@@ -103,3 +103,23 @@ class TestQuerySetSequence(TestCase):
         # Since we've now filtered down to a single QuerySet, we shouldn't be a
         # QuerySetSequence any longer.
         self.assertIsInstance(alice_qss, QuerySet)
+
+    def test_order_by(self):
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Order by author and ensure it takes.
+        qss = qss.order_by('author')
+        self.assertEqual(qss.query.order_by, ['author'])
+
+        # The first two should be Alice, followed by three from Bob.
+        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, list(qss)):
+            self.assertEqual(expected, element.author)
+
+    def test_slicing(self):
+        pass
+
+    def test_iterating(self):
+        pass
