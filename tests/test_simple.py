@@ -138,11 +138,19 @@ class TestQuerySetSequence(TestCase):
         self.assertEqual(qss.query.order_by, ['author'])
 
         # The first two should be Alice, followed by three from Bob.
-        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, list(qss)):
-            self.assertEqual(expected, element.author)
+        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
+            self.assertEqual(element.author, expected)
 
     def test_slicing(self):
         pass
 
     def test_iterating(self):
-        pass
+        """By default iteration just chains the iterables together."""
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # There are two books and three articles.
+        for expected, element in zip([Book] * 2 + [Article] * 3, qss):
+            self.assertIsInstance(element, expected)
