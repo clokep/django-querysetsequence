@@ -178,8 +178,12 @@ class QuerySetSequence(IterableSequence):
         fields_getter = lambda i: chain_singleton(attrgetter(*field_names)(i))
         # comparator gets the first non-zero value of the field comparison
         # results taking into account reverse order for fields prefixed with '-'
-        comparator = lambda i1, i2: dropwhile(__not__,
-              multiply_iterables(map(cmp, fields_getter(i1), fields_getter(i2)), reverses)).next()
+        def comparator(i1, i2):
+            try:
+                return dropwhile(__not__,
+                    multiply_iterables(map(cmp, fields_getter(i1), fields_getter(i2)), reverses)).next()
+            except StopIteration:
+                return 0
         # return new sorted list
         return sorted(self.collapse(), cmp=comparator)
 
