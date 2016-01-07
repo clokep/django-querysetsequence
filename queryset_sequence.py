@@ -130,6 +130,7 @@ class QuerySequence(object):
             for i, offset in enumerate(counts):
                 if offset <= self.low_mark:
                     start_index = i
+                if self.low_mark < offset:
                     break
 
         # Trim the end of the QuerySets, if necessary.
@@ -151,9 +152,11 @@ class QuerySequence(object):
         # Remove iterables we don't care about.
         self._querysets = self._querysets[start_index:end_index]
 
-        # Subtract the count that were removed.
+        # The low_mark needs the removed QuerySets subtracted from it.
         self.low_mark -= counts[start_index]
-        self.high_mark -= counts[start_index]
+        # The high_mark needs the count of all QuerySets before it subtracted
+        # from it.
+        self.high_mark -= counts[end_index - 1]
 
         # Apply the offsets to the edge QuerySets.
         self._querysets[0] = self._querysets[0][self.low_mark:]

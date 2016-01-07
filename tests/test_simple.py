@@ -163,20 +163,38 @@ class TestQuerySetSequence(TestCase):
         for element in result:
             self.assertIsInstance(element, Book)
 
-        return
-
         # Elements across iterables.
         temp_qss = qss._clone()
-        b1 = temp_qss[1:2]
-        self.assertEqual(b1.pk, 1)
-        self.assertIsNone(temp_qss._result_cache)
+        result = temp_qss[1:3]
+        self.assertIsInstance(result, QuerySetSequence)
+        data = list(result)
+        # Requesting the data above causes it to be cached.
+        self.assertIsNotNone(result._result_cache)
+        self.assertIsInstance(data[0], Book)
+        self.assertIsInstance(data[1], Article)
+        self.assertEqual(len(data), 2)
+
+        # Test multiple slices.
+        temp_qss = qss._clone()
+        result = temp_qss[1:3]
+        self.assertIsInstance(result, QuerySetSequence)
+        article = result[1]
+        # Still haven't evaluated the QuerySetSequence!
+        self.assertIsNone(result._result_cache)
+        self.assertEqual(article.title, 'Django Rocks')
 
         # Test step.
+        temp_qss = qss._clone()
+        result = temp_qss[0:4:2]
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
 
-        # All elements (essentially creating a list).
-        data = qss[:]
-        self.assertIsInstance(data, list)
-        self.assertIsNotNone(qss._result_cache)
+        # All elements.
+        qss = qss[:]
+        self.assertIsInstance(qss, QuerySetSequence)
+        # No data evaluated.
+        self.assertIsNone(qss._result_cache)
+        self.assertEqual(qss.count(), 5)
 
     def test_slicing_order_by(self):
         pass
