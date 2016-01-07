@@ -1,1 +1,6 @@
+# Python files.
 *.pyc
+
+# Coverage files.
+.coverage
+htmlcov
