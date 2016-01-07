@@ -14,6 +14,13 @@ def multiply_iterables(it1, it2):
     return map(mul, it1, it2)
 
 
+def cumsum(seq):
+    s = 0
+    for c in seq:
+       s += c
+       yield s
+
+
 class QuerySequence(object):
     """
     A Query that handles multiple QuerySets.
@@ -23,7 +30,7 @@ class QuerySequence(object):
     """
 
     def __init__(self, *args):
-        self._querysets = args
+        self._querysets = list(args)
 
         # Below is copied from django.db.models.sql.query.Query.
         self.filter_is_sticky = False
@@ -106,6 +113,56 @@ class QuerySequence(object):
         self.order_by = []
 
     def __iter__(self):
+        # First trim any QuerySets based on the currently set limits!
+        counts = [0]
+        counts.extend(cumsum(map(lambda it: it.count(), self._querysets)))
+
+        # TODO Do we need to work with a clone of _querysets?
+
+        # Trim the beginning of the QuerySets, if necessary.
+        start_index = 0
+        if self.low_mark is not 0:
+            # Convert a negative index into a positive.
+            if self.low_mark < 0:
+                self.low_mark += counts[-1]
+
+            # Find the point when low_mark crosses a threshold.
+            for i, offset in enumerate(counts):
+                if offset <= self.low_mark:
+                    start_index = i
+                    break
+
+        # Trim the end of the QuerySets, if necessary.
+        end_index = len(self._querysets)
+        if self.high_mark is None:
+            # If it was unset (meaning all), set it to the maximum.
+            self.high_mark = counts[-1]
+        elif self.high_mark:
+            # Convert a negative index into a positive.
+            if self.high_mark < 0:
+                self.high_mark += counts[-1]
+
+            # Find the point when high_mark crosses a threshold.
+            for i, offset in enumerate(counts):
+                if self.high_mark <= offset:
+                    end_index = i
+                    break
+
+        # Remove iterables we don't care about.
+        self._querysets = self._querysets[start_index:end_index]
+
+        # Subtract the count that were removed.
+        self.low_mark -= counts[start_index]
+        self.high_mark -= counts[start_index]
+
+        # Apply the offsets to the edge QuerySets.
+        self._querysets[0] = self._querysets[0][self.low_mark:]
+        self._querysets[-1] = self._querysets[-1][:self.high_mark]
+
+        # Some optimization, if there is only one QuerySet, iterate through it.
+        if len(self._querysets) == 1:
+            return iter(self._querysets[0])
+
         # If there is no ordering, just chain the QuerySets together.
         if not self.order_by:
             return chain(*self._querysets)

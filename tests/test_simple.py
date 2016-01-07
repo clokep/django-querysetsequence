@@ -142,6 +142,43 @@ class TestQuerySetSequence(TestCase):
             self.assertEqual(element.author, expected)
 
     def test_slicing(self):
+        """Test indexing and slicing."""
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Single element.
+        temp_qss = qss._clone()
+        result = temp_qss[0]
+        self.assertEqual(result.pk, 1)
+        self.assertIsInstance(result, Book)
+        # temp_qss never gets evaluated since the underlying QuerySet is used.
+        self.assertIsNone(temp_qss._result_cache)
+
+        # Elements all from one iterable.
+        temp_qss = qss._clone()
+        result = temp_qss[0:2]
+        self.assertIsInstance(result, QuerySet)
+        # temp_qss never gets evaluated since the underlying QuerySet is used.
+        self.assertIsNone(temp_qss._result_cache)
+        # Check the data.
+        for element in result:
+            self.assertIsInstance(element, Book)
+
+        return
+
+        # Elements across iterables.
+        temp_qss = qss._clone()
+        b1 = temp_qss[1:2]
+        self.assertEqual(b1.pk, 1)
+        self.assertIsNone(temp_qss._result_cache)
+
+        # Test step.
+
+        # All elements (essentially creating a list).
+        data = qss[:]
+        self.assertIsInstance(data, list)
+        self.assertIsNotNone(qss._result_cache)
+
+    def test_slicing_order_by(self):
         pass
 
     def test_iterating(self):
