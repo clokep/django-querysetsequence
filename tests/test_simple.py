@@ -1,3 +1,4 @@
+from django.db.models import QuerySet
 from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
@@ -35,6 +36,10 @@ class TestQuerySetSequence(TestCase):
         Book.objects.all().delete()
 
     def test_length(self):
+        """
+        Ensure that count() and len() are properly summed over the children
+        QuerySets.
+        """
         qss = QuerySetSequence(Book.objects.filter(author=self.bob),
                                Article.objects.filter(author=self.bob))
 
@@ -51,6 +56,10 @@ class TestQuerySetSequence(TestCase):
         self.assertEqual(qss.count(), 3)
 
     def test_filter(self):
+        """
+        Ensure that filter() properly filters the children QuerySets, note that
+        no QuerySets are actually evaluated during this.
+        """
         qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
 
         # Check that everything is in the current list.
@@ -59,3 +68,38 @@ class TestQuerySetSequence(TestCase):
         # Now filter to just Bob's work.
         bob_qss = qss.filter(author=self.bob)
         self.assertEqual(bob_qss.count(), 3)
+        self.assertIsNone(qss._result_cache)
+
+        # Now filter to just Alice's work.
+        alice_qss = qss.filter(author=self.alice)
+        self.assertEqual(alice_qss.count(), 2)
+        self.assertIsNone(qss._result_cache)
+        # Since we've now filtered down to a single QuerySet, we shouldn't be a
+        # QuerySetSequence any longer.
+        self.assertIsInstance(alice_qss, QuerySet)
+
+    def test_exclude(self):
+        """
+        Ensure that exclude() properly excludes the children QuerySets, note
+        that no QuerySets are actually evaluated during this.
+
+        Note that this is the same test as test_filter, but we exclude the other
+        author instead of filtering.
+        """
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Now filter to just Bob's work.
+        bob_qss = qss.exclude(author=self.alice)
+        self.assertEqual(bob_qss.count(), 3)
+        self.assertIsNone(qss._result_cache)
+
+        # Now filter to just Alice's work.
+        alice_qss = qss.exclude(author=self.bob)
+        self.assertEqual(alice_qss.count(), 2)
+        self.assertIsNone(qss._result_cache)
+        # Since we've now filtered down to a single QuerySet, we shouldn't be a
+        # QuerySetSequence any longer.
+        self.assertIsInstance(alice_qss, QuerySet)
