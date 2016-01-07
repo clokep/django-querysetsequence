@@ -1,6 +1,6 @@
 import codecs
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def long_description():
