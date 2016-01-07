@@ -13,11 +13,23 @@ def multiply_iterables(it1, it2):
     return map(mul, it1, it2)
 
 class QuerySequence(object):
-    """A Query that handles multiple QuerySets."""
+    """
+    A Query that handles multiple QuerySets.
+
+    The API is expected to match django.db.models.sql.query.Query.
+
+    """
 
     def __init__(self, *args):
         self._iterables = args
         self._ordering = ['pk']
+
+        # Below is copied from django.db.models.sql.query.Query.
+        self.low_mark, self.high_mark = 0, None
+
+    #####################################################
+    # METHODS TO MATCH django.db.models.sql.query.Query #
+    #####################################################
 
     # Must implement:
     # add_annotation
@@ -30,10 +42,24 @@ class QuerySequence(object):
     # add_select_related
     # add_update_fields
     # annotations
-    # can_filter
     # clear_deferred_loading
     # clear_ordering
     # clone
+
+    def clone(self, klass=None, memo=None, **kwargs):
+        """
+        Creates a copy of the current instance. The 'kwargs' parameter can be
+        used by clients to update attributes after copying has taken place.
+        """
+        obj = QuerySequence()
+
+        # Copy important properties.
+        obj._iterables = map(lambda it: it._clone(), self._iterables)
+        obj._ordering = list(self._ordering)
+
+        obj.__dict__.update(kwargs)
+        return obj
+
     # combine
     # default_ordering
     # distinct_Fields
@@ -46,6 +72,47 @@ class QuerySequence(object):
         """Request count on each sub-query."""
         return sum(map(lambda it: it.count(), self._iterables))
 
+    def set_limits(self, low=None, high=None):
+        """
+        Adjusts the limits on the rows retrieved. We use low/high to set these,
+        as it makes it more Pythonic to read and write. When the SQL query is
+        created, they are converted to the appropriate offset and limit values.
+
+        Any limits passed in here are applied relative to the existing
+        constraints. So low is added to the current low value and both will be
+        clamped to any existing high value.
+
+        Directly copied from django.db.models.sql.query.Query.
+        """
+        if high is not None:
+            if self.high_mark is not None:
+                self.high_mark = min(self.high_mark, self.low_mark + high)
+            else:
+                self.high_mark = self.low_mark + high
+        if low is not None:
+            if self.high_mark is not None:
+                self.low_mark = min(self.high_mark, self.low_mark + low)
+            else:
+                self.low_mark = self.low_mark + low
+
+    def clear_limits(self):
+        """
+        Clears any existing limits.
+
+        Directly copied from django.db.models.sql.query.Query.
+        """
+        self.low_mark, self.high_mark = 0, None
+
+    def can_filter(self):
+        """
+        Returns True if adding filters to this instance is still possible.
+
+        Typically, this means no limits or offsets have been put on the results.
+
+        Directly copied from django.db.models.sql.query.Query.
+        """
+        return not self.low_mark and self.high_mark is None
+
     # get_meta
     # group_by
     # has_filters
@@ -57,7 +124,6 @@ class QuerySequence(object):
     # select_for_update_nowait
     # select_related
     # set_empty
-    # set_limits
     # standard_ordering
 
     def __iter__(self):
@@ -130,7 +196,11 @@ class QuerySetSequence(QuerySet):
     """
 
     def __init__(self, *args, **kwargs):
-        super(QuerySetSequence, self).__init__(self, query=QuerySequence(*args))
+        if args:
+            # TODO If kwargs already has query.
+            kwargs['query'] = QuerySequence(*args)
+
+        super(QuerySetSequence, self).__init__(**kwargs)
 
     def iterator(self):
         return self.query
@@ -158,10 +228,34 @@ class QuerySetSequence(QuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
         """
         Maps _filter_or_exclude over QuerySet items and simplifies the result.
+
         """
-        # each QuerySet is cloned separately
-        clone = self._clone(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs))
-        return self._simplify()
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                "Cannot filter a query once a slice has been taken."
+        clone = self._clone()
+
+        # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
+        clone.query._iterables = \
+            map(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs),
+                clone.query._iterables)
+
+        return self._simplify(clone)
+
+    def _simplify(self, qss):
+        """
+        Returns QuerySetSequence, QuerySet or EmptyQuerySet depending on the
+        contents of items, i.e. at least two non empty QuerySets, exactly one
+        non empty QuerySet and all empty QuerySets respectively.
+
+        Does not modify original QuerySetSequence.
+        """
+        not_empty_qss = filter(None, qss.query._iterables)
+        if not len(not_empty_qss):
+            return EmptyQuerySet()
+        if len(not_empty_qss) == 1:
+            return not_empty_qss[0]
+        return qss
 
     def complex_filter(self, filter_obj):
         raise NotImplementedError("QuerySetSequence does not implement complex_filter()")
@@ -222,18 +316,9 @@ class QuerySetSequence(QuerySet):
     def _batched_insert(self, objs, fields, batch_size):
         raise NotImplementedError("QuerySetSequence does not implement _batched_insert()")
 
-    def _clone(self, it_method=None):
-        """
-        Returns a new QuerySetSequence, optionally applying a method to each of
-        the iterables.
-        """
-        query = QuerySetSequence(*map(it_method, self._iterables))
-        # Copy over important properties.
-        query._ordering = self._ordering
-        return query
+    # def _clone(self): inherits from QuerySet.
 
     # def _fetch_all(self): inherits from QuerySet.
-    #    raise NotImplementedError("QuerySetSequence does not implement _fetch_all()")
 
     def _next_is_sticky(self):
         raise NotImplementedError("QuerySetSequence does not implement _next_is_sticky()")
@@ -259,19 +344,3 @@ class QuerySetSequence(QuerySet):
 
     def is_compatible_query_object_type(self, opts):
         raise NotImplementedError("QuerySetSequence does not implement is_compatible_query_object_type()")
-
-
-    def _simplify(self):
-        """
-        Returns QuerySetSequence, QuerySet or EmptyQuerySet depending on the
-        contents of items, i.e. at least two non empty QuerySets, exactly one
-        non empty QuerySet and all empty QuerySets respectively.
-
-        Does not modify original QuerySetSequence.
-        """
-        not_empty_qss = filter(None, self._iterables)
-        if not len(not_empty_qss):
-            return EmptyQuerySet()
-        if len(not_empty_qss) == 1:
-            return not_empty_qss[0]
-        return self
