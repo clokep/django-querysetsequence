@@ -12,87 +12,58 @@ def multiply_iterables(it1, it2):
            "Can not element-wise multiply iterables of different length."
     return map(mul, it1, it2)
 
+class QuerySequence(object):
+    """A Query that handles multiple QuerySets."""
 
-class QuerySetSequence(QuerySet):
-    """
-    Wrapper for multiple QuerySets without the restriction on the identity of
-    the base models.
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        # Don't call super, the useful parts are below.
-        self._result_cache = None
-
-        # Wrapped sequences.
+    def __init__(self, *args):
         self._iterables = args
+        self._ordering = ['pk']
 
-        # Length and calculate elements caches.
-        self._len = None
-        self._collapsed = []
+    # Must implement:
+    # add_annotation
+    # add_deferred_loading
+    # add_distinct_fields,
+    # add_extra
+    # add_immediate_loading
+    # add_ordering
+    # add_q
+    # add_select_related
+    # add_update_fields
+    # annotations
+    # can_filter
+    # clear_deferred_loading
+    # clear_ordering
+    # clone
+    # combine
+    # default_ordering
+    # distinct_Fields
+    # extra_order_by
+    # filter_is_sticky
+    # get_aggregation
+    # get_compiler
 
-        # How to order elements of the QuerySets.
-        self._ordering = []
+    def get_count(self, using):
+        """Request count on each sub-query."""
+        return sum(map(lambda it: it.count(), self._iterables))
 
-    def __len__(self):
-        if not self._len:
-            self._len = sum(len(iterable) for iterable in self._iterables)
-        return self._len
-
-    def __nonzero__(self):
-        try:
-            iter(self).next()
-        except StopIteration:
-            return False
-        return True
-
-    def _collect(self, start=0, stop=None, step=1):
-        if not stop:
-            stop = len(self)
-        sub_iterables = []
-        # collect sub sets
-        it = self._iterables.__iter__()
-        try:
-            while stop > start:
-                i = it.next()
-                i_len = len(i)
-                if i_len > start:
-                    # no problem with 'stop' being too big
-                    sub_iterables.append(i[start:stop:step])
-                start = max(0, start - i_len)
-                stop -= i_len
-        except StopIteration:
-            pass
-        return sub_iterables
-
-    def collapse(self, stop=None):
-        """
-        Collapses sequence into a list.
-
-        Try to do it effectively with caching.
-        """
-        if not stop:
-            stop = len(self)
-        # if we already calculated sufficient collapse then return it
-        if len(self._collapsed) >= stop:
-            return self._collapsed[:stop]
-        # otherwise collapse only the missing part
-        items = self._collapsed
-        sub_iterables = self._collect(len(self._collapsed), stop)
-        for sub_iterable in sub_iterables:
-            items += sub_iterable
-        # cache new collapsed items
-        self._collapsed = items
-        return self._collapsed
+    # get_meta
+    # group_by
+    # has_filters
+    # has_results
+    # insert_values
+    # is_empty
+    # order_by
+    # select_for_update
+    # select_for_update_nowait
+    # select_related
+    # set_empty
+    # set_limits
+    # standard_ordering
 
     def __iter__(self):
         return self.__generator__()
 
-    def __generator__(self, start=None, stop=None, step=1):
-        if start is None:
-            start = 1
-        if stop is None:
-            stop = len(self)
+    def __generator__(self):
         # TODO Error checking.
 
         # TODO This breaks if there's no ordering.
@@ -127,8 +98,6 @@ class QuerySetSequence(QuerySet):
             except StopIteration:
                 return 0
 
-        # The number of elements handled thus far.
-        return_count = 0
         # A list of index to items. Prepopulate with the first in each iterable.
         # (Remember that each iterable is already sorted.)
         not_empty_qss = map(iter, filter(None, self._iterables))
@@ -142,12 +111,7 @@ class QuerySetSequence(QuerySet):
             index, value = cur_values.pop()
 
             # Return this item.
-            if start <= return_count < stop:
-                yield value
-            elif return_count == stop:
-                return
-            # Otherwise, skip this value.
-            return_count += 1
+            yield value
 
             # Pull the next value from the iterable that just lost a value.
             try:
@@ -157,46 +121,25 @@ class QuerySetSequence(QuerySet):
                 # No new value to add!
                 pass
 
-    def __getitem__(self, key):
-        if not isinstance(key, (slice, int, long)):
-            raise TypeError
 
-        # Break down the slice object.
-        if isinstance(key, slice):
-            start, stop, step = key.indices(len(self))
-            ret_item = False
-        else: # isinstance(key, (int,long))
-            start, stop, step = key, key + 1, 1
-            ret_item = True
+class QuerySetSequence(QuerySet):
+    """
+    Wrapper for multiple QuerySets without the restriction on the identity of
+    the base models.
 
-        return self.__generator__(start, stop, step)
+    """
 
-        # Note: this can't be self.__class__ instead of IterableSequence; exemplary
-        # cause is that indexing over query sets returns lists so we can not
-        # return QuerySetSequence by default. Some type checking enhancement can
-        # be implemented in subclasses.
-        #return IterableSequence(*ret_iterables)
+    def __init__(self, *args, **kwargs):
+        super(QuerySetSequence, self).__init__(self, query=QuerySequence(*args))
 
-    def count(self):
-        if not self._len:
-            self._len = sum(qs.count() for qs in self._iterables)
-        return self._len
-
-    def __len__(self):
-        # override: use DB effective count's instead of len()
-        return self.count()
+    def iterator(self):
+        return self.query
 
     ####################################
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
     # TODO
-
-    def exists(self):
-        for qs in self._iterables:
-            if qs.exists():
-                return True
-        return False
 
     ##################################################
     # PUBLIC METHODS THAT RETURN A QUERYSET SUBCLASS #
@@ -221,19 +164,19 @@ class QuerySetSequence(QuerySet):
         return self._simplify()
 
     def complex_filter(self, filter_obj):
-        raise NotImplementedError("QuerySetSequene does not implement complex_filter()")
+        raise NotImplementedError("QuerySetSequence does not implement complex_filter()")
 
     def select_for_update(self, nowait=False):
-        raise NotImplementedError("QuerySetSequene does not implement select_for_update()")
+        raise NotImplementedError("QuerySetSequence does not implement select_for_update()")
 
     def select_related(self, *fields):
-        raise NotImplementedError("QuerySetSequene does not implement select_related()")
+        raise NotImplementedError("QuerySetSequence does not implement select_related()")
 
     def prefetch_related(self, *lookups):
-        raise NotImplementedError("QuerySetSequene does not implement prefetch_related()")
+        raise NotImplementedError("QuerySetSequence does not implement prefetch_related()")
 
     def annotate(self, *args, **kwargs):
-        raise NotImplementedError("QuerySetSequene does not implement annotate()")
+        raise NotImplementedError("QuerySetSequence does not implement annotate()")
 
     def order_by(self, *field_names):
         """
@@ -244,23 +187,23 @@ class QuerySetSequence(QuerySet):
         return clone
 
     def distinct(self, *field_names):
-        raise NotImplementedError("QuerySetSequene does not implement distinct()")
+        raise NotImplementedError("QuerySetSequence does not implement distinct()")
 
     def extra(self, select=None, where=None, params=None, tables=None,
               order_by=None, select_params=None):
-        raise NotImplementedError("QuerySetSequene does not implement extra()")
+        raise NotImplementedError("QuerySetSequence does not implement extra()")
 
     def reverse(self):
-        raise NotImplementedError("QuerySetSequene does not implement reverse()")
+        raise NotImplementedError("QuerySetSequence does not implement reverse()")
 
     def defer(self, *fields):
-        raise NotImplementedError("QuerySetSequene does not implement defer()")
+        raise NotImplementedError("QuerySetSequence does not implement defer()")
 
     def only(self, *fields):
-        raise NotImplementedError("QuerySetSequene does not implement only()")
+        raise NotImplementedError("QuerySetSequence does not implement only()")
 
     def using(self, alias):
-        raise NotImplementedError("QuerySetSequene does not implement using()")
+        raise NotImplementedError("QuerySetSequence does not implement using()")
 
     ###################################
     # PUBLIC INTROSPECTION ATTRIBUTES #
@@ -274,10 +217,10 @@ class QuerySetSequence(QuerySet):
     ###################
 
     def _insert(self, objs, fields, return_id=False, raw=False, using=None):
-        raise NotImplementedError("QuerySetSequene does not implement _insert()")
+        raise NotImplementedError("QuerySetSequence does not implement _insert()")
 
     def _batched_insert(self, objs, fields, batch_size):
-        raise NotImplementedError("QuerySetSequene does not implement _batched_insert()")
+        raise NotImplementedError("QuerySetSequence does not implement _batched_insert()")
 
     def _clone(self, it_method=None):
         """
@@ -289,34 +232,33 @@ class QuerySetSequence(QuerySet):
         query._ordering = self._ordering
         return query
 
-    def _fetch_all(self):
-        raise NotImplementedError("QuerySetSequene does not implement _fetch_all()")
+    # def _fetch_all(self): inherits from QuerySet.
+    #    raise NotImplementedError("QuerySetSequence does not implement _fetch_all()")
 
     def _next_is_sticky(self):
-        raise NotImplementedError("QuerySetSequene does not implement _next_is_sticky()")
+        raise NotImplementedError("QuerySetSequence does not implement _next_is_sticky()")
 
     # def _merge_sanity_check(self, other): inherits from QuerySet.
 
     def _merge_known_related_objects(self, other):
-        raise NotImplementedError("QuerySetSequene does not implement _merge_known_related_objects()")
+        raise NotImplementedError("QuerySetSequence does not implement _merge_known_related_objects()")
 
     def _setup_aggregate_query(self, aggregates):
-        raise NotImplementedError("QuerySetSequene does not implement _setup_aggregate_query()")
+        raise NotImplementedError("QuerySetSequence does not implement _setup_aggregate_query()")
 
     # def _prepare(self): inherits from QuerySet.
 
     def _as_sql(self, connection):
-        raise NotImplementedError("QuerySetSequene does not implement _as_sql()")
+        raise NotImplementedError("QuerySetSequence does not implement _as_sql()")
 
     def _add_hints(self, **hints):
-        raise NotImplementedError("QuerySetSequene does not implement _add_hints()")
+        raise NotImplementedError("QuerySetSequence does not implement _add_hints()")
 
     def _has_filters(self):
-        raise NotImplementedError("QuerySetSequene does not implement _has_filters()")
+        raise NotImplementedError("QuerySetSequence does not implement _has_filters()")
 
     def is_compatible_query_object_type(self, opts):
-        raise NotImplementedError("QuerySetSequene does not implement is_compatible_query_object_type()")
-
+        raise NotImplementedError("QuerySetSequence does not implement is_compatible_query_object_type()")
 
 
     def _simplify(self):
