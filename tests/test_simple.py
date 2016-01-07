@@ -197,7 +197,23 @@ class TestQuerySetSequence(TestCase):
         self.assertEqual(qss.count(), 5)
 
     def test_slicing_order_by(self):
-        pass
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Order by author and ensure it takes.
+        qss = qss.order_by('title')
+        self.assertEqual(qss.query.order_by, ['title'])
+
+        # Take a slice.
+        qss = qss[1:3]
+        self.assertIsInstance(qss, QuerySetSequence)
+        # No data yet.
+        self.assertIsNone(qss._result_cache)
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data[0], 'Biography')
+        self.assertEqual(data[1], 'Django Rocks')
 
     def test_iterating(self):
         """By default iteration just chains the iterables together."""

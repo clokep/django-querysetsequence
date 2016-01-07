@@ -46,7 +46,7 @@ class QuerySequence(object):
     # Must implement:
     # add_annotation
     # add_deferred_loading
-    # add_distinct_fields,
+    # add_distinct_fields
     # add_extra
     # add_immediate_loading
     # add_q
@@ -113,6 +113,12 @@ class QuerySequence(object):
         self.order_by = []
 
     def __iter__(self):
+        # If order is necessary, evaluate and start feeding data back.
+        if self.order_by:
+            return self._ordered_iterator()
+
+        # If there is no ordering, evaluation can be pushed off further.
+
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
         counts.extend(cumsum(map(lambda it: it.count(), self._querysets)))
@@ -166,12 +172,8 @@ class QuerySequence(object):
         if len(self._querysets) == 1:
             return iter(self._querysets[0])
 
-        # If there is no ordering, just chain the QuerySets together.
-        if not self.order_by:
-            return chain(*self._querysets)
-
-        # Otherwise, handle the ordering in a lazy way.
-        return self._ordered_iterator()
+        # For anything left, just chain the QuerySets together.
+        return chain(*self._querysets)
 
     def _ordered_iterator(self):
         # For fields that start with a '-', reverse the ordering of the
@@ -214,14 +216,28 @@ class QuerySequence(object):
         not_empty_qss = map(iter, filter(None, self._querysets))
         values = {it: it.next() for it in not_empty_qss}
 
-        # Iterate until there's only one iterator left.
-        while len(values) > 1:
-            # Sort the current values for each iterable.
-            ordered_values = sorted(values.items(), cmp=comparator, key=lambda x: x[1])
+        # The offset of items returned.
+        index = 0
 
-            # The 'minimum' value is now in the last position! Return it.
-            qss, value = ordered_values.pop(0)
-            yield value
+        # Iterate until all the values are gone.
+        while values:
+            # If there's only one iterator left, don't bother sorting.
+            if len(values) > 1:
+                # Sort the current values for each iterable.
+                ordered_values = sorted(values.items(), cmp=comparator, key=lambda x: x[1])
+
+                # The 'minimum' value is now in the last position!
+                qss, value = ordered_values.pop(0)
+            else:
+                qss, value = values.items()[0]
+
+            # Return it if we're within the slice of interest.
+            if self.low_mark <= index:
+                yield value
+            index += 1
+            # We've left the slice of interest, we're done.
+            if index == self.high_mark:
+                return
 
             # Iterate the iterable that just lost a value.
             try:
@@ -229,16 +245,6 @@ class QuerySequence(object):
             except StopIteration:
                 # This iterator is done, remove it.
                 del values[qss]
-
-        # Finally, iterate completely through the last iterator.
-        it, value = values.items()[0]
-        # Don't forget the current value.
-        yield value
-        while True:
-            try:
-                yield it.next()
-            except StopIteration:
-                break
 
     ##########################################################
     # METHODS DIRECTLY FROM django.db.models.sql.query.Query #
