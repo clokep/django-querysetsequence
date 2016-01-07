@@ -150,23 +150,16 @@ class QuerySetSequence(IterableSequence):
     of the base models.
     """
 
-    def all(self):
-        return self
+    def __init__(self, *args, **kwargs):
+        super(QuerySetSequence, self).__init__(*args, **kwargs)
+        self._ordering = []
 
-    def count(self):
-        if not self._len:
-            self._len = sum(qs.count() for qs in self.iterables)
-        return self._len
-
-    def __len__(self):
-        # override: use DB effective count's instead of len()
-        return self.count()
-
-    def order_by(self, *field_names):
+    def collapse(self, stop=None):
         """
-        Returns a list of the QuerySetSequence items with the ordering changed.
+        Collapses sequence into a list, applying any sorting beforehand.
         """
         # construct a comparator function based on the field names prefixes
+        field_names = self._ordering
         reverses = [1] * len(field_names)
         field_names = list(field_names)
         for i in range(len(field_names)):
@@ -185,7 +178,26 @@ class QuerySetSequence(IterableSequence):
             except StopIteration:
                 return 0
         # return new sorted list
-        return sorted(self.collapse(), cmp=comparator)
+        return sorted(super(QuerySetSequence, self).collapse(), cmp=comparator)
+
+    def all(self):
+        return self
+
+    def count(self):
+        if not self._len:
+            self._len = sum(qs.count() for qs in self.iterables)
+        return self._len
+
+    def __len__(self):
+        # override: use DB effective count's instead of len()
+        return self.count()
+
+    def order_by(self, *field_names):
+        """
+        Returns a list of the QuerySetSequence items with the ordering changed.
+        """
+        self._ordering += field_names
+        return self
 
     def filter(self, *args, **kwargs):
         """
@@ -207,7 +219,7 @@ class QuerySetSequence(IterableSequence):
         """
         return self._filter_or_exclude(True, *args, **kwargs)
 
-    def _simplify(self, qss=None):
+    def _simplify(self, *qss):
         """
         Returns QuerySetSequence, QuerySet or EmptyQuerySet depending on the
         contents of items, i.e. at least two non empty QuerySets, exactly one
@@ -215,7 +227,7 @@ class QuerySetSequence(IterableSequence):
 
         Does not modify original QuerySetSequence.
         """
-        not_empty_qss = filter(None, qss if qss else self.iterables)
+        not_empty_qss = filter(None, qss)
         if not len(not_empty_qss):
             return EmptyQuerySet()
         if len(not_empty_qss) == 1:
