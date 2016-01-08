@@ -117,6 +117,10 @@ class QuerySequence(object):
         self.order_by = []
 
     def __iter__(self):
+        # There's no QuerySets, just return an empty iterator.
+        if not len(self._querysets):
+            return iter([])
+
         # If order is necessary, evaluate and start feeding data back.
         if self.order_by:
             return self._ordered_iterator()

@@ -94,6 +94,10 @@ class TestQuerySetSequence(TestCase):
         self.assertEqual(qss.count(), 0)
         self.assertIsInstance(qss, QuerySetSequence)
 
+        # This should not throw an exception.
+        data = list(qss)
+        self.assertEqual(len(data), 0)
+
     def test_exclude(self):
         """
         Ensure that exclude() properly excludes the children QuerySets, note
