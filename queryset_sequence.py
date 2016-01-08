@@ -1,7 +1,7 @@
 from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
-from django.db.models.query import EmptyQuerySet, QuerySet
+from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
 
 
@@ -66,12 +66,10 @@ class QuerySequence(object):
     # has_filters
     # has_results
     # insert_values
-    # is_empty
     # order_by
     # select_for_update
     # select_for_update_nowait
     # select_related
-    # set_empty
     # standard_ordering
 
     def clone(self, klass=None, memo=None, **kwargs):
@@ -93,6 +91,12 @@ class QuerySequence(object):
     def get_count(self, using):
         """Request count on each sub-query."""
         return sum(map(lambda it: it.count(), self._querysets))
+
+    def set_empty(self):
+        self._querysets = []
+
+    def is_empty(self):
+        return bool(len(self._querysets))
 
     def add_ordering(self, *ordering):
         """
@@ -327,6 +331,9 @@ class QuerySetSequence(QuerySet):
         """
         Maps _filter_or_exclude over QuerySet items and simplifies the result.
 
+        Returns QuerySetSequence, or QuerySet depending on the contents of
+        items, i.e. at least two non empty QuerySets, or exactly one non empty
+        QuerySet.
         """
         if args or kwargs:
             assert self.query.can_filter(), \
@@ -334,26 +341,20 @@ class QuerySetSequence(QuerySet):
         clone = self._clone()
 
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
-        clone.query._querysets = \
+        querysets = \
             map(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs),
                 clone.query._querysets)
 
-        return self._simplify(clone)
+        # Filter out now empty QuerySets.
+        querysets = filter(None, querysets)
 
-    def _simplify(self, qss):
-        """
-        Returns QuerySetSequence, QuerySet or EmptyQuerySet depending on the
-        contents of items, i.e. at least two non empty QuerySets, exactly one
-        non empty QuerySet and all empty QuerySets respectively.
+        # If there's only one QuerySet left, then return it. Otherwise return
+        # the clone.
+        if len(querysets) == 1:
+            return querysets[0]
 
-        Does not modify original QuerySetSequence.
-        """
-        not_empty_qss = filter(None, qss.query._querysets)
-        if not len(not_empty_qss):
-            return EmptyQuerySet()
-        if len(not_empty_qss) == 1:
-            return not_empty_qss[0]
-        return qss
+        clone.query._querysets = querysets
+        return clone
 
     def complex_filter(self, filter_obj):
         raise NotImplementedError("QuerySetSequence does not implement complex_filter()")

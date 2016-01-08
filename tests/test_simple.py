@@ -80,6 +80,20 @@ class TestQuerySetSequence(TestCase):
         # QuerySetSequence any longer.
         self.assertIsInstance(alice_qss, QuerySet)
 
+    def test_filter_empty(self):
+        """
+        Ensure that filter() works when.
+        """
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Filter to nothing.
+        qss = qss.filter(title='')
+        self.assertEqual(qss.count(), 0)
+        self.assertIsInstance(qss, QuerySetSequence)
+
     def test_exclude(self):
         """
         Ensure that exclude() properly excludes the children QuerySets, note
