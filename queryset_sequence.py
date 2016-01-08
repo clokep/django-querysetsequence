@@ -1,6 +1,7 @@
 from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
 
@@ -294,6 +295,22 @@ class QuerySequence(object):
         return not self.low_mark and self.high_mark is None
 
 
+# TODO Inherit from django.db.models.base.Model.
+class QuerySetSequenceModel(object):
+    """
+    A fake Model that is used to throw DoesNotExist exceptions for
+    QuerySetSequence.
+    """
+    class DoesNotExist(ObjectDoesNotExist):
+        pass
+
+    class MultipleObjectsReturned(MultipleObjectsReturned):
+        pass
+
+    class _meta:
+        object_name = 'QuerySetSequenceModel'
+
+
 class QuerySetSequence(QuerySet):
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -305,6 +322,9 @@ class QuerySetSequence(QuerySet):
         if args:
             # TODO If kwargs already has query.
             kwargs['query'] = QuerySequence(*args)
+        # A particular model doesn't really make sense, so just use the generic
+        # Model class.
+        kwargs['model'] = QuerySetSequenceModel
 
         super(QuerySetSequence, self).__init__(**kwargs)
 

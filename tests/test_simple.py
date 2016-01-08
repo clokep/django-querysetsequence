@@ -1,5 +1,6 @@
 import unittest
 
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db.models import QuerySet
 from django.test import TestCase
 
@@ -123,6 +124,26 @@ class TestQuerySetSequence(TestCase):
         # Since we've now filtered down to a single QuerySet, we shouldn't be a
         # QuerySetSequence any longer.
         self.assertIsInstance(alice_qss, QuerySet)
+
+    def test_get(self):
+        """
+        Ensure that get() returns the expected element or raises DoesNotExist.
+        """
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        # Check that everything is in the current list.
+        self.assertEqual(qss.count(), 5)
+
+        # Get a particular item.
+        book = qss.get(title='Biography')
+        self.assertEqual(book.title, 'Biography')
+        self.assertIsInstance(book, Book)
+
+        # An exception is rasied if get() is called and nothing is found.
+        self.assertRaises(ObjectDoesNotExist, qss.get, title='')
+
+        # ...or if get() is called and multiple objects are found.
+        self.assertRaises(MultipleObjectsReturned, qss.get, author=self.bob)
 
     def test_order_by(self):
         """Ensure that order_by() propagates to QuerySets and iteration."""
