@@ -7,7 +7,8 @@ classes, while treating them as a single ``QuerySet``.
 Supported Features
 ==================
 
-* ``filter()`` / ``exclude()`` across fields common to all sub-``QuerySets``.
+* ``filter()`` / ``exclude()`` / ``get()`` across fields common to all
+  sub-``QuerySets``.
 * ``order_by()`` fields common across all sub-``QuerySets``.
 * ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
 * Slicing and indexing works as expected.
