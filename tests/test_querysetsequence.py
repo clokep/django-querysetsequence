@@ -185,6 +185,31 @@ class TestOrderBy(TestBase):
         self.assertEqual(data[3], 'Fiction')
         self.assertEqual(data[4], 'Some Article')
 
+    def test_order_by_multi(self):
+        """Test ordering by multiple fields."""
+        # Add another object with the same title, but a later release date.
+        fiction2 = Book.objects.create(title="Fiction", author=self.alice)
+
+        qss = self.all.order_by('title', '-release')
+        self.assertEqual(qss.query.order_by, ['title', '-release'])
+
+        # Check the titles are properly ordered.
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data[0], 'Alice in Django-land')
+        self.assertEqual(data[1], 'Biography')
+        self.assertEqual(data[2], 'Django Rocks')
+        self.assertEqual(data[3], 'Fiction')
+        self.assertEqual(data[4], 'Fiction')
+        self.assertEqual(data[5], 'Some Article')
+
+        # Ensure the ordering is correct.
+        self.assertLess(qss[4].release, qss[3].release)
+        self.assertEqual(qss[3].author, self.alice)
+        self.assertEqual(qss[4].author, self.bob)
+
+        # Clean-up this test.
+        fiction2.delete()
+
     @unittest.skip('Currently not supported.')
     def test_order_by_model(self):
         """Apply order_by() with a field that returns a model."""

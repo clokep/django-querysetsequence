@@ -199,7 +199,7 @@ class QuerySequence(object):
             field_values = attrgetter(*field_names)(i)
             # Always want an tuple, but attrgetter returns single item if 1 arg
             # supplied.
-            if len(field_names):
+            if len(field_names) == 1:
                 field_values = (field_values, )
             return field_values
 
