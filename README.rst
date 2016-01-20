@@ -22,6 +22,16 @@ Known Issues
   ``ForeignKeys``).
 * The fully ``QuerySet`` API is not complete.
 
+Requirements
+============
+
+
+* Python (2.7)
+* Django (1.8)
+
+Support for Python (3.3, 3.4, 3.5) and Django 1.9 is wanted. If you wish an
+older version of Django to be supported, please submit a pull request.
+
 Installation
 ============
 
