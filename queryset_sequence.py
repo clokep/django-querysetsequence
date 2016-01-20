@@ -1,8 +1,10 @@
 from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db.models import Model
+from django.core.exceptions import (FieldError, MultipleObjectsReturned,
+                                    ObjectDoesNotExist)
+from django.db.models.base import Model
+from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
 
@@ -66,7 +68,6 @@ class QuerySequence(object):
     # has_filters
     # has_results
     # insert_values
-    # order_by
     # select_for_update
     # select_for_update_nowait
     # select_related
@@ -198,7 +199,7 @@ class QuerySequence(object):
 
         # If field_names refers to a field on a different model (using __
         # syntax), break this apart.
-        field_names = map(lambda f: (f.split('__', 2) + [''])[:2], field_names)
+        field_names = map(lambda f: (f.split(LOOKUP_SEP, 2) + [''])[:2], field_names)
         # Split this into a list of the field names on the current item and
         # fields on the values returned.
         field_names, next_field_names = zip(*field_names)
@@ -221,6 +222,11 @@ class QuerySequence(object):
         return field_values
 
     @classmethod
+    def _get_field_names(cls, model):
+        """Return a list of field names that are part of a model."""
+        return map(lambda f: f.name, model._meta.get_fields())
+
+    @classmethod
     def _cmp(cls, value1, value2):
         """
         Comparison method that takes into account Django's special rules when
@@ -231,16 +237,23 @@ class QuerySequence(object):
 
         """
         if isinstance(value1, Model) and isinstance(value2, Model):
-            # TODO Assert that the ordering is the same.
             field_names = value1._meta.ordering
+
+            # Assert that the ordering is the same between different models.
+            if field_names != value2._meta.ordering:
+                valid_field_names = (set(cls._get_field_names(value1)) &
+                               set(cls._get_field_names(value2)))
+                raise FieldError(
+                    "Ordering differs between models. Choices are: %s" %
+                    ', '.join(valid_field_names))
+
             # By default, order by the pk.
             if not field_names:
                 field_names = ['pk']
+
             # TODO Figure out if we don't need to generate this comparator every
             # time.
             return cls._generate_comparator(field_names)(value1, value2)
-
-        # TODO Error checking if they're not both Model.
 
         return cmp(value1, value2)
 
@@ -292,7 +305,7 @@ class QuerySequence(object):
         # The offset of items returned.
         index = 0
 
-        # Create a comparision function based on the requested ordering.
+        # Create a comparison function based on the requested ordering.
         comparator = self._generate_comparator(self.order_by)
 
         # Iterate until all the values are gone.
