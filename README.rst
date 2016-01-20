@@ -13,6 +13,8 @@ Supported Features
 * ``filter()`` / ``exclude()`` / ``get()`` across fields common to all
   sub-``QuerySets``.
 * ``order_by()`` fields common across all sub-``QuerySets``.
+    * Includes ordering by fields of related models (e.g. ``'foo__bar'``
+      syntax).
 * ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
 * Slicing and indexing works as expected.
 * ``QuerySetSequence`` is an iterable.
