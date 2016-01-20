@@ -79,6 +79,17 @@ class TestFilter(TestBase):
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
+    def test_filter_by_relation(self):
+        """
+        Ensure that filter() properly filters the children QuerySets when using
+        a related model, note that no QuerySets are actually evaluated during
+        this.
+        """
+        # Filter to just Bob's work.
+        bob_qss = self.all.filter(author__name=self.bob.name)
+        self.assertEqual(bob_qss.count(), 3)
+        self.assertIsNone(bob_qss._result_cache)
+
     def test_simplify(self):
         """
         Ensure that filter() properly filters the children QuerySets and
@@ -121,6 +132,17 @@ class TestExclude(TestBase):
         """
         # Filter to just Bob's work.
         bob_qss = self.all.exclude(author=self.alice)
+        self.assertEqual(bob_qss.count(), 3)
+        self.assertIsNone(bob_qss._result_cache)
+
+    def test_exclude_by_relation(self):
+        """
+        Ensure that exclude() properly filters the children QuerySets when using
+        a related model, note that no QuerySets are actually evaluated during
+        this.
+        """
+        # Filter to just Bob's work.
+        bob_qss = self.all.exclude(author__name=self.alice.name)
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
