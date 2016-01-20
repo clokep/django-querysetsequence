@@ -11,9 +11,14 @@ class Author(models.Model):
         return self.name
 
 
+class Publisher(models.Model):
+    name = models.CharField(max_length=50)
+
+
 class Article(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author)
+    publisher = models.ForeignKey(Publisher)
     release = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -23,6 +28,7 @@ class Article(models.Model):
 class Book(models.Model):
     title = models.CharField(max_length=50)
     author = models.ForeignKey(Author)
+    publisher = models.ForeignKey(Publisher)
     release = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
