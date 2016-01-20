@@ -12,9 +12,10 @@ Supported Features
 
 * ``filter()`` / ``exclude()`` / ``get()`` across fields common to all
   sub-``QuerySets``.
-* ``order_by()`` fields common across all sub-``QuerySets``.
-    * Includes ordering by fields of related models (e.g. ``'foo__bar'``
-      syntax).
+* ``order_by()`` fields common across all sub-``QuerySets``. Includes ordering
+  by fields of related models (e.g. ``'foo__bar'`` syntax), and ordering of
+  related fields (e.g. ``'foo'``, or ``'foo_id'``).
+  syntax).
 * ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
 * Slicing and indexing works as expected.
 * ``QuerySetSequence`` is an iterable.
@@ -23,8 +24,7 @@ Supported Features
 Known Issues
 ============
 
-* Cannot handle ``order_by()`` when fields include other models (e.g.
-  ``ForeignKeys``).
+* Cannot handle random ``order_by()``(e.g. ``order_by('?')``).
 * The fully ``QuerySet`` API is not complete.
 
 Requirements

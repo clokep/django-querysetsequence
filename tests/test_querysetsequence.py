@@ -1,12 +1,12 @@
-import unittest
-
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import (FieldError, MultipleObjectsReturned,
+                                    ObjectDoesNotExist)
 from django.db.models import QuerySet
 from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
 
-from .models import Article, Author, Book
+from .models import (Article, Author, BlogPost, Book, OnlinePublisher,
+                     PeriodicalPublisher, Publisher)
 
 class TestBase(TestCase):
     @classmethod
@@ -15,18 +15,36 @@ class TestBase(TestCase):
         alice = Author.objects.create(name="Alice")
         bob = Author.objects.create(name="Bob")
 
+        # Purposefully ordered such that the pks will be in the opposite order
+        # than the names.
+        mad_magazine = PeriodicalPublisher.objects.create(name="Mad Magazine")
+        unused_publisher = Publisher.objects.create(name="Unused Publisher")
+        big_books = Publisher.objects.create(name="Big Books",
+                                             address="123 Street")
+        wacky_website = OnlinePublisher.objects.create(name="Wacky Website")
+
         # Alice wrote some articles.
-        Article.objects.create(title="Django Rocks", author=alice)
-        Article.objects.create(title="Alice in Django-land", author=alice)
+        Article.objects.create(title="Django Rocks", author=alice,
+                               publisher=mad_magazine)
+        Article.objects.create(title="Alice in Django-land", author=alice,
+                               publisher=mad_magazine)
 
-        # Bob wrote a couple of books and an article.
-        Book.objects.create(title="Fiction", author=bob)
-        Book.objects.create(title="Biography", author=bob)
-        Article.objects.create(title="Some Article", author=bob)
+        # Bob wrote a couple of books, an article, and a blog post.
+        Book.objects.create(title="Fiction", author=bob, publisher=big_books,
+                            pages=10)
+        Book.objects.create(title="Biography", author=bob, publisher=big_books,
+                            pages=20)
+        Article.objects.create(title="Some Article", author=bob,
+                               publisher=mad_magazine)
+        BlogPost.objects.create(title="Post", author=bob,
+                                publisher=wacky_website)
 
-        # Save the authors for later.
+        # Save the authors and publishers for later.
         cls.alice = alice
         cls.bob = bob
+        cls.big_books = big_books
+        cls.mad_magazine = mad_magazine
+        cls.wacky_website = wacky_website
 
         # Many tests start with the same QuerySetSequence.
         cls.all = QuerySetSequence(Book.objects.all(), Article.objects.all())
@@ -207,10 +225,16 @@ class TestOrderBy(TestBase):
         self.assertEqual(data[3], 'Fiction')
         self.assertEqual(data[4], 'Some Article')
 
+    def test_order_by_non_existent_field(self):
+        qss = self.all.order_by('pages')
+        self.assertEqual(qss.query.order_by, ['pages'])
+        self.assertRaises(FieldError, list, qss)
+
     def test_order_by_multi(self):
         """Test ordering by multiple fields."""
         # Add another object with the same title, but a later release date.
-        fiction2 = Book.objects.create(title="Fiction", author=self.alice)
+        fiction2 = Book.objects.create(title="Fiction", author=self.alice,
+                                       publisher=self.big_books, pages=1)
 
         qss = self.all.order_by('title', '-release')
         self.assertEqual(qss.query.order_by, ['title', '-release'])
@@ -232,9 +256,40 @@ class TestOrderBy(TestBase):
         # Clean-up this test.
         fiction2.delete()
 
-    @unittest.skip('Currently not supported.')
     def test_order_by_relation(self):
-        """Apply order_by() with a field that returns a model."""
+        """
+        Apply order_by() with a field that is a relation to another model's id.
+        """
+        # Order by author and ensure it takes.
+        qss = self.all.order_by('author_id')
+        self.assertEqual(qss.query.order_by, ['author_id'])
+
+        # The first two should be Alice, followed by three from Bob.
+        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
+            self.assertEqual(element.author, expected)
+
+    def test_order_by_relation_pk(self):
+        """
+        Apply order_by() with a field that returns a model without a default
+        ordering (i.e. using the pk).
+        """
+        # Order by publisher and ensure it takes.
+        qss = self.all.order_by('publisher')
+        self.assertEqual(qss.query.order_by, ['publisher'])
+
+        # Ensure that the test has any hope of passing.
+        self.assertLess(self.mad_magazine.pk, self.big_books.pk)
+
+        # The first three should be from Mad Magazine, followed by three from
+        # Big Books.
+        for expected, element in zip([self.mad_magazine] * 3 + [self.big_books] * 2, qss):
+            self.assertEqual(element.publisher, expected)
+
+    def test_order_by_relation_with_ordering(self):
+        """
+        Apply order_by() with a field that returns a model with a default
+        ordering.
+        """
         # Order by author and ensure it takes.
         qss = self.all.order_by('author')
         self.assertEqual(qss.query.order_by, ['author'])
@@ -242,6 +297,21 @@ class TestOrderBy(TestBase):
         # The first two should be Alice, followed by three from Bob.
         for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
             self.assertEqual(element.author, expected)
+
+    def test_order_by_relation_with_different_ordering(self):
+        """
+        Apply order_by() with a field that returns a model with different
+        ordering on sub-QuerySets.
+        """
+        # Both of these have publishers with the same fields, but different
+        # ordering.
+        all = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+
+        # Order by publisher and ensure it takes.
+        qss = all.order_by('publisher')
+        self.assertEqual(qss.query.order_by, ['publisher'])
+
+        self.assertRaises(FieldError, list, qss)
 
     def test_order_by_relation_field(self):
         """Apply order_by() with a field through a model relationship."""
@@ -252,6 +322,12 @@ class TestOrderBy(TestBase):
         # The first two should be Alice, followed by three from Bob.
         for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
             self.assertEqual(element.author, expected)
+
+    def test_order_by_relation_no_existent_field(self):
+        """Apply order_by() with a field through a model relationship."""
+        qss = self.all.order_by('publisher__address')
+        self.assertEqual(qss.query.order_by, ['publisher__address'])
+        self.assertRaises(FieldError, list, qss)
 
 
 class TestSlicing(TestBase):

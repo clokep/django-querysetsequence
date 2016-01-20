@@ -1,10 +1,12 @@
 from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import (FieldError, MultipleObjectsReturned,
+                                    ObjectDoesNotExist)
+from django.db.models.base import Model
+from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
-
 
 def multiply_iterables(it1, it2):
     """
@@ -66,7 +68,6 @@ class QuerySequence(object):
     # has_filters
     # has_results
     # insert_values
-    # order_by
     # select_for_update
     # select_for_update_nowait
     # select_related
@@ -198,7 +199,7 @@ class QuerySequence(object):
 
         # If field_names refers to a field on a different model (using __
         # syntax), break this apart.
-        field_names = map(lambda f: (f.split('__', 2) + [''])[:2], field_names)
+        field_names = map(lambda f: (f.split(LOOKUP_SEP, 2) + [''])[:2], field_names)
         # Split this into a list of the field names on the current item and
         # fields on the values returned.
         field_names, next_field_names = zip(*field_names)
@@ -220,10 +221,57 @@ class QuerySequence(object):
 
         return field_values
 
-    def _ordered_iterator(self):
+    @classmethod
+    def _get_field_names(cls, model):
+        """Return a list of field names that are part of a model."""
+        return map(lambda f: f.name, model._meta.get_fields())
+
+    @classmethod
+    def _cmp(cls, value1, value2):
+        """
+        Comparison method that takes into account Django's special rules when
+        ordering by a field that is a model:
+
+            1. Try following the default ordering on the related model.
+            2. Order by the model's primary key, if there is no Meta.ordering.
+
+        """
+        if isinstance(value1, Model) and isinstance(value2, Model):
+            field_names = value1._meta.ordering
+
+            # Assert that the ordering is the same between different models.
+            if field_names != value2._meta.ordering:
+                valid_field_names = (set(cls._get_field_names(value1)) &
+                               set(cls._get_field_names(value2)))
+                raise FieldError(
+                    "Ordering differs between models. Choices are: %s" %
+                    ', '.join(valid_field_names))
+
+            # By default, order by the pk.
+            if not field_names:
+                field_names = ['pk']
+
+            # TODO Figure out if we don't need to generate this comparator every
+            # time.
+            return cls._generate_comparator(field_names)(value1, value2)
+
+        return cmp(value1, value2)
+
+    @classmethod
+    def _generate_comparator(cls, field_names):
+        """
+        Construct a comparator function based on the field names. The comparator
+        returns the first non-zero comparison value.
+
+        Inputs:
+            field_names (iterable of strings): The field names to sort on.
+
+        Returns:
+            A comparator function.
+        """
+
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
-        field_names = self.order_by
         reverses = [1] * len(field_names)
         for i, field_name in enumerate(field_names):
             if field_name[0] == '-':
@@ -231,17 +279,11 @@ class QuerySequence(object):
                 field_names[i] = field_name[1:]
 
         def comparator(i1, i2):
-            """
-            Construct a comparator function based on the field names. Returns
-            the first non-zero comparison value.
-            """
             # Get the values for comparison.
-            v1 = self._fields_getter(field_names, i1)
-            v2 = self._fields_getter(field_names, i2)
+            v1 = cls._fields_getter(field_names, i1)
+            v2 = cls._fields_getter(field_names, i2)
             # Compare each field for the two items, reversing if necessary.
-            order = multiply_iterables(map(cmp, v1, v2), reverses)
-            # TODO  This ordering is broken when fields_getter returns
-            #       sub-classes of Model.
+            order = multiply_iterables(map(cls._cmp, v1, v2), reverses)
 
             try:
                 # The first non-zero element.
@@ -250,13 +292,21 @@ class QuerySequence(object):
                 # Everything was equivalent.
                 return 0
 
+        return comparator
+
+    def _ordered_iterator(self):
+        """An iterator that takes into account the requested ordering."""
+
         # A mapping of iterable to the current item in that iterable. (Remember
-        # that each iterable is already sorted.)
+        # that each QuerySet is already sorted.)
         not_empty_qss = map(iter, filter(None, self._querysets))
         values = {it: it.next() for it in not_empty_qss}
 
         # The offset of items returned.
         index = 0
+
+        # Create a comparison function based on the requested ordering.
+        comparator = self._generate_comparator(self.order_by)
 
         # Iterate until all the values are gone.
         while values:
