@@ -1,6 +1,9 @@
 Django QuerySetSequence
 #######################
 
+.. image:: https://travis-ci.org/percipient/django-querysetsequence.svg?branch=master
+    :target: https://travis-ci.org/percipient/django-querysetsequence
+
 The ``QuerySetSequence`` wrapper helps to deal with disparate ``QuerySet``
 classes, while treating them as a single ``QuerySet``.
 
