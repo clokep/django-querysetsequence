@@ -38,7 +38,7 @@ class QuerySequence(object):
 
         self.order_by = []
         self.low_mark, self.high_mark = 0, None
-
+        self.distinct_fields = []
 
     #####################################################
     # METHODS TO MATCH django.db.models.sql.query.Query #
@@ -57,7 +57,6 @@ class QuerySequence(object):
     # clear_deferred_loading
     # combine
     # default_ordering
-    # distinct_Fields
     # extra_order_by
     # filter_is_sticky
     # get_aggregation
