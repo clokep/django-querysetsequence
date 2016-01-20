@@ -211,11 +211,22 @@ class TestOrderBy(TestBase):
         fiction2.delete()
 
     @unittest.skip('Currently not supported.')
-    def test_order_by_model(self):
+    def test_order_by_relation(self):
         """Apply order_by() with a field that returns a model."""
         # Order by author and ensure it takes.
         qss = self.all.order_by('author')
         self.assertEqual(qss.query.order_by, ['author'])
+
+        # The first two should be Alice, followed by three from Bob.
+        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
+            self.assertEqual(element.author, expected)
+
+    @unittest.skip('Currently not supported.')
+    def test_order_by_relation_field(self):
+        """Apply order_by() with a field through a model relationship."""
+        # Order by author name and ensure it takes.
+        qss = self.all.order_by('author__name')
+        self.assertEqual(qss.query.order_by, ['author__name'])
 
         # The first two should be Alice, followed by three from Bob.
         for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
