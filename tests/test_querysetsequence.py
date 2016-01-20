@@ -1,5 +1,3 @@
-import unittest
-
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models import QuerySet
@@ -236,7 +234,6 @@ class TestOrderBy(TestBase):
         # Clean-up this test.
         fiction2.delete()
 
-    @unittest.skip('Currently not supported.')
     def test_order_by_relation(self):
         """
         Apply order_by() with a field that is a relation to another model's id.
