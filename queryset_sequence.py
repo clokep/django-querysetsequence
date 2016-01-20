@@ -183,8 +183,8 @@ class QuerySequence(object):
         # For anything left, just chain the QuerySets together.
         return chain(*self._querysets)
 
-    @staticmethod
-    def _fields_getter(field_names, i):
+    @classmethod
+    def _fields_getter(cls, field_names, item):
         """
         Returns a tuple of the values to be compared.
 
@@ -196,11 +196,28 @@ class QuerySequence(object):
             A tuple of the values of each field in field_names.
         """
 
-        field_values = attrgetter(*field_names)(i)
-        # Always want an tuple, but attrgetter returns single item if 1 arg
+        # If field_names refers to a field on a different model (using __
+        # syntax), break this apart.
+        field_names = map(lambda f: (f.split('__', 2) + [''])[:2], field_names)
+        # Split this into a list of the field names on the current item and
+        # fields on the values returned.
+        field_names, next_field_names = zip(*field_names)
+
+        field_values = attrgetter(*field_names)(item)
+        # Always want a list, but attrgetter returns single item if 1 arg
         # supplied.
         if len(field_names) == 1:
-            field_values = (field_values, )
+            field_values = [field_values]
+        else:
+            field_values = list(field_values)
+
+        # For any field name that referred to a field on a different model,
+        # recursively find the field value.
+        for i, next_field_name in enumerate(next_field_names):
+            # If next_field_name is empty, the field value is correct.
+            if next_field_name:
+                field_values[i] = cls._fields_getter([next_field_name], field_values[i])
+
         return field_values
 
     def _ordered_iterator(self):

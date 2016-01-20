@@ -221,7 +221,6 @@ class TestOrderBy(TestBase):
         for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
             self.assertEqual(element.author, expected)
 
-    @unittest.skip('Currently not supported.')
     def test_order_by_relation_field(self):
         """Apply order_by() with a field through a model relationship."""
         # Order by author name and ensure it takes.
