@@ -2,9 +2,9 @@ from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
-
 
 def multiply_iterables(it1, it2):
     """
@@ -220,6 +220,22 @@ class QuerySequence(object):
 
         return field_values
 
+    @staticmethod
+    def _cmp(value1, value2):
+        """
+        Comparison method that takes into account Django's special rules when
+        ordering by a field that is a model:
+
+            1. Try following the default ordering on the related model.
+            2. Order by the model's primary key, if there is no Meta.ordering.
+
+        """
+        if isinstance(value1, Model) and isinstance(value2, Model):
+            pass
+        # TODO Error checking if they're not both Model.
+
+        return cmp(value1, value2)
+
     def _ordered_iterator(self):
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
@@ -239,7 +255,7 @@ class QuerySequence(object):
             v1 = self._fields_getter(field_names, i1)
             v2 = self._fields_getter(field_names, i2)
             # Compare each field for the two items, reversing if necessary.
-            order = multiply_iterables(map(cmp, v1, v2), reverses)
+            order = multiply_iterables(map(self._cmp, v1, v2), reverses)
             # TODO  This ordering is broken when fields_getter returns
             #       sub-classes of Model.
 
