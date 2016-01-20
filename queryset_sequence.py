@@ -183,6 +183,26 @@ class QuerySequence(object):
         # For anything left, just chain the QuerySets together.
         return chain(*self._querysets)
 
+    @staticmethod
+    def _fields_getter(field_names, i):
+        """
+        Returns a tuple of the values to be compared.
+
+        Inputs:
+            field_names (iterable of strings): The field names to sort on.
+            i (item): The item to get the fields from.
+
+        Returns:
+            A tuple of the values of each field in field_names.
+        """
+
+        field_values = attrgetter(*field_names)(i)
+        # Always want an tuple, but attrgetter returns single item if 1 arg
+        # supplied.
+        if len(field_names) == 1:
+            field_values = (field_values, )
+        return field_values
+
     def _ordered_iterator(self):
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
@@ -193,22 +213,16 @@ class QuerySequence(object):
                 reverses[i] = -1
                 field_names[i] = field_name[1:]
 
-        def fields_getter(i):
-            """Returns a tuple of the values to be compared."""
-            field_values = attrgetter(*field_names)(i)
-            # Always want an tuple, but attrgetter returns single item if 1 arg
-            # supplied.
-            if len(field_names) == 1:
-                field_values = (field_values, )
-            return field_values
-
         def comparator(i1, i2):
             """
             Construct a comparator function based on the field names. Returns
             the first non-zero comparison value.
             """
+            # Get the values for comparison.
+            v1 = self._fields_getter(field_names, i1)
+            v2 = self._fields_getter(field_names, i2)
             # Compare each field for the two items, reversing if necessary.
-            order = multiply_iterables(map(cmp, fields_getter(i1), fields_getter(i2)), reverses)
+            order = multiply_iterables(map(cmp, v1, v2), reverses)
             # TODO  This ordering is broken when fields_getter returns
             #       sub-classes of Model.
 
