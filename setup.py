@@ -5,7 +5,12 @@ from setuptools import setup
 
 def long_description():
     with codecs.open('README.rst', encoding='utf8') as f:
-        return f.read()
+        desc = f.read()
+
+    with codecs.open('CHANGELOG.rst', encoding='utf8') as f:
+        changelog = f.read()
+
+    return '%s\n\n%s' % (desc, changelog)
 
 setup(
     name='django-querysetsequence',
