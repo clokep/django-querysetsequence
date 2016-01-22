@@ -102,6 +102,26 @@ class TestIterator(TestBase):
             self.assertEqual(value1, value2)
 
 
+class TestAll(TestBase):
+    def test_all(self):
+        """Ensure a copy is made when calling all()."""
+        qss = self.all._clone()
+        copy = qss.all()
+
+        # Different QuerySetSequences, but the same content.
+        self.assertNotEqual(qss, copy)
+        # Ordered by sub-QuerySet than by pk.
+        expected = [
+            "Fiction",
+            "Biography",
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+        ]
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, expected)
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
@@ -219,11 +239,19 @@ class TestGet(TestBase):
         self.assertEqual(book.title, 'Biography')
         self.assertIsInstance(book, Book)
 
+    def test_not_found(self):
         # An exception is rasied if get() is called and nothing is found.
         self.assertRaises(ObjectDoesNotExist, self.all.get, title='')
 
+    def test_multi_found(self):
         # ...or if get() is called and multiple objects are found.
         self.assertRaises(MultipleObjectsReturned, self.all.get, author=self.bob)
+
+    def test_related_model(self):
+        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+        post = qss.get(publisher__name="Wacky Website")
+        self.assertEqual(post.title, 'Post')
+        self.assertIsInstance(post, BlogPost)
 
 
 class TestOrderBy(TestBase):
@@ -235,11 +263,13 @@ class TestOrderBy(TestBase):
 
         # Check the titles are properly ordered.
         data = map(lambda it: it.title, qss)
-        self.assertEqual(data[0], 'Alice in Django-land')
-        self.assertEqual(data[1], 'Biography')
-        self.assertEqual(data[2], 'Django Rocks')
-        self.assertEqual(data[3], 'Fiction')
-        self.assertEqual(data[4], 'Some Article')
+        expected = [
+            'Alice in Django-land',
+            'Biography',
+            'Django Rocks',
+            'Fiction',
+            'Some Article',
+        ]
 
     def test_order_by_non_existent_field(self):
         qss = self.all.order_by('pages')
@@ -257,12 +287,15 @@ class TestOrderBy(TestBase):
 
         # Check the titles are properly ordered.
         data = map(lambda it: it.title, qss)
-        self.assertEqual(data[0], 'Alice in Django-land')
-        self.assertEqual(data[1], 'Biography')
-        self.assertEqual(data[2], 'Django Rocks')
-        self.assertEqual(data[3], 'Fiction')
-        self.assertEqual(data[4], 'Fiction')
-        self.assertEqual(data[5], 'Some Article')
+        expected = [
+            'Alice in Django-land',
+            'Biography',
+            'Django Rocks',
+            'Fiction',
+            'Fiction',
+            'Some Article',
+        ]
+        self.assertEqual(data, expected)
 
         # Ensure the ordering is correct.
         self.assertLess(qss[4].release, qss[3].release)
