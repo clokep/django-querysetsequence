@@ -8,20 +8,69 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import ORDER_PATTERN
 
+
 def multiply_iterables(it1, it2):
     """
     Element-wise iterables multiplications.
     """
     assert len(it1) == len(it2),\
-           "Can not element-wise multiply iterables of different length."
+        "Can not element-wise multiply iterables of different length."
     return map(mul, it1, it2)
 
 
 def cumsum(seq):
     s = 0
     for c in seq:
-       s += c
-       yield s
+        s += c
+        yield s
+
+
+class PartialInheritanceMeta(type):
+    def __new__(meta, name, bases, dct):
+        # Pull out special properties first.
+        try:
+            INHERITED_ATTRS = dct['INHERITED_ATTRS']
+            del dct['INHERITED_ATTRS']
+        except KeyError:
+            INHERITED_ATTRS = []
+
+        try:
+            NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
+            del dct['NOT_IMPLEMENTED_ATTRS']
+        except KeyError:
+            NOT_IMPLEMENTED_ATTRS = []
+
+        # For each not implemented attribute, add a method raising
+        # NotImplementedError.
+        for attr in NOT_IMPLEMENTED_ATTRS:
+            def not_impl(self):
+                raise NotImplementedError("%s does not implement %s()" %
+                                          (name, attr))
+            dct[attr] = not_impl
+
+        # Create the actual class.
+        cls = type.__new__(meta, name, bases, dct)
+
+        # Monkey-patch the class to modify how attributes are gotten.
+        def __getattribute__(self, attr):
+            # If the attribute is part of the following, just use a standard
+            # __getattribute__:
+            #   This class' defined attributes
+            #   This instance's defined attributes
+            #   A specifically inherited attribute
+            #   A magic attribute/method.
+            __dict__ = super(cls, self).__getattribute__('__dict__')
+            if (attr in dct.keys() or attr in INHERITED_ATTRS or
+                    attr in __dict__ or
+                    (attr.startswith('__') and attr.endswith('__'))):
+                return super(cls, self).__getattribute__(attr)
+
+            # Finally, pretend the attribute doesn't exist.
+            raise AttributeError("'%s' object has no attribute '%s'" %
+                                 (name, attr))
+        cls.__getattribute__ = __getattribute__
+
+        return cls
 
 
 class QuerySequence(object):
@@ -242,7 +291,7 @@ class QuerySequence(object):
             # Assert that the ordering is the same between different models.
             if field_names != value2._meta.ordering:
                 valid_field_names = (set(cls._get_field_names(value1)) &
-                               set(cls._get_field_names(value2)))
+                                     set(cls._get_field_names(value2)))
                 raise FieldError(
                     "Ordering differs between models. Choices are: %s" %
                     ', '.join(valid_field_names))
@@ -398,6 +447,43 @@ class QuerySetSequence(QuerySet):
 
     """
 
+    INHERITED_ATTRS = [
+        # Public methods that return QuerySets.
+        'filter',
+        'exclude',
+        'order_by',
+        'all',
+
+        # Public methods that don't return QuerySets.
+        'get',
+        'count',
+
+        # Public introspection attributes.
+        'ordered',
+        'db',
+        'as_manager',
+
+        # Private methods.
+        '_clone',
+        '_fetch_all',
+        '_merge_sanity_check',
+        '_prepare',
+    ]
+    NOT_IMPLEMENTED_ATTRS = [
+        'complex_filter',
+        'select_for_update',
+        'select_related',
+        'prefetch_related',
+        'annotate',
+        'distinct',
+        'extra',
+        'reverse',
+        'defer',
+        'only',
+        'using'
+    ]
+    __metaclass__ = PartialInheritanceMeta
+
     def __init__(self, *args, **kwargs):
         if args:
             # TODO If kwargs already has query.
@@ -410,26 +496,6 @@ class QuerySetSequence(QuerySet):
 
     def iterator(self):
         return self.query
-
-    ####################################
-    # METHODS THAT DO DATABASE QUERIES #
-    ####################################
-
-    # TODO
-
-    ##################################################
-    # PUBLIC METHODS THAT RETURN A QUERYSET SUBCLASS #
-    ##################################################
-
-    # TODO
-
-    ##################################################################
-    # PUBLIC METHODS THAT ALTER ATTRIBUTES AND RETURN A NEW QUERYSET #
-    ##################################################################
-
-    # def all(self) inherits from QuerySet.
-    # def filter(self, *args, **kwargs) inherits from QuerySet.
-    # def exclude(self, *args, **kwargs) inherits from QuerySet.
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
         """
@@ -459,85 +525,3 @@ class QuerySetSequence(QuerySet):
 
         clone.query._querysets = querysets
         return clone
-
-    def complex_filter(self, filter_obj):
-        raise NotImplementedError("QuerySetSequence does not implement complex_filter()")
-
-    def select_for_update(self, nowait=False):
-        raise NotImplementedError("QuerySetSequence does not implement select_for_update()")
-
-    def select_related(self, *fields):
-        raise NotImplementedError("QuerySetSequence does not implement select_related()")
-
-    def prefetch_related(self, *lookups):
-        raise NotImplementedError("QuerySetSequence does not implement prefetch_related()")
-
-    def annotate(self, *args, **kwargs):
-        raise NotImplementedError("QuerySetSequence does not implement annotate()")
-
-    # def order_by(self, *field_names): inherits from QuerySet.
-
-    def distinct(self, *field_names):
-        raise NotImplementedError("QuerySetSequence does not implement distinct()")
-
-    def extra(self, select=None, where=None, params=None, tables=None,
-              order_by=None, select_params=None):
-        raise NotImplementedError("QuerySetSequence does not implement extra()")
-
-    def reverse(self):
-        raise NotImplementedError("QuerySetSequence does not implement reverse()")
-
-    def defer(self, *fields):
-        raise NotImplementedError("QuerySetSequence does not implement defer()")
-
-    def only(self, *fields):
-        raise NotImplementedError("QuerySetSequence does not implement only()")
-
-    def using(self, alias):
-        raise NotImplementedError("QuerySetSequence does not implement using()")
-
-    ###################################
-    # PUBLIC INTROSPECTION ATTRIBUTES #
-    ###################################
-
-    # ordered
-    # db
-
-    ###################
-    # PRIVATE METHODS #
-    ###################
-
-    def _insert(self, objs, fields, return_id=False, raw=False, using=None):
-        raise NotImplementedError("QuerySetSequence does not implement _insert()")
-
-    def _batched_insert(self, objs, fields, batch_size):
-        raise NotImplementedError("QuerySetSequence does not implement _batched_insert()")
-
-    # def _clone(self): inherits from QuerySet.
-
-    # def _fetch_all(self): inherits from QuerySet.
-
-    def _next_is_sticky(self):
-        raise NotImplementedError("QuerySetSequence does not implement _next_is_sticky()")
-
-    # def _merge_sanity_check(self, other): inherits from QuerySet.
-
-    def _merge_known_related_objects(self, other):
-        raise NotImplementedError("QuerySetSequence does not implement _merge_known_related_objects()")
-
-    def _setup_aggregate_query(self, aggregates):
-        raise NotImplementedError("QuerySetSequence does not implement _setup_aggregate_query()")
-
-    # def _prepare(self): inherits from QuerySet.
-
-    def _as_sql(self, connection):
-        raise NotImplementedError("QuerySetSequence does not implement _as_sql()")
-
-    def _add_hints(self, **hints):
-        raise NotImplementedError("QuerySetSequence does not implement _add_hints()")
-
-    def _has_filters(self):
-        raise NotImplementedError("QuerySetSequence does not implement _has_filters()")
-
-    def is_compatible_query_object_type(self, opts):
-        raise NotImplementedError("QuerySetSequence does not implement is_compatible_query_object_type()")
