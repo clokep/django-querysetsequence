@@ -110,6 +110,7 @@ class QuerySequence(object):
         self.order_by = []
         self.low_mark, self.high_mark = 0, None
         self.distinct_fields = []
+        self.standard_ordering = True
 
     #####################################################
     # METHODS TO MATCH django.db.models.sql.query.Query #
@@ -140,7 +141,6 @@ class QuerySequence(object):
     # select_for_update
     # select_for_update_nowait
     # select_related
-    # standard_ordering
 
     def clone(self, klass=None, memo=None, **kwargs):
         """
@@ -153,6 +153,7 @@ class QuerySequence(object):
         obj._querysets = map(lambda it: it._clone(), self._querysets)
         obj.filter_is_sticky = self.filter_is_sticky
         obj.order_by = self.order_by[:]
+        obj.standard_ordering = self.standard_ordering
         obj.low_mark, obj.high_mark = self.low_mark, self.high_mark
 
         obj.__dict__.update(kwargs)
@@ -190,6 +191,12 @@ class QuerySequence(object):
         # There's no QuerySets, just return an empty iterator.
         if not len(self._querysets):
             return iter([])
+
+        # Reverse the ordering, if necessary. Apply this to both the individual
+        # QuerySets and the ordering of the QuerySets themselves.
+        if not self.standard_ordering:
+            self._querysets = map(lambda it: it.reverse(), self._querysets)
+            self._querysets = self._querysets[::-1]
 
         # If order is necessary, evaluate and start feeding data back.
         if self.order_by:
@@ -384,8 +391,12 @@ class QuerySequence(object):
                 # Sort the current values for each iterable.
                 ordered_values = sorted(values.items(), cmp=comparator, key=lambda x: x[1])
 
-                # The 'minimum' value is now in the last position!
-                qss, value = ordered_values.pop(0)
+                # The next ordering item is in the first position, unless we're
+                # in reverse mode.
+                if self.standard_ordering:
+                    qss, value = ordered_values.pop(0)
+                else:
+                    qss, value = ordered_values.pop(-1)
             else:
                 qss, value = values.items()[0]
 
@@ -472,6 +483,7 @@ class QuerySetSequence(QuerySet):
         'filter',
         'exclude',
         'order_by',
+        'reverse',
         'all',
 
         # Public methods that don't return QuerySets.
@@ -492,7 +504,6 @@ class QuerySetSequence(QuerySet):
     NOT_IMPLEMENTED_ATTRS = [
         # Public methods that return QuerySets.
         'annotate',
-        'reverse',
         'distinct',
         'values',
         'values_list',

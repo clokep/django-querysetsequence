@@ -31,7 +31,6 @@ class NotImplementedMeta(MetaTestGenerator):
     ATTRIBUTES = [
         # Methods that return QuerySets.
         'annotate',
-        'reverse',
         'distinct',
         'values',
         'values_list',

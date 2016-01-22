@@ -388,6 +388,68 @@ class TestOrderBy(TestBase):
         self.assertRaises(FieldError, list, qss)
 
 
+class TestReverse(TestBase):
+    def test_reverse(self):
+        """Ensure calling reverse() returns elements in a reverse order."""
+        # This really only makes sense if there's an order set.
+        qss = self.all.reverse()
+
+        # Note that this didn't really reverse everything because no ordering
+        # was set.
+        expected = [
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+
+            "Fiction",
+            "Biography",
+        ]
+
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, expected)
+
+    def test_reverse_twice(self):
+        """Ensure calling reverse() twice returns elements in a normal order."""
+        qss = self.all.reverse().reverse()
+
+        expected = [
+            "Fiction",
+            "Biography",
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+        ]
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, expected)
+
+    def test_reverse_ordered(self):
+        qss = self.all.order_by('title').reverse()
+
+        expected = [
+            "Some Article",
+            "Fiction",
+            "Django Rocks",
+            "Biography",
+            "Alice in Django-land",
+        ]
+
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, expected)
+
+    def test_reverse_twice_ordered(self):
+        qss = self.all.reverse().order_by('title').reverse()
+
+        expected = [
+            "Alice in Django-land",
+            "Biography",
+            "Django Rocks",
+            "Fiction",
+            "Some Article",
+        ]
+
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, expected)
+
 class TestSlicing(TestBase):
     """Test indexing and slicing."""
 
