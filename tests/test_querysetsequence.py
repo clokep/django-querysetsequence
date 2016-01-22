@@ -88,18 +88,23 @@ class TestLength(TestBase):
 
 class TestIterator(TestBase):
     """Test the iterator when no ordering is set."""
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
     def test_iterator(self):
         qss = self.all._clone()
-
-        expected = list(Book.objects.all()) + list(Article.objects.all())
-        self.assertEqual(list(qss), expected)
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter(self):
         qss = self.all._clone()
-
-        expected = list(Book.objects.all()) + list(Article.objects.all())
-        for value1, value2 in zip(qss, expected):
-            self.assertEqual(value1, value2)
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, TestIterator.EXPECTED)
 
 
 class TestAll(TestBase):
@@ -118,8 +123,11 @@ class TestAll(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
-        data = map(lambda it: it.title, qss)
+        data = map(lambda it: it.title, copy)
         self.assertEqual(data, expected)
+
+        # The copy was evaluated, not qss.
+        self.assertIsNone(qss._result_cache)
 
 
 class TestFilter(TestBase):
@@ -270,6 +278,7 @@ class TestOrderBy(TestBase):
             'Fiction',
             'Some Article',
         ]
+        self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
         qss = self.all.order_by('pages')
