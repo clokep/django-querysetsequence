@@ -27,6 +27,23 @@ def cumsum(seq):
 
 
 class PartialInheritanceMeta(type):
+    """
+    A metaclass which allows partial inheritance of attributes from a
+    superclass. Generally this is a bad design decision, unless you don't
+    control the superclass and want to keep most of the code of a subclass in
+    sync.
+
+    In particular this metaclass:
+        * Raises NotImplementedError for all attributes provided in
+          NOT_IMPLEMENTED_ATTRS.
+        * Allows access (i.e. inheritance) for all attributes provided in
+          INHERITED_ATTRS.
+        * Allows access (i.e. inheritance) for all magic methods.
+        * Allows access for all attributes defined on the subclass or subclass
+          instance.
+        * Otherwise, raises AttributeError.
+
+    """
     def __new__(meta, name, bases, dct):
         # Pull out special properties first.
         try:
@@ -57,14 +74,15 @@ class PartialInheritanceMeta(type):
         def __getattribute__(self, attr):
             # If the attribute is part of the following, just use a standard
             # __getattribute__:
-            #   This class' defined attributes
-            #   This instance's defined attributes
+            #   This class' attributes
+            #   This instance's attributes
             #   A specifically inherited attribute
-            #   A magic attribute/method.
+            #   A magic method
             __dict__ = super(cls, self).__getattribute__('__dict__')
-            if (attr in dct.keys() or attr in INHERITED_ATTRS or
-                    attr in __dict__ or
-                    (attr.startswith('__') and attr.endswith('__'))):
+            if (attr in dct.keys() or  # class attribute
+                    attr in INHERITED_ATTRS or  # inherited attribute
+                    attr in __dict__ or  # instance attribute
+                    (attr.startswith('__') and attr.endswith('__'))):  # magic method
                 return super(cls, self).__getattribute__(attr)
 
             # Finally, pretend the attribute doesn't exist.

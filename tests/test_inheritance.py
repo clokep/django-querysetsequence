@@ -12,6 +12,9 @@ class A(object):
     def __init__(self):
         self.z = 42
 
+    def __str__(self):
+        return ('%s(a = %s)' % (self.__class__.__name__, self.a))
+
 
 class B(A):
     __metaclass__ = PartialInheritanceMeta
@@ -40,8 +43,10 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertEqual(self.a.z, 42)
 
         self.assertFalse(hasattr(self.b, 'z'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as exc:
             self.b.z
+        self.assertEqual(exc.exception.message,
+                         "'B' object has no attribute 'z'")
 
     def test_dynamic(self):
         """Test an attribute in an object's __dict__."""
@@ -62,14 +67,27 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertEqual(self.a.c, 72)
 
         self.assertFalse(hasattr(self.b, 'c'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as exc:
             self.b.c
+        self.assertEqual(exc.exception.message,
+                         "'B' object has no attribute 'c'")
 
     def test_attr_error2(self):
         self.assertFalse(hasattr(self.a, 'm'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as exc:
             self.a.m
+        self.assertEqual(exc.exception.message,
+                         "'A' object has no attribute 'm'")
 
         self.assertFalse(hasattr(self.b, 'm'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as exc:
             self.b.m
+        self.assertEqual(exc.exception.message,
+                         "'B' object has no attribute 'm'")
+
+    def test_magic_method(self):
+        self.assertTrue(hasattr(self.a, '__str__'))
+        self.assertEqual(self.a.__str__(), 'A(a = 1)')
+
+        self.assertTrue(hasattr(self.b, '__str__'))
+        self.assertEqual(self.b.__str__(), 'B(a = 1)')
