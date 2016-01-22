@@ -7,6 +7,7 @@ class A(object):
     a = 1
     b = True
     c = 72
+    d = 90
 
     def __init__(self):
         self.z = 42
@@ -15,7 +16,7 @@ class A(object):
 class B(A):
     __metaclass__ = PartialInheritanceMeta
     INHERITED_ATTRS = ['a']
-    NOT_IMPLEMENTED_ATTRS = ['b']
+    NOT_IMPLEMENTED_ATTRS = ['b', 'd']
 
     def __init__(self):
         self.y = 24
@@ -52,7 +53,9 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertEqual(self.a.b, True)
 
         self.assertTrue(hasattr(self.b, 'b'))
-        self.assertRaises(NotImplementedError, self.b.b)
+        with self.assertRaises(NotImplementedError) as exc:
+            self.b.b()
+        self.assertEqual(exc.exception.message, 'B does not implement b()')
 
     def test_attr_error(self):
         self.assertTrue(hasattr(self.a, 'c'))

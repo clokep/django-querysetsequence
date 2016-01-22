@@ -1,3 +1,4 @@
+import functools
 from itertools import chain, dropwhile
 from operator import mul, attrgetter, __not__
 
@@ -37,16 +38,17 @@ class PartialInheritanceMeta(type):
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
             del dct['NOT_IMPLEMENTED_ATTRS']
-        except KeyError:
-            NOT_IMPLEMENTED_ATTRS = []
 
-        # For each not implemented attribute, add a method raising
-        # NotImplementedError.
-        for attr in NOT_IMPLEMENTED_ATTRS:
-            def not_impl(self):
+            # For each not implemented attribute, add a method raising
+            # NotImplementedError.
+            def not_impl(attr):
                 raise NotImplementedError("%s does not implement %s()" %
                                           (name, attr))
-            dct[attr] = not_impl
+
+            for attr in NOT_IMPLEMENTED_ATTRS:
+                dct[attr] = functools.partial(not_impl, attr)
+        except KeyError:
+            pass
 
         # Create the actual class.
         cls = type.__new__(meta, name, bases, dct)
