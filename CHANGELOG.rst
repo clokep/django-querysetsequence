@@ -3,6 +3,13 @@
 Changelog
 #########
 
+0.3 (xxxx-yy-zz)
+================
+
+* Raises ``NotImplementedError`` for ``QuerySet`` methods that
+  ``QuerySetSequence`` does not implement.
+* Support ``reverse()`` to reverse the item ordering
+
 0.2.4 (2016-01-21)
 ==================
 

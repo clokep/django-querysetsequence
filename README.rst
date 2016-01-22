@@ -17,15 +17,18 @@ Supported Features
   related fields (e.g. ``'foo'``, or ``'foo_id'``).
   syntax).
 * ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
+* ``reverse()`` returns the items in reverse order.
 * Slicing and indexing works as expected.
 * ``QuerySetSequence`` is an iterable.
 * ``QuerySets`` are evaluated as late as possible.
+* ``NotImplementedError`` is raised on untested methods / ``AttributeError`` is
+  raised on attributes we don't want to inherit from ``QuerySet``.
 
 Known Issues
 ============
 
 * Cannot handle random ``order_by()``(e.g. ``order_by('?')``).
-* The fully ``QuerySet`` API is not complete.
+* The full ``QuerySet`` API is not complete.
 
 Requirements
 ============
