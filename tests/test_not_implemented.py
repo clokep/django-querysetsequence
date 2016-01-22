@@ -33,7 +33,6 @@ class MetaTestGenerator(type):
         'update_or_create',
         'bulk_create',
         'in_bulk',
-        'iterator',
         'latest',
         'earliest',
         'first',
@@ -45,12 +44,16 @@ class MetaTestGenerator(type):
     ]
 
     def __new__(meta, name, bases, dct):
-        for attr in meta.NOT_IMPLEMENTED:
+        # Give the test function a separate namespace.
+        def gen_test_func(attr):
             def test(self):
                 self.assertRaises(NotImplementedError, getattr(self.qss, attr))
+            test.__doc__ = ("Ensure that NotImplementedError is raised when "
+                            "accessing '%s'" % attr)
+            return test
 
-            # Add the test case.
-            dct['test_' + attr] = test
+        for attr in meta.NOT_IMPLEMENTED:
+            dct['test_' + attr] = gen_test_func(attr)
 
         return type.__new__(meta, name, bases, dct)
 

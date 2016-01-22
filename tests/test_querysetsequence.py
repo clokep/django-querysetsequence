@@ -86,6 +86,22 @@ class TestLength(TestBase):
         self.assertEqual(qss.count(), 5)
 
 
+class TestIterator(TestBase):
+    """Test the iterator when no ordering is set."""
+    def test_iterator(self):
+        qss = self.all._clone()
+
+        expected = list(Book.objects.all()) + list(Article.objects.all())
+        self.assertEqual(list(qss), expected)
+
+    def test_iter(self):
+        qss = self.all._clone()
+
+        expected = list(Book.objects.all()) + list(Article.objects.all())
+        for value1, value2 in zip(qss, expected):
+            self.assertEqual(value1, value2)
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
