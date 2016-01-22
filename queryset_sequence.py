@@ -470,17 +470,38 @@ class QuerySetSequence(QuerySet):
         '_prepare',
     ]
     NOT_IMPLEMENTED_ATTRS = [
-        'complex_filter',
-        'select_for_update',
+        # Public methods that return QuerySets.
+        'annotate',
+        'reverse',
+        'distinct',
+        'values',
+        'values_list',
+        'dates',
+        'datetimes',
+        'none',
         'select_related',
         'prefetch_related',
-        'annotate',
-        'distinct',
         'extra',
-        'reverse',
         'defer',
         'only',
-        'using'
+        'using',
+        'select_for_update',
+        'raw',
+
+        # Public methods that don't return QuerySets.
+        'create',
+        'get_or_create',
+        'update_or_create',
+        'bulk_create',
+        'in_bulk',
+        'latest',
+        'earliest',
+        'first',
+        'last',
+        'aggregate',
+        'exists',
+        'update',
+        'delete',
     ]
     __metaclass__ = PartialInheritanceMeta
 
