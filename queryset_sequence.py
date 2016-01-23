@@ -7,7 +7,8 @@ from django.core.exceptions import (FieldError, MultipleObjectsReturned,
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
-from django.db.models.sql.query import ORDER_PATTERN
+from django.db.models.sql.constants import ORDER_PATTERN
+from django.db.models.sql.query import Query
 
 
 def multiply_iterables(it1, it2):
@@ -93,54 +94,42 @@ class PartialInheritanceMeta(type):
         return cls
 
 
-class QuerySequence(object):
+class QuerySequence(Query):
     """
     A Query that handles multiple QuerySets.
 
     The API is expected to match django.db.models.sql.query.Query.
 
     """
+    INHERITED_ATTRS = [
+        'set_limits',
+        'clear_limits',
+        'can_filter',
+    ]
+    NOT_IMPLEMENTED_ATTRS = [
+        'add_annotation',
+        'add_deferred_loading',
+        'add_distinct_fields',
+        'add_extra',
+        'add_immediate_loading',
+        'add_q',
+        'add_select_related',
+        'add_update_fields',
+        'clear_deferred_loading',
+        'combine',
+        'get_aggregation',
+        'get_compiler',
+        'get_meta',
+        'has_filters',
+        'has_results',
+    ]
+    __metaclass__ = PartialInheritanceMeta
 
     def __init__(self, *args):
         self._querysets = list(args)
 
-        # Below is copied from django.db.models.sql.query.Query.
-        self.filter_is_sticky = False
-
-        self.order_by = []
-        self.low_mark, self.high_mark = 0, None
-        self.distinct_fields = []
-        self.standard_ordering = True
-
-    #####################################################
-    # METHODS TO MATCH django.db.models.sql.query.Query #
-    #####################################################
-
-    # Must implement:
-    # add_annotation
-    # add_deferred_loading
-    # add_distinct_fields
-    # add_extra
-    # add_immediate_loading
-    # add_q
-    # add_select_related
-    # add_update_fields
-    # annotations
-    # clear_deferred_loading
-    # combine
-    # default_ordering
-    # extra_order_by
-    # filter_is_sticky
-    # get_aggregation
-    # get_compiler
-    # get_meta
-    # group_by
-    # has_filters
-    # has_results
-    # insert_values
-    # select_for_update
-    # select_for_update_nowait
-    # select_related
+        # Call super to pick up a variety of properties.
+        super(QuerySequence, self).__init__(model=None)
 
     def clone(self, klass=None, memo=None, **kwargs):
         """
@@ -418,45 +407,6 @@ class QuerySequence(object):
             except StopIteration:
                 # This iterator is done, remove it.
                 del values[qss]
-
-    ##########################################################
-    # METHODS DIRECTLY FROM django.db.models.sql.query.Query #
-    ##########################################################
-
-    def set_limits(self, low=None, high=None):
-        """
-        Adjusts the limits on the rows retrieved. We use low/high to set these,
-        as it makes it more Pythonic to read and write. When the SQL query is
-        created, they are converted to the appropriate offset and limit values.
-
-        Any limits passed in here are applied relative to the existing
-        constraints. So low is added to the current low value and both will be
-        clamped to any existing high value.
-        """
-        if high is not None:
-            if self.high_mark is not None:
-                self.high_mark = min(self.high_mark, self.low_mark + high)
-            else:
-                self.high_mark = self.low_mark + high
-        if low is not None:
-            if self.high_mark is not None:
-                self.low_mark = min(self.high_mark, self.low_mark + low)
-            else:
-                self.low_mark = self.low_mark + low
-
-    def clear_limits(self):
-        """
-        Clears any existing limits.
-        """
-        self.low_mark, self.high_mark = 0, None
-
-    def can_filter(self):
-        """
-        Returns True if adding filters to this instance is still possible.
-
-        Typically, this means no limits or offsets have been put on the results.
-        """
-        return not self.low_mark and self.high_mark is None
 
 
 # TODO Inherit from django.db.models.base.Model.
