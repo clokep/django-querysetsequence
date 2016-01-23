@@ -384,6 +384,13 @@ class QuerySequence(object):
         # Create a comparison function based on the requested ordering.
         comparator = self._generate_comparator(self.order_by)
 
+        # If in reverse mode, get the last value instead of the first value from
+        # ordered_values below.
+        if self.standard_ordering:
+            next_value_ind = 0
+        else:
+            next_value_ind = -1
+
         # Iterate until all the values are gone.
         while values:
             # If there's only one iterator left, don't bother sorting.
@@ -393,10 +400,7 @@ class QuerySequence(object):
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
-                if self.standard_ordering:
-                    qss, value = ordered_values.pop(0)
-                else:
-                    qss, value = ordered_values.pop(-1)
+                qss, value = ordered_values.pop(next_value_ind)
             else:
                 qss, value = values.items()[0]
 
