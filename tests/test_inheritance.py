@@ -9,6 +9,9 @@ class A(object):
     c = 72
     d = 90
 
+    def e(self):
+        return 17
+
     def __init__(self):
         self.z = 42
 
@@ -18,11 +21,17 @@ class A(object):
 
 class B(A):
     __metaclass__ = PartialInheritanceMeta
-    INHERITED_ATTRS = ['a']
+    INHERITED_ATTRS = ['a', 'e']
     NOT_IMPLEMENTED_ATTRS = ['b', 'd']
+
+    f = True
 
     def __init__(self):
         self.y = 24
+
+    def e(self):
+        result = super(B, self).e()
+        return -result
 
 
 class TestPartialInheritanceMeta(TestCase):
@@ -85,9 +94,26 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertEqual(exc.exception.message,
                          "'B' object has no attribute 'm'")
 
+    def test_subclass_attr(self):
+        self.assertFalse(hasattr(self.a, 'f'))
+        with self.assertRaises(AttributeError) as exc:
+            self.a.f
+        self.assertEqual(exc.exception.message,
+                         "'A' object has no attribute 'f'")
+
+        self.assertTrue(hasattr(self.b, 'f'))
+        self.assertEqual(self.b.f, True)
+
     def test_magic_method(self):
         self.assertTrue(hasattr(self.a, '__str__'))
         self.assertEqual(self.a.__str__(), 'A(a = 1)')
 
         self.assertTrue(hasattr(self.b, '__str__'))
         self.assertEqual(self.b.__str__(), 'B(a = 1)')
+
+    def test_super(self):
+        self.assertTrue(hasattr(self.a, 'e'))
+        self.assertEqual(self.a.e(), 17)
+
+        self.assertTrue(hasattr(self.b, 'e'))
+        self.assertEqual(self.b.e(), -17)

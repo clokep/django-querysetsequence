@@ -131,21 +131,11 @@ class QuerySequence(Query):
         # Call super to pick up a variety of properties.
         super(QuerySequence, self).__init__(model=None)
 
-    def clone(self, klass=None, memo=None, **kwargs):
-        """
-        Creates a copy of the current instance. The 'kwargs' parameter can be
-        used by clients to update attributes after copying has taken place.
-        """
-        obj = QuerySequence()
+    def clone(self, *args, **kwargs):
+        obj = super(QuerySequence, self).clone(*args, **kwargs)
 
-        # Copy important properties.
+        # Clone each QuerySet and copy it to the new object.
         obj._querysets = map(lambda it: it._clone(), self._querysets)
-        obj.filter_is_sticky = self.filter_is_sticky
-        obj.order_by = self.order_by[:]
-        obj.standard_ordering = self.standard_ordering
-        obj.low_mark, obj.high_mark = self.low_mark, self.high_mark
-
-        obj.__dict__.update(kwargs)
         return obj
 
     def get_count(self, using):
