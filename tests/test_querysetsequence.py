@@ -137,7 +137,8 @@ class TestFilter(TestBase):
         no QuerySets are actually evaluated during this.
         """
         # Filter to just Bob's work.
-        bob_qss = self.all.filter(author=self.bob)
+        with self.assertNumQueries(0):
+            bob_qss = self.all.filter(author=self.bob)
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
@@ -148,7 +149,8 @@ class TestFilter(TestBase):
         this.
         """
         # Filter to just Bob's work.
-        bob_qss = self.all.filter(author__name=self.bob.name)
+        with self.assertNumQueries(0):
+            bob_qss = self.all.filter(author__name=self.bob.name)
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
@@ -158,7 +160,8 @@ class TestFilter(TestBase):
         simplifies to a single child QuerySet when all others become empty.
         """
         # Filter to just Alice's work.
-        alice_qss = self.all.filter(author=self.alice)
+        with self.assertNumQueries(0):
+            alice_qss = self.all.filter(author=self.alice)
         self.assertEqual(alice_qss.count(), 2)
         # TODO
         #self.assertIsNone(alice_qss._result_cache)
@@ -172,7 +175,8 @@ class TestFilter(TestBase):
         Ensure that filter() works when it results in an empty QuerySet.
         """
         # Filter to nothing.
-        qss = self.all.filter(title='')
+        with self.assertNumQueries(0):
+            qss = self.all.filter(title='')
         self.assertEqual(qss.count(), 0)
         self.assertIsInstance(qss, QuerySetSequence)
 
@@ -193,7 +197,8 @@ class TestExclude(TestBase):
         no QuerySets are actually evaluated during this.
         """
         # Filter to just Bob's work.
-        bob_qss = self.all.exclude(author=self.alice)
+        with self.assertNumQueries(0):
+            bob_qss = self.all.exclude(author=self.alice)
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
@@ -204,7 +209,8 @@ class TestExclude(TestBase):
         this.
         """
         # Filter to just Bob's work.
-        bob_qss = self.all.exclude(author__name=self.alice.name)
+        with self.assertNumQueries(0):
+            bob_qss = self.all.exclude(author__name=self.alice.name)
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
@@ -214,7 +220,8 @@ class TestExclude(TestBase):
         simplifies to a single child QuerySet when all others become empty.
         """
         # Filter to just Alice's work.
-        alice_qss = self.all.exclude(author=self.bob)
+        with self.assertNumQueries(0):
+            alice_qss = self.all.exclude(author=self.bob)
         self.assertEqual(alice_qss.count(), 2)
         # TODO
         #self.assertIsNone(alice_qss._result_cache)
@@ -228,7 +235,8 @@ class TestExclude(TestBase):
         Ensure that filter() works when it results in an empty QuerySet.
         """
         # Filter to nothing.
-        qss = self.all.exclude(author__in=[self.alice, self.bob])
+        with self.assertNumQueries(0):
+            qss = self.all.exclude(author__in=[self.alice, self.bob])
         self.assertEqual(qss.count(), 0)
         self.assertIsInstance(qss, QuerySetSequence)
 
@@ -266,7 +274,8 @@ class TestOrderBy(TestBase):
     def test_order_by(self):
         """Ensure that order_by() propagates to QuerySets and iteration."""
         # Order by author and ensure it takes.
-        qss = self.all.order_by('title')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('title')
         self.assertEqual(qss.query.order_by, ['title'])
 
         # Check the titles are properly ordered.
@@ -281,7 +290,8 @@ class TestOrderBy(TestBase):
         self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
-        qss = self.all.order_by('pages')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('pages')
         self.assertEqual(qss.query.order_by, ['pages'])
         self.assertRaises(FieldError, list, qss)
 
@@ -291,7 +301,8 @@ class TestOrderBy(TestBase):
         fiction2 = Book.objects.create(title="Fiction", author=self.alice,
                                        publisher=self.big_books, pages=1)
 
-        qss = self.all.order_by('title', '-release')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('title', '-release')
         self.assertEqual(qss.query.order_by, ['title', '-release'])
 
         # Check the titles are properly ordered.
@@ -319,7 +330,8 @@ class TestOrderBy(TestBase):
         Apply order_by() with a field that is a relation to another model's id.
         """
         # Order by author and ensure it takes.
-        qss = self.all.order_by('author_id')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('author_id')
         self.assertEqual(qss.query.order_by, ['author_id'])
 
         # The first two should be Alice, followed by three from Bob.
@@ -332,7 +344,8 @@ class TestOrderBy(TestBase):
         ordering (i.e. using the pk).
         """
         # Order by publisher and ensure it takes.
-        qss = self.all.order_by('publisher')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('publisher')
         self.assertEqual(qss.query.order_by, ['publisher'])
 
         # Ensure that the test has any hope of passing.
@@ -349,7 +362,8 @@ class TestOrderBy(TestBase):
         ordering.
         """
         # Order by author and ensure it takes.
-        qss = self.all.order_by('author')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('author')
         self.assertEqual(qss.query.order_by, ['author'])
 
         # The first two should be Alice, followed by three from Bob.
@@ -366,7 +380,8 @@ class TestOrderBy(TestBase):
         all = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
 
         # Order by publisher and ensure it takes.
-        qss = all.order_by('publisher')
+        with self.assertNumQueries(0):
+            qss = all.order_by('publisher')
         self.assertEqual(qss.query.order_by, ['publisher'])
 
         self.assertRaises(FieldError, list, qss)
@@ -374,7 +389,8 @@ class TestOrderBy(TestBase):
     def test_order_by_relation_field(self):
         """Apply order_by() with a field through a model relationship."""
         # Order by author name and ensure it takes.
-        qss = self.all.order_by('author__name')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('author__name')
         self.assertEqual(qss.query.order_by, ['author__name'])
 
         # The first two should be Alice, followed by three from Bob.
@@ -383,7 +399,8 @@ class TestOrderBy(TestBase):
 
     def test_order_by_relation_no_existent_field(self):
         """Apply order_by() with a field through a model relationship."""
-        qss = self.all.order_by('publisher__address')
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('publisher__address')
         self.assertEqual(qss.query.order_by, ['publisher__address'])
         self.assertRaises(FieldError, list, qss)
 
@@ -392,7 +409,8 @@ class TestReverse(TestBase):
     def test_reverse(self):
         """Ensure calling reverse() returns elements in a reverse order."""
         # This really only makes sense if there's an order set.
-        qss = self.all.reverse()
+        with self.assertNumQueries(0):
+            qss = self.all.reverse()
 
         # Note that this didn't really reverse everything because no ordering
         # was set.
@@ -410,7 +428,8 @@ class TestReverse(TestBase):
 
     def test_reverse_twice(self):
         """Ensure calling reverse() twice returns elements in a normal order."""
-        qss = self.all.reverse().reverse()
+        with self.assertNumQueries(0):
+            qss = self.all.reverse().reverse()
 
         expected = [
             "Fiction",
@@ -423,7 +442,8 @@ class TestReverse(TestBase):
         self.assertEqual(data, expected)
 
     def test_reverse_ordered(self):
-        qss = self.all.order_by('title').reverse()
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('title').reverse()
 
         expected = [
             "Some Article",
@@ -437,7 +457,8 @@ class TestReverse(TestBase):
         self.assertEqual(data, expected)
 
     def test_reverse_twice_ordered(self):
-        qss = self.all.reverse().order_by('title').reverse()
+        with self.assertNumQueries(0):
+            qss = self.all.reverse().order_by('title').reverse()
 
         expected = [
             "Alice in Django-land",
