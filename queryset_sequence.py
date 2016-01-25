@@ -567,10 +567,5 @@ class QuerySetSequence(QuerySet):
             map(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs),
                 clone.query._querysets)
 
-        # If there's only one QuerySet left, then return it. Otherwise return
-        # the clone.
-        if len(querysets) == 1:
-            return querysets[0]
-
         clone.query._querysets = querysets
         return clone
