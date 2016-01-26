@@ -18,6 +18,8 @@ Supported Features
   syntax).
 * ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
 * ``reverse()`` returns the items in reverse order.
+* ``none()`` returns an ``EmptyQuerySet``, ``all()`` returns a copy of the
+  ``QuerySetSequence``.
 * Slicing and indexing works as expected.
 * ``QuerySetSequence`` is an iterable.
 * ``QuerySets`` are evaluated as late as possible.

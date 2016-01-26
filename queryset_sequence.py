@@ -102,6 +102,8 @@ class QuerySequence(Query):
 
     """
     INHERITED_ATTRS = [
+        'set_empty',
+        'is_empty',
         'set_limits',
         'clear_limits',
         'can_filter',
@@ -131,6 +133,10 @@ class QuerySequence(Query):
         # Call super to pick up a variety of properties.
         super(QuerySequence, self).__init__(model=None)
 
+    def __str__(self):
+        """Return the class-name and memory location; there's no SQL to show."""
+        return object.__str__(self)
+
     def clone(self, *args, **kwargs):
         obj = super(QuerySequence, self).clone(*args, **kwargs)
 
@@ -140,19 +146,14 @@ class QuerySequence(Query):
 
     def get_count(self, using):
         """Request count on each sub-query."""
+        if self.is_empty():
+            return 0
         return sum(map(lambda it: it.count(), self._querysets))
-
-    def set_empty(self):
-        self._querysets = []
-
-    def is_empty(self):
-        return bool(len(self._querysets))
 
     def add_ordering(self, *ordering):
         """
         Propagate ordering to each QuerySet and save it for iteration.
         """
-        # TODO Roll-up errors.
         self._querysets = map(lambda it: it.order_by(*ordering), self._querysets)
 
         if ordering:
@@ -167,8 +168,9 @@ class QuerySequence(Query):
         self.order_by = []
 
     def __iter__(self):
-        # There's no QuerySets, just return an empty iterator.
-        if not len(self._querysets):
+        # If this is explicitly marked as empty or there's no QuerySets, just
+        # return an empty iterator.
+        if not len(self._querysets) or self.is_empty():
             return iter([])
 
         # Reverse the ordering, if necessary. Apply this to both the individual
@@ -428,6 +430,7 @@ class QuerySetSequence(QuerySet):
         'exclude',
         'order_by',
         'reverse',
+        'none',
         'all',
 
         # Public methods that don't return QuerySets.
@@ -453,7 +456,6 @@ class QuerySetSequence(QuerySet):
         'values_list',
         'dates',
         'datetimes',
-        'none',
         'select_related',
         'prefetch_related',
         'extra',
@@ -481,9 +483,13 @@ class QuerySetSequence(QuerySet):
     __metaclass__ = PartialInheritanceMeta
 
     def __init__(self, *args, **kwargs):
-        if args:
-            # TODO If kwargs already has query.
+        # Create the QuerySequence object where most of the magic happens.
+        if 'query' not in kwargs:
             kwargs['query'] = QuerySequence(*args)
+        elif args:
+            raise ValueError(
+                "Cannot provide args and a 'query' keyword argument.")
+
         # A particular model doesn't really make sense, so just use the generic
         # Model class.
         kwargs['model'] = QuerySetSequenceModel

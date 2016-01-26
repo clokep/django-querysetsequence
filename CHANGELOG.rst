@@ -9,6 +9,7 @@ Changelog
 * [Enhancement] Raises ``NotImplementedError`` for ``QuerySet`` methods that
   ``QuerySetSequence`` does not implement.
 * [Feature] Support ``reverse()`` to reverse the item ordering
+* [Feature] Support ``none()`` to return an ``EmptyQuerySet``
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
   ``exclude()`` like a Django ``QuerySet``. Thanks @jpic
 

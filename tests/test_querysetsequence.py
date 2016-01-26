@@ -1,6 +1,6 @@
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
-from django.db.models import QuerySet
+from django.db.models.query import EmptyQuerySet, QuerySet
 from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
@@ -61,6 +61,31 @@ class TestBase(TestCase):
         Book.objects.all().delete()
 
 
+class TestQuerySetSequence(TestBase):
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
+    def test_query_keyword(self):
+        """Test constructing a QuerySetSequence with the query keyword."""
+        clone = self.all._clone()
+        qss = QuerySetSequence(query=clone.query)
+
+        data = map(lambda it: it.title, qss)
+        self.assertEqual(data, self.EXPECTED)
+
+    def test_query_keyword_args(self):
+        """
+        Test constructing a QuerySetSequence with both arguments and the query
+        keyword.
+        """
+        self.assertRaises(ValueError, QuerySetSequence, Book.objects.all(),
+                          query=self.all.query)
+
 class TestLength(TestBase):
     """
     Ensure that count() and len() are properly summed over the children
@@ -105,6 +130,33 @@ class TestIterator(TestBase):
         qss = self.all._clone()
         data = map(lambda it: it.title, qss)
         self.assertEqual(data, TestIterator.EXPECTED)
+
+    def test_empty(self):
+        qss = QuerySetSequence()
+        self.assertEqual(list(qss), [])
+
+
+class TestNone(TestBase):
+    def test_none(self):
+        """
+        Ensure an instance of EmptyQuerySet is returned and has no results (and
+        doesn't perform queries).
+        """
+        with self.assertNumQueries(0):
+            qss = self.all.none()
+
+            # This returns a special EmptyQuerySet.
+            self.assertIsInstance(qss, EmptyQuerySet)
+
+            # Should have no data.
+            self.assertEqual(list(qss), [])
+
+    def test_count(self):
+        with self.assertNumQueries(0):
+            qss = self.all.none()
+
+            self.assertEqual(qss.count(), 0)
+            self.assertEqual(len(qss), 0)
 
 
 class TestAll(TestBase):
