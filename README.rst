@@ -20,6 +20,7 @@ Supported Features
 * ``reverse()`` returns the items in reverse order.
 * ``none()`` returns an ``EmptyQuerySet``, ``all()`` returns a copy of the
   ``QuerySetSequence``.
+* ``exists()`` checks if a ``QuerySetSequence`` has any results.
 * Slicing and indexing works as expected.
 * ``QuerySetSequence`` is an iterable.
 * ``QuerySets`` are evaluated as late as possible.

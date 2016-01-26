@@ -10,6 +10,8 @@ Changelog
   ``QuerySetSequence`` does not implement.
 * [Feature] Support ``reverse()`` to reverse the item ordering
 * [Feature] Support ``none()`` to return an ``EmptyQuerySet``
+* [Feature] Support ``exists()`` to check if a ``QuerySetSequence`` has any
+  results.
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
   ``exclude()`` like a Django ``QuerySet``. Thanks @jpic
 

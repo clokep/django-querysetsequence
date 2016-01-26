@@ -56,7 +56,6 @@ class NotImplementedMeta(MetaTestGenerator):
         'first',
         'last',
         'aggregate',
-        'exists',
         'update',
         'delete',
     ]

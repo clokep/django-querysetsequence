@@ -297,31 +297,6 @@ class TestExclude(TestBase):
         self.assertEqual(len(data), 0)
 
 
-class TestGet(TestBase):
-    def test_get(self):
-        """
-        Ensure that get() returns the expected element or raises DoesNotExist.
-        """
-        # Get a particular item.
-        book = self.all.get(title='Biography')
-        self.assertEqual(book.title, 'Biography')
-        self.assertIsInstance(book, Book)
-
-    def test_not_found(self):
-        # An exception is rasied if get() is called and nothing is found.
-        self.assertRaises(ObjectDoesNotExist, self.all.get, title='')
-
-    def test_multi_found(self):
-        # ...or if get() is called and multiple objects are found.
-        self.assertRaises(MultipleObjectsReturned, self.all.get, author=self.bob)
-
-    def test_related_model(self):
-        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
-        post = qss.get(publisher__name="Wacky Website")
-        self.assertEqual(post.title, 'Post')
-        self.assertIsInstance(post, BlogPost)
-
-
 class TestOrderBy(TestBase):
     def test_order_by(self):
         """Ensure that order_by() propagates to QuerySets and iteration."""
@@ -601,11 +576,61 @@ class TestSlicing(TestBase):
         self.assertEqual(data[1], 'Django Rocks')
 
 
-class TestIterating(TestBase):
-    def test_iterating(self):
-        """By default iteration just chains the iterables together."""
-        qss = self.all._clone()
+class TestGet(TestBase):
+    def test_get(self):
+        """
+        Ensure that get() returns the expected element or raises DoesNotExist.
+        """
+        # Get a particular item.
+        book = self.all.get(title='Biography')
+        self.assertEqual(book.title, 'Biography')
+        self.assertIsInstance(book, Book)
 
-        # There are two books and three articles.
-        for expected, element in zip([Book] * 2 + [Article] * 3, qss):
-            self.assertIsInstance(element, expected)
+    def test_not_found(self):
+        # An exception is rasied if get() is called and nothing is found.
+        self.assertRaises(ObjectDoesNotExist, self.all.get, title='')
+
+    def test_multi_found(self):
+        # ...or if get() is called and multiple objects are found.
+        self.assertRaises(MultipleObjectsReturned, self.all.get, author=self.bob)
+
+    def test_related_model(self):
+        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+        post = qss.get(publisher__name="Wacky Website")
+        self.assertEqual(post.title, 'Post')
+        self.assertIsInstance(post, BlogPost)
+
+
+class TestBoolean(TestBase):
+    """Tests related to casting the QuerySetSequence to a boolean."""
+    def test_exists(self):
+        """Ensure that it casts to True if the item is found."""
+        self.assertTrue(self.all.filter(title='Biography'))
+
+    def test_not_found(self):
+        """Ensure that exists() returns False if the item is not found."""
+        self.assertFalse(self.all.filter(title=''))
+
+    def test_multi_found(self):
+        self.assertTrue(self.all.filter(author=self.bob))
+
+    def test_related_model(self):
+        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+        self.assertTrue(qss.filter(publisher__name="Wacky Website"))
+
+
+class TestExists(TestBase):
+    def test_exists(self):
+        """Ensure that exists() returns True if the item is found."""
+        self.assertTrue(self.all.filter(title='Biography').exists())
+
+    def test_not_found(self):
+        """Ensure that exists() returns False if the item is not found."""
+        self.assertFalse(self.all.filter(title='').exists())
+
+    def test_multi_found(self):
+        self.assertTrue(self.all.filter(author=self.bob).exists())
+
+    def test_related_model(self):
+        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+        self.assertTrue(qss.filter(publisher__name="Wacky Website").exists())

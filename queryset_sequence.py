@@ -123,7 +123,6 @@ class QuerySequence(Query):
         'get_compiler',
         'get_meta',
         'has_filters',
-        'has_results',
     ]
     __metaclass__ = PartialInheritanceMeta
 
@@ -149,6 +148,10 @@ class QuerySequence(Query):
         if self.is_empty():
             return 0
         return sum(map(lambda it: it.count(), self._querysets))
+
+    def has_results(self, using):
+        """If any sub-query has a result, this is true."""
+        return any(map(lambda it: it.exists(), self._querysets))
 
     def add_ordering(self, *ordering):
         """
@@ -436,11 +439,12 @@ class QuerySetSequence(QuerySet):
         # Public methods that don't return QuerySets.
         'get',
         'count',
+        'as_manager',
+        'exists',
 
         # Public introspection attributes.
         'ordered',
         'db',
-        'as_manager',
 
         # Private methods.
         '_clone',
@@ -476,7 +480,6 @@ class QuerySetSequence(QuerySet):
         'first',
         'last',
         'aggregate',
-        'exists',
         'update',
         'delete',
     ]
