@@ -1,7 +1,23 @@
 from queryset_sequence import QuerySetSequence
 
 
+MAGIC_METHODS = [
+    # Magic methods.
+    '__iter__',     # Iteration / container types.
+    '__len__',
+    '__getitem__',  # Slicing
+    # Pickling
+    '__setstate__', '__getstate__', '__reduce__',
+    '__repr__',
+    '__bool__',     # Boolean
+    '__nonzero__',
+    '__and__',
+    '__or__',
+    '__deepcopy__', # Deepcopy
+]
+
 QUERYSET_ATTRS = [
+    # Public methods that return QuerySets.
     'filter',
     'exclude',
     'annotate',
@@ -22,6 +38,8 @@ QUERYSET_ATTRS = [
     'using',
     'select_for_update',
     'raw',
+
+    # Public methods that don't return QuerySets.
     'get',
     'create',
     'get_or_create',
@@ -45,6 +63,16 @@ QUERYSET_ATTRS = [
 NOTES = {
     'order_by': "Does not support random ``order_by()`` (e.g. ``order_by('?')``)"
 }
+CANNOT_IMPL_ATTRS = [
+    'create',
+    'get_or_create',
+    'update_or_create',
+    'bulk_create',
+    'in_bulk',
+    'update',
+]
+for attr in CANNOT_IMPL_ATTRS:
+    NOTES[attr] = "Cannot be implemented in ``QuerySetSequence``."
 
 
 def main():
@@ -88,7 +116,6 @@ def main():
             else:
                 writeln('  - |xmark|', 1)
             writeln('  - %s' % NOTES.get(attr, ''), 1)
-
         writeln()
 
         # Finally, create all the links.

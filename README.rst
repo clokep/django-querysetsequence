@@ -106,22 +106,22 @@ multiple ``QuerySets``:
       - 
     * - |create|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |get_or_create|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |update_or_create|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |bulk_create|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |count|_
       - |check|
       - 
     * - |in_bulk|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |iterator|_
       - |xmark|
       - 
@@ -145,7 +145,7 @@ multiple ``QuerySets``:
       - 
     * - |update|_
       - |xmark|
-      - 
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |delete|_
       - |xmark|
       - 
