@@ -230,12 +230,6 @@ multiple ``QuerySets``:
 .. ATTRIBUTES_TABLE_END
 .. End auto-generate content.
 
-Known Issues
-============
-
-* Cannot handle random ``order_by()``(e.g. ``order_by('?')``).
-* The full ``QuerySet`` API is not complete.
-
 Requirements
 ============
 
