@@ -12,6 +12,8 @@ Changelog
 * [Feature] Support ``none()`` to return an ``EmptyQuerySet``
 * [Feature] Support ``exists()`` to check if a ``QuerySetSequence`` has any
   results.
+* [Feature] Support ``select_related`` to follow foreign-key relationships when
+  generating results.
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
   ``exclude()`` like a Django ``QuerySet``. Thanks @jpic
 

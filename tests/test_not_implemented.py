@@ -36,7 +36,6 @@ class NotImplementedMeta(MetaTestGenerator):
         'values_list',
         'dates',
         'datetimes',
-        'select_related',
         'prefetch_related',
         'extra',
         'defer',

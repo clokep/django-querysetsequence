@@ -182,6 +182,46 @@ class TestAll(TestBase):
         self.assertIsNone(qss._result_cache)
 
 
+class TestSelectRelated(TestBase):
+    def test_select_related(self):
+        # Check behavior first.
+        qss = self.all._clone()
+        with self.assertNumQueries(3):
+            book = qss.get(title='Fiction')
+        with self.assertNumQueries(1):
+            author = book.author
+            self.assertEqual(author, self.bob)
+
+        # Now ensure one database query.
+        qss = self.all._clone()
+        with self.assertNumQueries(3):
+            qss = qss.select_related('author')
+            book = qss.get(title='Fiction')
+        with self.assertNumQueries(0):
+            author = book.author
+            self.assertEqual(author, self.bob)
+
+    def test_clear_select_related(self):
+        # Ensure no database query.
+        qss = self.all._clone()
+        with self.assertNumQueries(3):
+            qss = qss.select_related('author')
+            book = qss.get(title='Fiction')
+        with self.assertNumQueries(0):
+            author = book.author
+            self.assertEqual(author, self.bob)
+
+        # Ensure there is a database query.
+        qss = self.all._clone()
+        with self.assertNumQueries(3):
+            qss = qss.select_related('author')
+            qss = qss.select_related(None)
+            book = qss.get(title='Fiction')
+        with self.assertNumQueries(1):
+            author = book.author
+            self.assertEqual(author, self.bob)
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """

@@ -107,6 +107,7 @@ class QuerySequence(Query):
         'set_limits',
         'clear_limits',
         'can_filter',
+        'add_select_related',
     ]
     NOT_IMPLEMENTED_ATTRS = [
         'add_annotation',
@@ -115,7 +116,6 @@ class QuerySequence(Query):
         'add_extra',
         'add_immediate_loading',
         'add_q',
-        'add_select_related',
         'add_update_fields',
         'clear_deferred_loading',
         'combine',
@@ -154,9 +154,7 @@ class QuerySequence(Query):
         return any(map(lambda it: it.exists(), self._querysets))
 
     def add_ordering(self, *ordering):
-        """
-        Propagate ordering to each QuerySet and save it for iteration.
-        """
+        """Propagate ordering to each QuerySet and save it for iteration."""
         self._querysets = map(lambda it: it.order_by(*ordering), self._querysets)
 
         if ordering:
@@ -169,6 +167,9 @@ class QuerySequence(Query):
         Does not propagate to each QuerySet since their is no appropriate API.
         """
         self.order_by = []
+
+    def add_select_related(self, fields):
+        self._querysets = map(lambda it: it.select_related(*fields), self._querysets)
 
     def __iter__(self):
         # If this is explicitly marked as empty or there's no QuerySets, just
@@ -460,7 +461,6 @@ class QuerySetSequence(QuerySet):
         'values_list',
         'dates',
         'datetimes',
-        'select_related',
         'prefetch_related',
         'extra',
         'defer',
@@ -522,3 +522,9 @@ class QuerySetSequence(QuerySet):
 
         clone.query._querysets = querysets
         return clone
+
+    def select_related(self, *fields):
+        """Overridden because of the weird bool/dict behavior."""
+        obj = self._clone()
+        obj.query.add_select_related(fields)
+        return obj
