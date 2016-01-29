@@ -31,6 +31,202 @@ multiple ``QuerySets``:
 
 .. Auto-generated content, run python gen_docs.py to generate this.
 .. ATTRIBUTES_TABLE_START
+.. |check| unicode:: U+2713
+.. |xmark| unicode:: U+2717
+
+.. list-table:: ``QuerySet`` API implemented by ``QuerySetSequence``
+    :widths: 15 10 30
+    :header-rows: 1
+
+    * - Method
+      - Implemented?
+      - Notes
+    * - |filter|_
+      - |check|
+      - 
+    * - |exclude|_
+      - |check|
+      - 
+    * - |annotate|_
+      - |xmark|
+      - 
+    * - |order_by|_
+      - |check|
+      - Does not support random ``order_by()`` (e.g. ``order_by('?')``)
+    * - |reverse|_
+      - |check|
+      - 
+    * - |distinct|_
+      - |xmark|
+      - 
+    * - |values|_
+      - |xmark|
+      - 
+    * - |values_list|_
+      - |xmark|
+      - 
+    * - |dates|_
+      - |xmark|
+      - 
+    * - |datetimes|_
+      - |xmark|
+      - 
+    * - |none|_
+      - |check|
+      - 
+    * - |all|_
+      - |check|
+      - 
+    * - |select_related|_
+      - |xmark|
+      - 
+    * - |prefetch_related|_
+      - |xmark|
+      - 
+    * - |extra|_
+      - |xmark|
+      - 
+    * - |defer|_
+      - |xmark|
+      - 
+    * - |only|_
+      - |xmark|
+      - 
+    * - |using|_
+      - |xmark|
+      - 
+    * - |select_for_update|_
+      - |xmark|
+      - 
+    * - |raw|_
+      - |xmark|
+      - 
+    * - |get|_
+      - |check|
+      - 
+    * - |create|_
+      - |xmark|
+      - 
+    * - |get_or_create|_
+      - |xmark|
+      - 
+    * - |update_or_create|_
+      - |xmark|
+      - 
+    * - |bulk_create|_
+      - |xmark|
+      - 
+    * - |count|_
+      - |check|
+      - 
+    * - |in_bulk|_
+      - |xmark|
+      - 
+    * - |iterator|_
+      - |xmark|
+      - 
+    * - |latest|_
+      - |xmark|
+      - 
+    * - |earliest|_
+      - |xmark|
+      - 
+    * - |first|_
+      - |xmark|
+      - 
+    * - |last|_
+      - |xmark|
+      - 
+    * - |aggregate|_
+      - |xmark|
+      - 
+    * - |exists|_
+      - |check|
+      - 
+    * - |update|_
+      - |xmark|
+      - 
+    * - |delete|_
+      - |xmark|
+      - 
+    * - |as_manager|_
+      - |check|
+      - 
+
+.. |filter| replace:: ``filter()``
+.. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter
+.. |exclude| replace:: ``exclude()``
+.. _exclude: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exclude
+.. |annotate| replace:: ``annotate()``
+.. _annotate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#annotate
+.. |order_by| replace:: ``order_by()``
+.. _order_by: https://docs.djangoproject.com/en/dev/ref/models/querysets/#order_by
+.. |reverse| replace:: ``reverse()``
+.. _reverse: https://docs.djangoproject.com/en/dev/ref/models/querysets/#reverse
+.. |distinct| replace:: ``distinct()``
+.. _distinct: https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+.. |values| replace:: ``values()``
+.. _values: https://docs.djangoproject.com/en/dev/ref/models/querysets/#values
+.. |values_list| replace:: ``values_list()``
+.. _values_list: https://docs.djangoproject.com/en/dev/ref/models/querysets/#values_list
+.. |dates| replace:: ``dates()``
+.. _dates: https://docs.djangoproject.com/en/dev/ref/models/querysets/#dates
+.. |datetimes| replace:: ``datetimes()``
+.. _datetimes: https://docs.djangoproject.com/en/dev/ref/models/querysets/#datetimes
+.. |none| replace:: ``none()``
+.. _none: https://docs.djangoproject.com/en/dev/ref/models/querysets/#none
+.. |all| replace:: ``all()``
+.. _all: https://docs.djangoproject.com/en/dev/ref/models/querysets/#all
+.. |select_related| replace:: ``select_related()``
+.. _select_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select_related
+.. |prefetch_related| replace:: ``prefetch_related()``
+.. _prefetch_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#prefetch_related
+.. |extra| replace:: ``extra()``
+.. _extra: https://docs.djangoproject.com/en/dev/ref/models/querysets/#extra
+.. |defer| replace:: ``defer()``
+.. _defer: https://docs.djangoproject.com/en/dev/ref/models/querysets/#defer
+.. |only| replace:: ``only()``
+.. _only: https://docs.djangoproject.com/en/dev/ref/models/querysets/#only
+.. |using| replace:: ``using()``
+.. _using: https://docs.djangoproject.com/en/dev/ref/models/querysets/#using
+.. |select_for_update| replace:: ``select_for_update()``
+.. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select_for_update
+.. |raw| replace:: ``raw()``
+.. _raw: https://docs.djangoproject.com/en/dev/ref/models/querysets/#raw
+.. |get| replace:: ``get()``
+.. _get: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get
+.. |create| replace:: ``create()``
+.. _create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#create
+.. |get_or_create| replace:: ``get_or_create()``
+.. _get_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get_or_create
+.. |update_or_create| replace:: ``update_or_create()``
+.. _update_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update_or_create
+.. |bulk_create| replace:: ``bulk_create()``
+.. _bulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk_create
+.. |count| replace:: ``count()``
+.. _count: https://docs.djangoproject.com/en/dev/ref/models/querysets/#count
+.. |in_bulk| replace:: ``in_bulk()``
+.. _in_bulk: https://docs.djangoproject.com/en/dev/ref/models/querysets/#in_bulk
+.. |iterator| replace:: ``iterator()``
+.. _iterator: https://docs.djangoproject.com/en/dev/ref/models/querysets/#iterator
+.. |latest| replace:: ``latest()``
+.. _latest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#latest
+.. |earliest| replace:: ``earliest()``
+.. _earliest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#earliest
+.. |first| replace:: ``first()``
+.. _first: https://docs.djangoproject.com/en/dev/ref/models/querysets/#first
+.. |last| replace:: ``last()``
+.. _last: https://docs.djangoproject.com/en/dev/ref/models/querysets/#last
+.. |aggregate| replace:: ``aggregate()``
+.. _aggregate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#aggregate
+.. |exists| replace:: ``exists()``
+.. _exists: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
+.. |update| replace:: ``update()``
+.. _update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update
+.. |delete| replace:: ``delete()``
+.. _delete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
+.. |as_manager| replace:: ``as_manager()``
+.. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as_manager
 .. ATTRIBUTES_TABLE_END
 .. End auto-generate content.
 
