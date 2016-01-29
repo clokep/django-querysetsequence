@@ -78,7 +78,7 @@ multiple ``QuerySets``:
       - |check|
       - 
     * - |select_related|_
-      - |xmark|
+      - |check|
       - 
     * - |prefetch_related|_
       - |xmark|
@@ -123,7 +123,7 @@ multiple ``QuerySets``:
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |iterator|_
-      - |xmark|
+      - |check|
       - 
     * - |latest|_
       - |xmark|
