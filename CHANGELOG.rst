@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.3 (xxxx-yy-zz)
+0.3 (2016-01-29)
 ================
 
 * [Enhancement] Raises ``NotImplementedError`` for ``QuerySet`` methods that
