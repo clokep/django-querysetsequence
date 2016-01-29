@@ -206,22 +206,6 @@ class TestFilter(TestBase):
         self.assertEqual(bob_qss.count(), 3)
         self.assertIsNone(bob_qss._result_cache)
 
-    def test_simplify(self):
-        """
-        Ensure that filter() properly filters the children QuerySets and
-        simplifies to a single child QuerySet when all others become empty.
-        """
-        # Filter to just Alice's work.
-        with self.assertNumQueries(0):
-            alice_qss = self.all.filter(author=self.alice)
-        self.assertEqual(alice_qss.count(), 2)
-        # TODO
-        #self.assertIsNone(alice_qss._result_cache)
-
-        # Since we've now filtered down to a single QuerySet, we shouldn't be a
-        # QuerySetSequence any longer.
-        self.assertIsInstance(alice_qss, QuerySet)
-
     def test_empty(self):
         """
         Ensure that filter() works when it results in an empty QuerySet.

@@ -471,20 +471,22 @@ class QuerySetSequence(QuerySet):
         'using',
         'select_for_update',
         'raw',
-
         # Public methods that don't return QuerySets.
-        'create',
-        'get_or_create',
-        'update_or_create',
-        'bulk_create',
-        'in_bulk',
         'latest',
         'earliest',
         'first',
         'last',
         'aggregate',
-        'update',
         'delete',
+
+        # Public methods that don't return QuerySets. These don't make sense in
+        # the context of a QuerySetSequence.
+        'create',
+        'get_or_create',
+        'update_or_create',
+        'bulk_create',
+        'in_bulk',
+        'update',
     ]
     __metaclass__ = PartialInheritanceMeta
 
