@@ -10,22 +10,29 @@ classes, while treating them as a single ``QuerySet``.
 Supported Features
 ==================
 
-* ``filter()`` / ``exclude()`` / ``get()`` across fields common to all
+Listed below are features of Django's |QuerySets|_ that ``QuerySetSequence``
+implements. The behavior should match that of ``QuerySet``, but applied across
+multiple ``QuerySets``:
+
+.. |QuerySets| replace:: ``QuerySets``
+.. _QuerySets: https://docs.djangoproject.com/en/dev/ref/models/querysets/
+
+* Methods that take a list of fields (e.g. ``filter()``, ``exclude()``,
+  ``get()``, ``order_by()``) must use fields that are common across all
   sub-``QuerySets``.
-* ``order_by()`` fields common across all sub-``QuerySets``. Includes ordering
-  by fields of related models (e.g. ``'foo__bar'`` syntax), and ordering of
-  related fields (e.g. ``'foo'``, or ``'foo_id'``).
-  syntax).
-* ``len()`` / ``count()`` to get the total length across all ``QuerySets``.
-* ``reverse()`` returns the items in reverse order.
-* ``none()`` returns an ``EmptyQuerySet``, ``all()`` returns a copy of the
-  ``QuerySetSequence``.
-* ``exists()`` checks if a ``QuerySetSequence`` has any results.
-* Slicing and indexing works as expected.
-* ``QuerySetSequence`` is an iterable.
-* ``QuerySets`` are evaluated as late as possible.
-* ``NotImplementedError`` is raised on untested methods / ``AttributeError`` is
-  raised on attributes we don't want to inherit from ``QuerySet``.
+* Relationships across related models work (e.g. ``'foo__bar'``, ``'foo'``, or
+  ``'foo_id'``). syntax).
+* The sub-``QuerySets`` are evaluated as late as possible (e.g. during
+  iteration, slicing, pickling, ``repr()``/``len()``/``list()``/``bool()``
+  calls).
+* Public ``QuerySet`` API methods that are untested/unimplemented raise
+  ``NotImplementedError``. ``AttributeError`` is raised on attributes not
+  explictly inherited from ``QuerySet``.
+
+.. Auto-generated content, run python gen_docs.py to generate this.
+.. ATTRIBUTES_TABLE_START
+.. ATTRIBUTES_TABLE_END
+.. End auto-generate content.
 
 Known Issues
 ============
