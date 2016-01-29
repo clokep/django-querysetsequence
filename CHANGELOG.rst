@@ -16,6 +16,7 @@ Changelog
   generating results.
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
   ``exclude()`` like a Django ``QuerySet``. Thanks @jpic
+* [Bugfix] Do not cache the results when calling ``iterator()``.
 
 0.2.4 (2016-01-21)
 ==================

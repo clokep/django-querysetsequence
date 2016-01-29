@@ -505,7 +505,8 @@ class QuerySetSequence(QuerySet):
         super(QuerySetSequence, self).__init__(**kwargs)
 
     def iterator(self):
-        return self.query
+        # Create a clone so that each call re-evaluates the QuerySets.
+        return self.query.clone()
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
         """

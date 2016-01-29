@@ -122,14 +122,35 @@ class TestIterator(TestBase):
     ]
 
     def test_iterator(self):
+        """Ensure that an iterator queries for the results."""
         qss = self.all._clone()
-        data = map(lambda it: it.title, qss)
-        self.assertEqual(data, TestIterator.EXPECTED)
+
+        # Ensure that calling iterator twice re-evaluates the query.
+        with self.assertNumQueries(4):
+            data = map(lambda it: it.title, qss.iterator())
+            self.assertEqual(data, TestIterator.EXPECTED)
+
+        with self.assertNumQueries(4):
+            data = map(lambda it: it.title, qss.iterator())
+            self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter(self):
         qss = self.all._clone()
         data = map(lambda it: it.title, qss)
         self.assertEqual(data, TestIterator.EXPECTED)
+
+    def test_iter_cache(self):
+        """Ensure that iterating the QuerySet caches."""
+        qss = self.all._clone()
+
+        with self.assertNumQueries(4):
+            data = map(lambda it: it.title, qss)
+            self.assertEqual(data, TestIterator.EXPECTED)
+
+        # So the second call does nothing.
+        with self.assertNumQueries(0):
+            data = map(lambda it: it.title, qss)
+            self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_empty(self):
         qss = QuerySetSequence()
