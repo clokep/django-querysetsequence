@@ -52,6 +52,8 @@ class PartialInheritanceMeta(type):
             del dct['INHERITED_ATTRS']
         except KeyError:
             INHERITED_ATTRS = []
+        meta.INHERITED_ATTRS = INHERITED_ATTRS
+        meta.IMPLEMENTED_ATTRS = dct.keys()
 
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
@@ -66,7 +68,8 @@ class PartialInheritanceMeta(type):
             for attr in NOT_IMPLEMENTED_ATTRS:
                 dct[attr] = functools.partial(not_impl, attr)
         except KeyError:
-            pass
+            NOT_IMPLEMENTED_ATTRS = []
+        meta.NOT_IMPLEMENTED_ATTRS = NOT_IMPLEMENTED_ATTRS
 
         # Create the actual class.
         cls = type.__new__(meta, name, bases, dct)
