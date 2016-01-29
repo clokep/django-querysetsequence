@@ -52,6 +52,8 @@ class PartialInheritanceMeta(type):
             del dct['INHERITED_ATTRS']
         except KeyError:
             INHERITED_ATTRS = []
+        meta.INHERITED_ATTRS = INHERITED_ATTRS
+        meta.IMPLEMENTED_ATTRS = dct.keys()
 
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
@@ -66,7 +68,8 @@ class PartialInheritanceMeta(type):
             for attr in NOT_IMPLEMENTED_ATTRS:
                 dct[attr] = functools.partial(not_impl, attr)
         except KeyError:
-            pass
+            NOT_IMPLEMENTED_ATTRS = []
+        meta.NOT_IMPLEMENTED_ATTRS = NOT_IMPLEMENTED_ATTRS
 
         # Create the actual class.
         cls = type.__new__(meta, name, bases, dct)
@@ -468,20 +471,22 @@ class QuerySetSequence(QuerySet):
         'using',
         'select_for_update',
         'raw',
-
         # Public methods that don't return QuerySets.
-        'create',
-        'get_or_create',
-        'update_or_create',
-        'bulk_create',
-        'in_bulk',
         'latest',
         'earliest',
         'first',
         'last',
         'aggregate',
-        'update',
         'delete',
+
+        # Public methods that don't return QuerySets. These don't make sense in
+        # the context of a QuerySetSequence.
+        'create',
+        'get_or_create',
+        'update_or_create',
+        'bulk_create',
+        'in_bulk',
+        'update',
     ]
     __metaclass__ = PartialInheritanceMeta
 
