@@ -6,8 +6,9 @@ MAGIC_METHODS = [
     '__iter__',     # Iteration / container types.
     '__len__',
     '__getitem__',  # Slicing
-    # Pickling
-    '__setstate__', '__getstate__', '__reduce__',
+    '__setstate__', # Pickling
+    '__getstate__',
+    '__reduce__',
     '__repr__',
     '__bool__',     # Boolean
     '__nonzero__',
