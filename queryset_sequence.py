@@ -9,6 +9,11 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
 from django.db.models.sql.constants import ORDER_PATTERN
 from django.db.models.sql.query import Query
+from django.utils import six
+
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 
 def multiply_iterables(it1, it2):
@@ -17,7 +22,7 @@ def multiply_iterables(it1, it2):
     """
     assert len(it1) == len(it2),\
         "Can not element-wise multiply iterables of different length."
-    return map(mul, it1, it2)
+    return list(map(mul, it1, it2))
 
 
 def cumsum(seq):
@@ -53,7 +58,7 @@ class PartialInheritanceMeta(type):
         except KeyError:
             INHERITED_ATTRS = []
         meta.INHERITED_ATTRS = INHERITED_ATTRS
-        meta.IMPLEMENTED_ATTRS = dct.keys()
+        meta.IMPLEMENTED_ATTRS = list(dct.keys())
 
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
@@ -83,7 +88,7 @@ class PartialInheritanceMeta(type):
             #   A specifically inherited attribute
             #   A magic method
             __dict__ = super(cls, self).__getattribute__('__dict__')
-            if (attr in dct.keys() or  # class attribute
+            if (attr in list(dct.keys()) or  # class attribute
                     attr in INHERITED_ATTRS or  # inherited attribute
                     attr in __dict__ or  # instance attribute
                     (attr.startswith('__') and attr.endswith('__'))):  # magic method
@@ -97,13 +102,15 @@ class PartialInheritanceMeta(type):
         return cls
 
 
-class QuerySequence(Query):
+class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
     """
     A Query that handles multiple QuerySets.
 
     The API is expected to match django.db.models.sql.query.Query.
 
     """
+    __metaclass__ = PartialInheritanceMeta
+
     INHERITED_ATTRS = [
         'set_empty',
         'is_empty',
@@ -127,7 +134,6 @@ class QuerySequence(Query):
         'get_meta',
         'has_filters',
     ]
-    __metaclass__ = PartialInheritanceMeta
 
     def __init__(self, *args):
         self._querysets = list(args)
@@ -143,22 +149,22 @@ class QuerySequence(Query):
         obj = super(QuerySequence, self).clone(*args, **kwargs)
 
         # Clone each QuerySet and copy it to the new object.
-        obj._querysets = map(lambda it: it._clone(), self._querysets)
+        obj._querysets = [it._clone() for it in self._querysets]
         return obj
 
     def get_count(self, using):
         """Request count on each sub-query."""
         if self.is_empty():
             return 0
-        return sum(map(lambda it: it.count(), self._querysets))
+        return sum([it.count() for it in self._querysets])
 
     def has_results(self, using):
         """If any sub-query has a result, this is true."""
-        return any(map(lambda it: it.exists(), self._querysets))
+        return any([it.exists() for it in self._querysets])
 
     def add_ordering(self, *ordering):
         """Propagate ordering to each QuerySet and save it for iteration."""
-        self._querysets = map(lambda it: it.order_by(*ordering), self._querysets)
+        self._querysets = [it.order_by(*ordering) for it in self._querysets]
 
         if ordering:
             self.order_by.extend(ordering)
@@ -172,7 +178,7 @@ class QuerySequence(Query):
         self.order_by = []
 
     def add_select_related(self, fields):
-        self._querysets = map(lambda it: it.select_related(*fields), self._querysets)
+        self._querysets = [it.select_related(*fields) for it in self._querysets]
 
     def __iter__(self):
         # If this is explicitly marked as empty or there's no QuerySets, just
@@ -183,7 +189,7 @@ class QuerySequence(Query):
         # Reverse the ordering, if necessary. Apply this to both the individual
         # QuerySets and the ordering of the QuerySets themselves.
         if not self.standard_ordering:
-            self._querysets = map(lambda it: it.reverse(), self._querysets)
+            self._querysets = [it.reverse() for it in self._querysets]
             self._querysets = self._querysets[::-1]
 
         # If order is necessary, evaluate and start feeding data back.
@@ -194,7 +200,7 @@ class QuerySequence(Query):
 
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
-        counts.extend(cumsum(map(lambda it: it.count(), self._querysets)))
+        counts.extend(cumsum([it.count() for it in self._querysets]))
 
         # TODO Do we need to work with a clone of _querysets?
 
@@ -263,10 +269,10 @@ class QuerySequence(Query):
 
         # If field_names refers to a field on a different model (using __
         # syntax), break this apart.
-        field_names = map(lambda f: (f.split(LOOKUP_SEP, 2) + [''])[:2], field_names)
+        field_names = [(f.split(LOOKUP_SEP, 2) + [''])[:2] for f in field_names]
         # Split this into a list of the field names on the current item and
         # fields on the values returned.
-        field_names, next_field_names = zip(*field_names)
+        field_names, next_field_names = list(zip(*field_names))
 
         field_values = attrgetter(*field_names)(item)
         # Always want a list, but attrgetter returns single item if 1 arg
@@ -288,7 +294,7 @@ class QuerySequence(Query):
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
-        return map(lambda f: f.name, model._meta.get_fields())
+        return [f.name for f in model._meta.get_fields()]
 
     @classmethod
     def _cmp(cls, value1, value2):
@@ -347,11 +353,11 @@ class QuerySequence(Query):
             v1 = cls._fields_getter(field_names, i1)
             v2 = cls._fields_getter(field_names, i2)
             # Compare each field for the two items, reversing if necessary.
-            order = multiply_iterables(map(cls._cmp, v1, v2), reverses)
+            order = multiply_iterables(list(map(cls._cmp, v1, v2)), reverses)
 
             try:
                 # The first non-zero element.
-                return dropwhile(__not__, order).next()
+                return next(dropwhile(__not__, order))
             except StopIteration:
                 # Everything was equivalent.
                 return 0
@@ -363,14 +369,16 @@ class QuerySequence(Query):
 
         # A mapping of iterable to the current item in that iterable. (Remember
         # that each QuerySet is already sorted.)
-        not_empty_qss = map(iter, filter(None, self._querysets))
-        values = {it: it.next() for it in not_empty_qss}
+        not_empty_qss = list(map(iter, [_f for _f in self._querysets if _f]))
+        values = {it: next(it) for it in not_empty_qss}
 
         # The offset of items returned.
         index = 0
 
         # Create a comparison function based on the requested ordering.
-        comparator = self._generate_comparator(self.order_by)
+        _comparator = self._generate_comparator(self.order_by)
+        def comparator(i1, i2):
+            return _comparator(i1[1], i2[1])
 
         # If in reverse mode, get the last value instead of the first value from
         # ordered_values below.
@@ -384,13 +392,13 @@ class QuerySequence(Query):
             # If there's only one iterator left, don't bother sorting.
             if len(values) > 1:
                 # Sort the current values for each iterable.
-                ordered_values = sorted(values.items(), cmp=comparator, key=lambda x: x[1])
+                ordered_values = sorted(list(values.items()), key=functools.cmp_to_key(comparator))
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
                 qss, value = ordered_values.pop(next_value_ind)
             else:
-                qss, value = values.items()[0]
+                qss, value = list(values.items())[0]
 
             # Return it if we're within the slice of interest.
             if self.low_mark <= index:
@@ -402,7 +410,7 @@ class QuerySequence(Query):
 
             # Iterate the iterable that just lost a value.
             try:
-                values[qss] = qss.next()
+                values[qss] = next(qss)
             except StopIteration:
                 # This iterator is done, remove it.
                 del values[qss]
@@ -424,12 +432,13 @@ class QuerySetSequenceModel(object):
         object_name = 'QuerySetSequenceModel'
 
 
-class QuerySetSequence(QuerySet):
+class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
     the base models.
 
     """
+    __metaclass__ = PartialInheritanceMeta
 
     INHERITED_ATTRS = [
         # Public methods that return QuerySets.
@@ -488,7 +497,6 @@ class QuerySetSequence(QuerySet):
         'in_bulk',
         'update',
     ]
-    __metaclass__ = PartialInheritanceMeta
 
     def __init__(self, *args, **kwargs):
         # Create the QuerySequence object where most of the magic happens.
@@ -523,8 +531,7 @@ class QuerySetSequence(QuerySet):
 
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
         querysets = \
-            map(lambda qs: qs._filter_or_exclude(negate, *args, **kwargs),
-                clone.query._querysets)
+            [qs._filter_or_exclude(negate, *args, **kwargs) for qs in clone.query._querysets]
 
         clone.query._querysets = querysets
         return clone
