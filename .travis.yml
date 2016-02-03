@@ -1,6 +1,6 @@
 language: python
-python:
-  - "2.7"
+# This version of python is only used to run tox.
+python: 3.5
 script: tox
 notifications:
   email: false
