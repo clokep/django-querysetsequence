@@ -13,6 +13,7 @@ from django.utils import six
 
 
 def cmp(a, b):
+    """Python 2 & 3 version of cmp built-in."""
     return (a > b) - (a < b)
 
 
@@ -57,8 +58,6 @@ class PartialInheritanceMeta(type):
             del dct['INHERITED_ATTRS']
         except KeyError:
             INHERITED_ATTRS = []
-        meta.INHERITED_ATTRS = INHERITED_ATTRS
-        meta.IMPLEMENTED_ATTRS = list(dct.keys())
 
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
@@ -74,7 +73,6 @@ class PartialInheritanceMeta(type):
                 dct[attr] = functools.partial(not_impl, attr)
         except KeyError:
             NOT_IMPLEMENTED_ATTRS = []
-        meta.NOT_IMPLEMENTED_ATTRS = NOT_IMPLEMENTED_ATTRS
 
         # Create the actual class.
         cls = type.__new__(meta, name, bases, dct)
@@ -88,7 +86,7 @@ class PartialInheritanceMeta(type):
             #   A specifically inherited attribute
             #   A magic method
             __dict__ = super(cls, self).__getattribute__('__dict__')
-            if (attr in list(dct.keys()) or  # class attribute
+            if (attr in dct or  # class attribute
                     attr in INHERITED_ATTRS or  # inherited attribute
                     attr in __dict__ or  # instance attribute
                     (attr.startswith('__') and attr.endswith('__'))):  # magic method
@@ -109,8 +107,6 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
     The API is expected to match django.db.models.sql.query.Query.
 
     """
-    __metaclass__ = PartialInheritanceMeta
-
     INHERITED_ATTRS = [
         'set_empty',
         'is_empty',
@@ -369,7 +365,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
         # A mapping of iterable to the current item in that iterable. (Remember
         # that each QuerySet is already sorted.)
-        not_empty_qss = list(map(iter, [_f for _f in self._querysets if _f]))
+        not_empty_qss = [iter(it) for it in self._querysets if it]
         values = {it: next(it) for it in not_empty_qss}
 
         # The offset of items returned.
@@ -378,6 +374,8 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         # Create a comparison function based on the requested ordering.
         _comparator = self._generate_comparator(self.order_by)
         def comparator(i1, i2):
+            # Actually compare the 2nd element in each tuple, the 1st element is
+            # the generator.
             return _comparator(i1[1], i2[1])
 
         # If in reverse mode, get the last value instead of the first value from
@@ -392,7 +390,8 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             # If there's only one iterator left, don't bother sorting.
             if len(values) > 1:
                 # Sort the current values for each iterable.
-                ordered_values = sorted(list(values.items()), key=functools.cmp_to_key(comparator))
+                ordered_values = sorted(values.items(),
+                                        key=functools.cmp_to_key(comparator))
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
@@ -438,8 +437,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
     the base models.
 
     """
-    __metaclass__ = PartialInheritanceMeta
-
     INHERITED_ATTRS = [
         # Public methods that return QuerySets.
         'filter',

@@ -1,5 +1,4 @@
 from django.test import TestCase
-
 from django.utils import six
 
 from queryset_sequence import QuerySetSequence
@@ -65,7 +64,6 @@ class NotImplementedMeta(MetaTestGenerator):
 
 class TestNotImplemented(six.with_metaclass(NotImplementedMeta, TestCase)):
     """Test methods that are not implemented and should raise NotImplemented."""
-    __metaclass__ = NotImplementedMeta
 
     @classmethod
     def setUpClass(cls):
@@ -104,7 +102,6 @@ class AttributeErrorMeta(MetaTestGenerator):
 
 class TestAttributeError(six.with_metaclass(AttributeErrorMeta, TestCase)):
     """Test methods that are not implemented and should raise NotImplemented."""
-    __metaclass__ = AttributeErrorMeta
 
     @classmethod
     def setUpClass(cls):

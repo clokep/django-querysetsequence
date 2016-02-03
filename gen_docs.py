@@ -112,7 +112,7 @@ def main():
 
         for attr in QUERYSET_ATTRS:
             writeln('* - |%s|_' % attr, 1)
-            if attr in QuerySetSequence.__metaclass__.NOT_IMPLEMENTED_ATTRS:
+            if attr in QuerySetSequence.NOT_IMPLEMENTED_ATTRS:
                 writeln('  - |xmark|', 1)
             else:
                 writeln('  - |check|', 1)

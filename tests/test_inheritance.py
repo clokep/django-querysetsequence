@@ -22,7 +22,6 @@ class A(object):
 
 
 class B(six.with_metaclass(PartialInheritanceMeta, A)):
-    __metaclass__ = PartialInheritanceMeta
     INHERITED_ATTRS = ['a', 'e']
     NOT_IMPLEMENTED_ATTRS = ['b', 'd']
 
@@ -61,7 +60,7 @@ class TestPartialInheritanceMeta(TestCase):
         with self.assertRaises(AttributeError) as exc:
             self.b.z
         self.assertExceptionMessageEquals(exc.exception,
-                         "'B' object has no attribute 'z'")
+                                          "'B' object has no attribute 'z'")
 
     def test_dynamic(self):
         """Test an attribute in an object's __dict__."""
@@ -76,7 +75,7 @@ class TestPartialInheritanceMeta(TestCase):
         with self.assertRaises(NotImplementedError) as exc:
             self.b.b()
         self.assertExceptionMessageEquals(exc.exception,
-                         'B does not implement b()')
+                                          'B does not implement b()')
 
     def test_attr_error(self):
         self.assertTrue(hasattr(self.a, 'c'))
@@ -86,27 +85,27 @@ class TestPartialInheritanceMeta(TestCase):
         with self.assertRaises(AttributeError) as exc:
             self.b.c
         self.assertExceptionMessageEquals(exc.exception,
-                         "'B' object has no attribute 'c'")
+                                          "'B' object has no attribute 'c'")
 
     def test_attr_error2(self):
         self.assertFalse(hasattr(self.a, 'm'))
         with self.assertRaises(AttributeError) as exc:
             self.a.m
         self.assertExceptionMessageEquals(exc.exception,
-                         "'A' object has no attribute 'm'")
+                                          "'A' object has no attribute 'm'")
 
         self.assertFalse(hasattr(self.b, 'm'))
         with self.assertRaises(AttributeError) as exc:
             self.b.m
         self.assertExceptionMessageEquals(exc.exception,
-                         "'B' object has no attribute 'm'")
+                                          "'B' object has no attribute 'm'")
 
     def test_subclass_attr(self):
         self.assertFalse(hasattr(self.a, 'f'))
         with self.assertRaises(AttributeError) as exc:
             self.a.f
         self.assertExceptionMessageEquals(exc.exception,
-                         "'A' object has no attribute 'f'")
+                                          "'A' object has no attribute 'f'")
 
         self.assertTrue(hasattr(self.b, 'f'))
         self.assertEqual(self.b.f, True)
