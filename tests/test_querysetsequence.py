@@ -75,7 +75,7 @@ class TestQuerySetSequence(TestBase):
         clone = self.all._clone()
         qss = QuerySetSequence(query=clone.query)
 
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, self.EXPECTED)
 
     def test_query_keyword_args(self):
@@ -127,16 +127,16 @@ class TestIterator(TestBase):
 
         # Ensure that calling iterator twice re-evaluates the query.
         with self.assertNumQueries(4):
-            data = map(lambda it: it.title, qss.iterator())
+            data = [it.title for it in qss.iterator()]
             self.assertEqual(data, TestIterator.EXPECTED)
 
         with self.assertNumQueries(4):
-            data = map(lambda it: it.title, qss.iterator())
+            data = [it.title for it in qss.iterator()]
             self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter(self):
         qss = self.all._clone()
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter_cache(self):
@@ -144,12 +144,12 @@ class TestIterator(TestBase):
         qss = self.all._clone()
 
         with self.assertNumQueries(4):
-            data = map(lambda it: it.title, qss)
+            data = [it.title for it in qss]
             self.assertEqual(data, TestIterator.EXPECTED)
 
         # So the second call does nothing.
         with self.assertNumQueries(0):
-            data = map(lambda it: it.title, qss)
+            data = [it.title for it in qss]
             self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_empty(self):
@@ -196,7 +196,7 @@ class TestAll(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
-        data = map(lambda it: it.title, copy)
+        data = [it.title for it in copy]
         self.assertEqual(data, expected)
 
         # The copy was evaluated, not qss.
@@ -351,7 +351,7 @@ class TestOrderBy(TestBase):
         self.assertEqual(qss.query.order_by, ['title'])
 
         # Check the titles are properly ordered.
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         expected = [
             'Alice in Django-land',
             'Biography',
@@ -378,7 +378,7 @@ class TestOrderBy(TestBase):
         self.assertEqual(qss.query.order_by, ['title', '-release'])
 
         # Check the titles are properly ordered.
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         expected = [
             'Alice in Django-land',
             'Biography',
@@ -495,7 +495,7 @@ class TestReverse(TestBase):
             "Biography",
         ]
 
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_twice(self):
@@ -510,7 +510,7 @@ class TestReverse(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_ordered(self):
@@ -525,7 +525,7 @@ class TestReverse(TestBase):
             "Alice in Django-land",
         ]
 
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_twice_ordered(self):
@@ -540,7 +540,7 @@ class TestReverse(TestBase):
             "Some Article",
         ]
 
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
 class TestSlicing(TestBase):
@@ -616,7 +616,7 @@ class TestSlicing(TestBase):
         self.assertIsInstance(qss, QuerySetSequence)
         # No data yet.
         self.assertIsNone(qss._result_cache)
-        data = map(lambda it: it.title, qss)
+        data = [it.title for it in qss]
         self.assertEqual(data[0], 'Biography')
         self.assertEqual(data[1], 'Django Rocks')
 
