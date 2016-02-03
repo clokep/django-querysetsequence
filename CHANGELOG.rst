@@ -3,6 +3,11 @@
 Changelog
 #########
 
+0.4 (2016-02-03)
+================
+
+* [Enhancement] Python 3.4/3.5 support. Thanks @jpic #3
+
 0.3 (2016-01-29)
 ================
 
@@ -15,7 +20,7 @@ Changelog
 * [Feature] Support ``select_related`` to follow foreign-key relationships when
   generating results.
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
-  ``exclude()`` like a Django ``QuerySet``. Thanks @jpic
+  ``exclude()`` like a Django ``QuerySet``. Thanks @jpic #1
 * [Bugfix] Do not cache the results when calling ``iterator()``.
 
 0.2.4 (2016-01-21)
