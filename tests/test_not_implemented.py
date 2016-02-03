@@ -1,5 +1,7 @@
 from django.test import TestCase
 
+from django.utils import six
+
 from queryset_sequence import QuerySetSequence
 
 from .models import Article
@@ -61,7 +63,7 @@ class NotImplementedMeta(MetaTestGenerator):
     EXPECTED_EXCEPTION = NotImplementedError
 
 
-class TestNotImplemented(TestCase):
+class TestNotImplemented(six.with_metaclass(NotImplementedMeta, TestCase)):
     """Test methods that are not implemented and should raise NotImplemented."""
     __metaclass__ = NotImplementedMeta
 
@@ -100,7 +102,7 @@ class AttributeErrorMeta(MetaTestGenerator):
     EXPECTED_EXCEPTION = AttributeError
 
 
-class TestAttributeError(TestCase):
+class TestAttributeError(six.with_metaclass(AttributeErrorMeta, TestCase)):
     """Test methods that are not implemented and should raise NotImplemented."""
     __metaclass__ = AttributeErrorMeta
 

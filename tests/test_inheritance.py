@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from django.utils import six
+
 from queryset_sequence import PartialInheritanceMeta
 
 
@@ -19,7 +21,7 @@ class A(object):
         return ('%s(a = %s)' % (self.__class__.__name__, self.a))
 
 
-class B(A):
+class B(six.with_metaclass(PartialInheritanceMeta, A)):
     __metaclass__ = PartialInheritanceMeta
     INHERITED_ATTRS = ['a', 'e']
     NOT_IMPLEMENTED_ATTRS = ['b', 'd']
@@ -35,6 +37,10 @@ class B(A):
 
 
 class TestPartialInheritanceMeta(TestCase):
+    def assertExceptionMessageEquals(self, exception, expected):
+        result = exception.message if six.PY2 else exception.args[0]
+        self.assertEqual(expected, result)
+
     def setUp(self):
         self.a = A()
         self.b = B()
@@ -54,7 +60,7 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertFalse(hasattr(self.b, 'z'))
         with self.assertRaises(AttributeError) as exc:
             self.b.z
-        self.assertEqual(exc.exception.message,
+        self.assertExceptionMessageEquals(exc.exception,
                          "'B' object has no attribute 'z'")
 
     def test_dynamic(self):
@@ -69,7 +75,8 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertTrue(hasattr(self.b, 'b'))
         with self.assertRaises(NotImplementedError) as exc:
             self.b.b()
-        self.assertEqual(exc.exception.message, 'B does not implement b()')
+        self.assertExceptionMessageEquals(exc.exception,
+                         'B does not implement b()')
 
     def test_attr_error(self):
         self.assertTrue(hasattr(self.a, 'c'))
@@ -78,27 +85,27 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertFalse(hasattr(self.b, 'c'))
         with self.assertRaises(AttributeError) as exc:
             self.b.c
-        self.assertEqual(exc.exception.message,
+        self.assertExceptionMessageEquals(exc.exception,
                          "'B' object has no attribute 'c'")
 
     def test_attr_error2(self):
         self.assertFalse(hasattr(self.a, 'm'))
         with self.assertRaises(AttributeError) as exc:
             self.a.m
-        self.assertEqual(exc.exception.message,
+        self.assertExceptionMessageEquals(exc.exception,
                          "'A' object has no attribute 'm'")
 
         self.assertFalse(hasattr(self.b, 'm'))
         with self.assertRaises(AttributeError) as exc:
             self.b.m
-        self.assertEqual(exc.exception.message,
+        self.assertExceptionMessageEquals(exc.exception,
                          "'B' object has no attribute 'm'")
 
     def test_subclass_attr(self):
         self.assertFalse(hasattr(self.a, 'f'))
         with self.assertRaises(AttributeError) as exc:
             self.a.f
-        self.assertEqual(exc.exception.message,
+        self.assertExceptionMessageEquals(exc.exception,
                          "'A' object has no attribute 'f'")
 
         self.assertTrue(hasattr(self.b, 'f'))
