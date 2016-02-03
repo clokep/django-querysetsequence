@@ -1,0 +1,2 @@
+[run]
+source = queryset_sequence,tests

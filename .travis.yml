@@ -5,4 +5,4 @@ script: tox
 notifications:
   email: false
 install:
-  - pip install tox
+  - pip install tox coveralls
