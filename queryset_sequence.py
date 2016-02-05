@@ -348,6 +348,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             # Actually compare the 2nd element in each tuple, the 1st element is
             # the generator.
             return _comparator(i1[1], i2[1])
+        comparator = functools.cmp_to_key(comparator)
 
         # If in reverse mode, get the last value instead of the first value from
         # ordered_values below.
@@ -361,8 +362,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             # If there's only one iterator left, don't bother sorting.
             if len(values) > 1:
                 # Sort the current values for each iterable.
-                ordered_values = sorted(values.items(),
-                                        key=functools.cmp_to_key(comparator))
+                ordered_values = sorted(values.items(), key=comparator)
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
