@@ -156,6 +156,12 @@ class TestIterator(TestBase):
         qss = QuerySetSequence()
         self.assertEqual(list(qss), [])
 
+    def test_empty_subqueryset(self):
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.none()).order_by('title')
+
+        data = [it.title for it in qss]
+        self.assertEqual(data, ['Biography', 'Fiction'])
+
 
 class TestNone(TestBase):
     def test_none(self):
