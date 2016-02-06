@@ -251,43 +251,6 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         return chain(*self._querysets)
 
     @classmethod
-    def _fields_getter(cls, field_names, item):
-        """
-        Returns a tuple of the values to be compared.
-
-        Inputs:
-            field_names (iterable of strings): The field names to sort on.
-            i (item): The item to get the fields from.
-
-        Returns:
-            A tuple of the values of each field in field_names.
-        """
-
-        # If field_names refers to a field on a different model (using __
-        # syntax), break this apart.
-        field_names = [(f.split(LOOKUP_SEP, 2) + [''])[:2] for f in field_names]
-        # Split this into a list of the field names on the current item and
-        # fields on the values returned.
-        field_names, next_field_names = list(zip(*field_names))
-
-        field_values = attrgetter(*field_names)(item)
-        # Always want a list, but attrgetter returns single item if 1 arg
-        # supplied.
-        if len(field_names) == 1:
-            field_values = [field_values]
-        else:
-            field_values = list(field_values)
-
-        # For any field name that referred to a field on a different model,
-        # recursively find the field value.
-        for i, next_field_name in enumerate(next_field_names):
-            # If next_field_name is empty, the field value is correct.
-            if next_field_name:
-                field_values[i] = cls._fields_getter([next_field_name], field_values[i])
-
-        return field_values
-
-    @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
         return [f.name for f in model._meta.get_fields()]
@@ -344,10 +307,18 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
                 reverses[i] = -1
                 field_names[i] = field_name[1:]
 
+        field_names = [f.replace(LOOKUP_SEP, '.') for f in field_names]
+
         def comparator(i1, i2):
-            # Get the values for comparison.
-            v1 = cls._fields_getter(field_names, i1)
-            v2 = cls._fields_getter(field_names, i2)
+            # Get a tuple of values for comparison.
+            v1 = attrgetter(*field_names)(i1)
+            v2 = attrgetter(*field_names)(i2)
+
+            # If there's only one arg supplied, attrgetter returns a single
+            # item, directly return the result in this case.
+            if len(field_names) == 1:
+                return cls._cmp(v1, v2) * reverses[0]
+
             # Compare each field for the two items, reversing if necessary.
             order = multiply_iterables(list(map(cls._cmp, v1, v2)), reverses)
 
@@ -377,6 +348,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             # Actually compare the 2nd element in each tuple, the 1st element is
             # the generator.
             return _comparator(i1[1], i2[1])
+        comparator = functools.cmp_to_key(comparator)
 
         # If in reverse mode, get the last value instead of the first value from
         # ordered_values below.
@@ -390,8 +362,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             # If there's only one iterator left, don't bother sorting.
             if len(values) > 1:
                 # Sort the current values for each iterable.
-                ordered_values = sorted(values.items(),
-                                        key=functools.cmp_to_key(comparator))
+                ordered_values = sorted(values.items(), key=comparator)
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
