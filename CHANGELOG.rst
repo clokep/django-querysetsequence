@@ -3,6 +3,12 @@
 Changelog
 #########
 
+0.5 (xxxx-xx-xx)
+================
+
+* [Enhancement] Significant performance improvements when ordering the
+  ``QuerySetSequence``. #5
+
 0.4 (2016-02-03)
 ================
 
