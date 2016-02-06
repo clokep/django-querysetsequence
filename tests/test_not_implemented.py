@@ -57,7 +57,6 @@ class NotImplementedMeta(MetaTestGenerator):
         'last',
         'aggregate',
         'update',
-        'delete',
     ]
     EXPECTED_EXCEPTION = NotImplementedError
 

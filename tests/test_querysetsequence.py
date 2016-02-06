@@ -685,3 +685,16 @@ class TestExists(TestBase):
     def test_related_model(self):
         qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
         self.assertTrue(qss.filter(publisher__name="Wacky Website").exists())
+
+
+class TestDelete(TestBase):
+    def test_delete_all(self):
+        """Ensure that delete() works properly."""
+        self.all.delete()
+
+        self.assertEqual(self.all.count(), 0)
+
+    def test_delete_filter(self):
+        """Ensure that delete() works properly when filtering."""
+        self.all.filter(author=self.alice).delete()
+        self.assertEqual(self.all.count(), 3)

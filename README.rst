@@ -150,7 +150,7 @@ multiple ``QuerySets``:
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |delete|_
-      - |xmark|
+      - |check|
       - 
     * - |as_manager|_
       - |check|

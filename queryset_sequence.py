@@ -454,7 +454,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'first',
         'last',
         'aggregate',
-        'delete',
 
         # Public methods that don't return QuerySets. These don't make sense in
         # the context of a QuerySetSequence.
@@ -509,3 +508,11 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         obj = self._clone()
         obj.query.add_select_related(fields)
         return obj
+
+    def delete(self):
+        # Propagate delete to each sub-query.
+        for qs in self.query._querysets:
+            qs.delete()
+
+        # Clear the result cache, in case this QuerySet gets reused.
+        self._result_cache = None

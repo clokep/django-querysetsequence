@@ -8,6 +8,7 @@ Changelog
 
 * [Enhancement] Significant performance improvements when ordering the
   ``QuerySetSequence``. #5
+* [Feature] Support ``delete()`` to remove items.
 
 0.4 (2016-02-03)
 ================
