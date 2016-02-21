@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.5 (xxxx-xx-xx)
+0.5 (2016-02-21)
 ================
 
 * [Enhancement] Significant performance improvements when ordering the
