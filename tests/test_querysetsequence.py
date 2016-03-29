@@ -69,6 +69,10 @@ class TestQuerySetSequence(TestBase):
         "Alice in Django-land",
         "Some Article",
     ]
+    EXPECTED_WITH_BOOK_MODEL = [
+        "Fiction",
+        "Biography",
+    ]
 
     def test_query_keyword(self):
         """Test constructing a QuerySetSequence with the query keyword."""
@@ -85,6 +89,28 @@ class TestQuerySetSequence(TestBase):
         """
         self.assertRaises(ValueError, QuerySetSequence, Book.objects.all(),
                           query=self.all.query)
+
+    def test_model_keyword_args(self):
+        """Test constructing a QuerySetSequence with the model keyword."""
+        qss = QuerySetSequence(
+            Book.objects.filter(title="Fiction"),
+            Book.objects.filter(title="Biography"),
+            model=Book,
+        )
+
+        data = [it.title for it in qss]
+        self.assertEqual(data, self.EXPECTED_WITH_BOOK_MODEL)
+
+    def test_without_model_keyword_args(self):
+        """Test constructing a QuerySetSequence without the model keyword."""
+        qss = QuerySetSequence(
+            Book.objects.filter(title="Fiction"),
+            Book.objects.filter(title="Biography"),
+        )
+
+        data = [it.title for it in qss]
+        self.assertEqual(data, self.EXPECTED_WITH_BOOK_MODEL)
+
 
 class TestLength(TestBase):
     """
