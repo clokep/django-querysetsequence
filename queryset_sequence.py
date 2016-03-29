@@ -473,9 +473,11 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
             raise ValueError(
                 "Cannot provide args and a 'query' keyword argument.")
 
-        # Model class.
-        # Could be smarter with some introspection.
-        if 'model' not in kwargs.keys():
+        # If a particular Model class is not provided, just use the generic
+        # model class.
+        # TODO Dynamically generate the fields available in this model via
+        # introspection of the input QuerySets.
+        if 'model' not in kwargs:
             kwargs['model'] = QuerySetSequenceModel
 
         super(QuerySetSequence, self).__init__(**kwargs)

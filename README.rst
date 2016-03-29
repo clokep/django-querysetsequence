@@ -264,6 +264,9 @@ Usage
 
     # Use query as if it were a QuerySet! E.g. in a ListView.
 
+You can also provide a ``model`` keyword argument if you need to specify the
+``QuerySet`` ``Model``, e.g. for compatibility with some third-party
+applications that check the ``model`` field for equality
 
 Example
 =======

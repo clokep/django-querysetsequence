@@ -62,16 +62,14 @@ class TestBase(TestCase):
 
 
 class TestQuerySetSequence(TestBase):
-    EXPECTED = [
-        "Fiction",
-        "Biography",
-        "Django Rocks",
-        "Alice in Django-land",
-        "Some Article",
-    ]
     EXPECTED_WITH_BOOK_MODEL = [
         "Fiction",
         "Biography",
+    ]
+    EXPECTED = EXPECTED_WITH_BOOK_MODEL + [
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
     ]
 
     def test_query_keyword(self):
