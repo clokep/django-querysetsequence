@@ -28,6 +28,7 @@ class OnlinePublisher(models.Model):
     class Meta:
         ordering = ['name']
 
+
 class Article(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author)
@@ -53,4 +54,3 @@ class Book(models.Model):
 
     def __str__(self):
         return "%s by %s" % (self.title, self.author)
-

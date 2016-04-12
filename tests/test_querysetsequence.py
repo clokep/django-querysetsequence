@@ -8,6 +8,7 @@ from queryset_sequence import QuerySetSequence
 from .models import (Article, Author, BlogPost, Book, OnlinePublisher,
                      PeriodicalPublisher, Publisher)
 
+
 class TestBase(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -351,7 +352,7 @@ class TestExclude(TestBase):
             alice_qss = self.all.exclude(author=self.bob)
         self.assertEqual(alice_qss.count(), 2)
         # TODO
-        #self.assertIsNone(alice_qss._result_cache)
+        # self.assertIsNone(alice_qss._result_cache)
 
         # Since we've now filtered down to a single QuerySet, we shouldn't be a
         # QuerySetSequence any longer.
@@ -572,6 +573,7 @@ class TestReverse(TestBase):
 
         data = [it.title for it in qss]
         self.assertEqual(data, expected)
+
 
 class TestSlicing(TestBase):
     """Test indexing and slicing."""
