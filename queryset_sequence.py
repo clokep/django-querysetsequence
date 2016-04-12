@@ -174,13 +174,18 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         self.order_by = []
 
     def add_select_related(self, fields):
-        self._querysets = [it.select_related(*fields) for it in self._querysets]
+        # Don't bother splitting this by field sep, etc.
+        self.select_related = fields
 
     def __iter__(self):
         # If this is explicitly marked as empty or there's no QuerySets, just
         # return an empty iterator.
         if not len(self._querysets) or self.is_empty():
             return iter([])
+
+        # Apply any select related calls.
+        if isinstance(self.select_related, (list, tuple)):
+            self._querysets = [it.select_related(*self.select_related) for it in self._querysets]
 
         # Reverse the ordering, if necessary. Apply this to both the individual
         # QuerySets and the ordering of the QuerySets themselves.
@@ -416,6 +421,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'reverse',
         'none',
         'all',
+        'select_related',
 
         # Public methods that don't return QuerySets.
         'get',
@@ -441,7 +447,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'values_list',
         'dates',
         'datetimes',
-        'prefetch_related',
         'extra',
         'defer',
         'only',
@@ -506,12 +511,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         clone.query._querysets = querysets
         return clone
 
-    def select_related(self, *fields):
-        """Overridden because of the weird bool/dict behavior."""
-        obj = self._clone()
-        obj.query.add_select_related(fields)
-        return obj
-
     def delete(self):
         # Propagate delete to each sub-query.
         for qs in self.query._querysets:
@@ -519,3 +518,11 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
         # Clear the result cache, in case this QuerySet gets reused.
         self._result_cache = None
+
+    def prefetch_related(self, *lookups):
+        # Don't modify self._prefetch_related_lookups, as that will cause
+        # issues, but call prefetch_related on underlying QuerySets.
+        clone = self._clone()
+        clone.query._querysets = [
+            qs.prefetch_related(*lookups) for qs in clone.query._querysets]
+        return clone
