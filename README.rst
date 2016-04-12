@@ -84,7 +84,7 @@ multiple ``QuerySets``:
       - |check|
       - 
     * - |prefetch_related|_
-      - |xmark|
+      - |check|
       - 
     * - |extra|_
       - |xmark|

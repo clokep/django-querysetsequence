@@ -183,7 +183,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         if not len(self._querysets) or self.is_empty():
             return iter([])
 
-        # Apply any select/prefetch related calls.
+        # Apply any select related calls.
         if isinstance(self.select_related, (list, tuple)):
             self._querysets = [it.select_related(*self.select_related) for it in self._querysets]
 
@@ -447,7 +447,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'values_list',
         'dates',
         'datetimes',
-        'prefetch_related',
         'extra',
         'defer',
         'only',
@@ -519,3 +518,11 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
         # Clear the result cache, in case this QuerySet gets reused.
         self._result_cache = None
+
+    def prefetch_related(self, *lookups):
+        # Don't modify self._prefetch_related_lookups, as that will cause
+        # issues, but call prefetch_related on underlying QuerySets.
+        clone = self._clone()
+        clone.query._querysets = [
+            qs.prefetch_related(*lookups) for qs in clone.query._querysets]
+        return clone
