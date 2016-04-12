@@ -253,6 +253,8 @@ class TestSelectRelated(TestBase):
             author = book.author
             self.assertEqual(author, self.bob)
 
+    # TODO Add a test for select_related that follows multiple ForeignKeys.
+
     def test_clear_select_related(self):
         # Ensure no database query.
         qss = self.all._clone()
