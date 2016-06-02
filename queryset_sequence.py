@@ -404,6 +404,7 @@ class QuerySetSequenceModel(object):
         pass
 
     class _meta:
+        app_label = 'queryset_sequence'
         object_name = 'QuerySetSequenceModel'
 
 
