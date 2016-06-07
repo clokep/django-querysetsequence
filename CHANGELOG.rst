@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.6 (xxxx-xx-xx)
+0.6 (2016-06-07)
 ================
 
 * [Feature] Allow specifying the ``Model`` to use when instantiating a
