@@ -18,6 +18,7 @@ setup(
     url='https://github.com/percipient/django-querysetsequence',
     download_url='https://github.com/percipient/django-querysetsequence',
     keywords=['django', 'queryset', 'chain', 'multi', 'multiple', 'iterable'],
+    license='ISC',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
