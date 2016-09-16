@@ -160,10 +160,15 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
     def add_ordering(self, *ordering):
         """Propagate ordering to each QuerySet and save it for iteration."""
-        self._querysets = [it.order_by(*ordering) for it in self._querysets]
-
         if ordering:
             self.order_by.extend(ordering)
+
+            # Remove the ordering by QuerySet before trying to order the
+            # individual QuerySets.
+            if ordering[0] == '#':
+                ordering = ordering[1:]
+
+        self._querysets = [it.order_by(*ordering) for it in self._querysets]
 
     def clear_ordering(self, force_empty):
         """
@@ -194,10 +199,11 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             self._querysets = self._querysets[::-1]
 
         # If order is necessary, evaluate and start feeding data back.
-        if self.order_by:
+        if self.order_by and self.order_by[0] != '#':
             return self._ordered_iterator()
 
-        # If there is no ordering, evaluation can be pushed off further.
+        # If there is no ordering, or the ordering is specific to each QuerySet,
+        # evaluation can be pushed off further.
 
         # First trim any QuerySets based on the currently set limits!
         counts = [0]

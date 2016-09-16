@@ -5,8 +5,8 @@ from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
 
-from .models import (Article, Author, BlogPost, Book, OnlinePublisher,
-                     PeriodicalPublisher, Publisher)
+from tests.models import (Article, Author, BlogPost, Book, OnlinePublisher,
+                          PeriodicalPublisher, Publisher)
 
 
 class TestBase(TestCase):
@@ -542,6 +542,29 @@ class TestOrderBy(TestBase):
             qss = self.all.order_by('publisher__address')
         self.assertEqual(qss.query.order_by, ['publisher__address'])
         self.assertRaises(FieldError, list, qss)
+
+    def test_order_by_queryset(self):
+        """Ensure we can order by QuerySet and then other fields."""
+        # Order by title, but don't interleave each QuerySet.
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('#', 'title')
+        self.assertEqual(qss.query.order_by, ['#', 'title'])
+        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+
+        # TODO Ensure that _ordered_iterator isn't called.
+
+        # Check the titles are properly ordered.
+        data = [it.title for it in qss]
+        expected = [
+            # First the Books, in order.
+            'Biography',
+            'Fiction',
+            # Then the Articles, in order.
+            'Alice in Django-land',
+            'Django Rocks',
+            'Some Article',
+        ]
+        self.assertEqual(data, expected)
 
 
 class TestReverse(TestBase):
