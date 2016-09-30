@@ -1,6 +1,6 @@
 import functools
 from itertools import chain, dropwhile
-from operator import mul, attrgetter, __not__
+from operator import mul, attrgetter, __not__, lt, le, eq, ne, ge, gt, contains
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
@@ -511,12 +511,109 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 "Cannot filter a query once a slice has been taken."
         clone = self._clone()
 
+        # TODO Handle # as an arg / kwarg.
+        queryset_kwargs = {}
+        for kwarg in kwargs.keys():
+            if kwarg.startswith('#'):
+                queryset_kwargs[kwarg] = kwargs.pop(kwarg)
+        clone._filter_or_exclude_querysets(**queryset_kwargs)
+
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
         querysets = \
             [qs._filter_or_exclude(negate, *args, **kwargs) for qs in clone.query._querysets]
 
         clone.query._querysets = querysets
         return clone
+
+    def _filter_or_exclude_querysets(self, **kwargs):
+        """
+        Similar to _filter_or_exclude, but run over the QuerySets in the
+        QuerySetSequence instead of over each QuerySet's fields.
+
+        """
+        # Start with all QuerySets.
+        querysets = range(len(self.query._querysets))
+
+        for kwarg, value in kwargs.items():
+            parts = kwarg.split(LOOKUP_SEP)
+
+            # Ensure this is being used to filter QuerySets.
+            if parts[0] != '#':
+                raise ValueError("Keyword '%s' is not a valid to filter over, "
+                                 "it must begin with '#'." % kwarg)
+
+            # Don't allow __ multiple times.
+            if len(parts) > 2:
+                raise ValueError("Keyword '%s' must not contain multiple "
+                                 "lookup seperators." % kwarg)
+
+            # The value must be a number (or coerced to a number).
+            try:
+                value = int(value)
+            except ValueError:
+                raise ValueError("Value for keyword '%s' must be an integer: "
+                                 "%s" % (kwarg, value))
+
+            # The actual lookup is the second part.
+            try:
+                lookup = parts[1]
+            except IndexError:
+                lookup = 'exact'
+
+            # Math operators that all have the same logic.
+            LOOKUP_TO_OPERATOR = {
+                'exact': eq,
+                'iexact': eq,
+                'gt': gt,
+                'gte': ge,
+                'lt': gt,
+                'lte': le,
+                'in': contains,
+            }
+            try:
+                operator = LOOKUP_TO_OPERATOR[lookup]
+                querysets = filter(lambda i: operator(i, value), querysets)
+                continue
+            except KeyError:
+                # It wasn't one of the above operators, keep trying.
+                pass
+
+            # These seem to get handled as bytes.
+            STRING_LOOKUP_TO_OPERATOR = {
+                'contains': contains,
+                'icontains': contains,
+                'startswith': '',
+                'istartswith': '',
+                'endswith': '',
+                'iendswith': '',
+            }
+
+            if kwarg in ('contains', 'icontains'):
+                value = bytes(value)
+                querysets = filter(lambda i: value in bytes(i), querysets)
+
+            elif kwarg in ('startswith', 'istartswith'):
+                value = bytes(value)
+                querysets = filter(lambda i: bytes(i).startswith(value), querysets)
+
+            elif kwarg in ('endswith', 'iendswith'):
+                value = bytes(value)
+                querysets = filter(lambda i: bytes(i).endswith(value), querysets)
+
+            elif kwarg == 'range':
+                # Inclusive include.
+                start, end = value
+                querysets = filter(lambda i: start <= i <= end, querysets)
+                continue
+
+            else:
+                # Any other field lookup is not supported, e.g. date, year, month,
+                # day, week_day, hour, minute, second, isnull, search, regex, and
+                # iregex.
+                raise ValueError("Unsupported lookup '%s'" % lookup)
+
+        # Finally, trim down the actual QuerySets we care about!
+        self.query._querysets = [self.query._querysets[i] for i in querysets]
 
     def delete(self):
         # Propagate delete to each sub-query.

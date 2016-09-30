@@ -348,6 +348,20 @@ class TestFilter(TestBase):
         data = list(qss)
         self.assertEqual(len(data), 0)
 
+    def test_queryset(self):
+        """Ensure we can order by QuerySet and then other fields."""
+        qss = self.all.filter(**{'#': 1})
+
+        # Only the articles are here because it's the second queryset.
+        data = [it.title for it in qss]
+        expected = [
+            # Then the Articles.
+            'Django Rocks',
+            'Alice in Django-land',
+            'Some Article',
+        ]
+        self.assertEqual(data, expected)
+
 
 class TestExclude(TestBase):
     """
