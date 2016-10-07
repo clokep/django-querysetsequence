@@ -547,13 +547,6 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 raise ValueError("Keyword '%s' must not contain multiple "
                                  "lookup seperators." % kwarg)
 
-            # The value must be a number (or coerced to a number).
-            try:
-                value = int(value)
-            except ValueError:
-                raise ValueError("Value for keyword '%s' must be an integer: "
-                                 "%s" % (kwarg, value))
-
             # The actual lookup is the second part.
             try:
                 lookup = parts[1]
@@ -566,9 +559,8 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 'iexact': eq,
                 'gt': gt,
                 'gte': ge,
-                'lt': gt,
+                'lt': lt,
                 'lte': le,
-                'in': contains,
             }
             try:
                 operator = LOOKUP_TO_OPERATOR[lookup]
@@ -578,29 +570,23 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 # It wasn't one of the above operators, keep trying.
                 pass
 
-            # These seem to get handled as bytes.
-            STRING_LOOKUP_TO_OPERATOR = {
-                'contains': contains,
-                'icontains': contains,
-                'startswith': '',
-                'istartswith': '',
-                'endswith': '',
-                'iendswith': '',
-            }
-
-            if kwarg in ('contains', 'icontains'):
+            # Some of these seem to get handled as bytes.
+            if lookup in ('contains', 'icontains'):
                 value = bytes(value)
                 querysets = filter(lambda i: value in bytes(i), querysets)
 
-            elif kwarg in ('startswith', 'istartswith'):
+            elif lookup == 'in':
+                querysets = filter(lambda i: i in value, querysets)
+
+            elif lookup in ('startswith', 'istartswith'):
                 value = bytes(value)
                 querysets = filter(lambda i: bytes(i).startswith(value), querysets)
 
-            elif kwarg in ('endswith', 'iendswith'):
+            elif lookup in ('endswith', 'iendswith'):
                 value = bytes(value)
                 querysets = filter(lambda i: bytes(i).endswith(value), querysets)
 
-            elif kwarg == 'range':
+            elif lookup == 'range':
                 # Inclusive include.
                 start, end = value
                 querysets = filter(lambda i: start <= i <= end, querysets)
