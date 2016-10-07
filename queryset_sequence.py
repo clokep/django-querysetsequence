@@ -516,7 +516,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         for kwarg in kwargs.keys():
             if kwarg.startswith('#'):
                 queryset_kwargs[kwarg] = kwargs.pop(kwarg)
-        clone._filter_or_exclude_querysets(**queryset_kwargs)
+        clone._filter_or_exclude_querysets(negate, **queryset_kwargs)
 
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
         querysets = \
@@ -525,7 +525,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         clone.query._querysets = querysets
         return clone
 
-    def _filter_or_exclude_querysets(self, **kwargs):
+    def _filter_or_exclude_querysets(self, negate, **kwargs):
         """
         Similar to _filter_or_exclude, but run over the QuerySets in the
         QuerySetSequence instead of over each QuerySet's fields.
@@ -555,12 +555,12 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
             # Math operators that all have the same logic.
             LOOKUP_TO_OPERATOR = {
-                'exact': eq,
-                'iexact': eq,
-                'gt': gt,
-                'gte': ge,
-                'lt': lt,
-                'lte': le,
+                'exact': ne if negate else eg,
+                'iexact': ne if negate else eg,
+                'gt': le if negate else gt,
+                'gte': lt if negate else ge,
+                'lt': ge if negate else lt,
+                'lte': gt if negate else le,
             }
             try:
                 operator = LOOKUP_TO_OPERATOR[lookup]
@@ -573,24 +573,38 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
             # Some of these seem to get handled as bytes.
             if lookup in ('contains', 'icontains'):
                 value = bytes(value)
-                querysets = filter(lambda i: value in bytes(i), querysets)
+                if negate:
+                    querysets = filter(lambda i: value not in bytes(i), querysets)
+                else:
+                    querysets = filter(lambda i: value in bytes(i), querysets)
 
             elif lookup == 'in':
-                querysets = filter(lambda i: i in value, querysets)
+                if negate:
+                    querysets = filter(lambda i: i not in value, querysets)
+                else:
+                    querysets = filter(lambda i: i in value, querysets)
 
             elif lookup in ('startswith', 'istartswith'):
                 value = bytes(value)
-                querysets = filter(lambda i: bytes(i).startswith(value), querysets)
+                if negate:
+                    querysets = filter(lambda i: not bytes(i).startswith(value), querysets)
+                else:
+                    querysets = filter(lambda i: bytes(i).startswith(value), querysets)
 
             elif lookup in ('endswith', 'iendswith'):
                 value = bytes(value)
-                querysets = filter(lambda i: bytes(i).endswith(value), querysets)
+                if negate:
+                    querysets = filter(lambda i: not bytes(i).endswith(value), querysets)
+                else:
+                    querysets = filter(lambda i: bytes(i).endswith(value), querysets)
 
             elif lookup == 'range':
                 # Inclusive include.
                 start, end = value
-                querysets = filter(lambda i: start <= i <= end, querysets)
-                continue
+                if negate:
+                    querysets = filter(lambda i: not (start <= i <= end), querysets)
+                else:
+                    querysets = filter(lambda i: start <= i <= end, querysets)
 
             else:
                 # Any other field lookup is not supported, e.g. date, year, month,
