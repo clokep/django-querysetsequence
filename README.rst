@@ -46,40 +46,41 @@ multiple ``QuerySets``:
       - Notes
     * - |filter|_
       - |check|
-      - 
+      - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |exclude|_
       - |check|
-      - 
+      - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |annotate|_
       - |xmark|
       - 
     * - |order_by|_
       - |check|
-      - Does not support random ``order_by()`` (e.g. ``order_by('?')``)
+      - Does not support random ordering (e.g. ``order_by('?')``). See [1]_ for
+        information on the ``QuerySet`` lookup: ``'#'``.
     * - |reverse|_
       - |check|
       - 
     * - |distinct|_
       - |xmark|
-      - 
+      -
     * - |values|_
       - |xmark|
-      - 
+      -
     * - |values_list|_
       - |xmark|
-      - 
+      -
     * - |dates|_
       - |xmark|
-      - 
+      -
     * - |datetimes|_
       - |xmark|
-      - 
+      -
     * - |none|_
       - |check|
-      - 
+      -
     * - |all|_
       - |check|
-      - 
+      -
     * - |select_related|_
       - |check|
       - 
@@ -106,7 +107,7 @@ multiple ``QuerySets``:
       - 
     * - |get|_
       - |check|
-      - 
+      - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |create|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
@@ -230,8 +231,48 @@ multiple ``QuerySets``:
 .. _delete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
 .. |as_manager| replace:: ``as_manager()``
 .. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as_manager
-.. ATTRIBUTES_TABLE_END
-.. End auto-generate content.
+
+
+.. [1]  ``QuerySetSequence`` supports a special field lookup that looks up the
+        index of the ``QuerySet``, this is represented by ``'#'``. This can be
+        used in any of the operations that normally take field lookups (i.e.
+        ``filter()``, ``exclude()``, and ``get()``), as well as ``order_by()``.
+
+        A few examples are below:
+
+        .. code-block:: python
+
+            # Order first by QuerySet, then by the value of the 'title' field.
+            QuerySetSequence(...).order_by('#', 'title')
+
+            # Filter out the first QuerySet.
+            QuerySetSequence(...).filter(**{'#__gt': 0})
+
+        .. note::
+
+            Ordering first by ``QuerySet`` allows for a more optimized code path
+            when iterating over the entries.
+
+        .. warning::
+
+            Not all lookups are supported when using ``'#'`` (some lookups
+            simply don't make sense; others are just not supported). The
+            following are allowed:
+
+            * ``exact``
+            * ``iexact``
+            * ``contains``
+            * ``icontains``
+            * ``in``
+            * ``gt``
+            * ``gte``
+            * ``lt``
+            * ``lte``
+            * ``startswith``
+            * ``istartswith``
+            * ``endswith``
+            * ``iendswith``
+            * ``range``
 
 Requirements
 ============
