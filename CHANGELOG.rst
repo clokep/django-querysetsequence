@@ -12,6 +12,8 @@ Changelog
   Framework.
 * [Enhancement] Move ``queryset_sequence`` to an actual module in order to hide
   some implementation details.
+* [Bugfix] ``PartialInheritanceMeta`` must be provided ``INHERITED_ATTRS`` and
+  ``NOT_IMPLEMENTED_ATTRS``.
 
 0.6.1 (2016-08-03)
 ==================
