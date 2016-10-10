@@ -10,6 +10,8 @@ Changelog
   ``QuerySets`` in the ``QuerySetSequence`` by using ``'#'``. This allows for
   additional optimizations when using third-party applications, e.g. Django REST
   Framework.
+* [Enhancement] Move ``queryset_sequence`` to an actual module in order to hide
+  some implementation details.
 
 0.6.1 (2016-08-03)
 ==================
