@@ -1,6 +1,6 @@
 import codecs
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def long_description():
@@ -9,7 +9,7 @@ def long_description():
 
 setup(
     name='django-querysetsequence',
-    py_modules=['queryset_sequence'],
+    packages=find_packages(),
     version='0.7',
     description='Chain together multiple (disparate) QuerySets to treat them as a single QuerySet.',
     long_description=long_description(),
