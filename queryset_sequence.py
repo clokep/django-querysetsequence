@@ -1,6 +1,6 @@
 import functools
 from itertools import chain, dropwhile
-from operator import mul, attrgetter, __not__
+from operator import mul, attrgetter, __not__, lt, le, eq, ne, ge, gt, contains
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
@@ -160,10 +160,15 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
     def add_ordering(self, *ordering):
         """Propagate ordering to each QuerySet and save it for iteration."""
-        self._querysets = [it.order_by(*ordering) for it in self._querysets]
-
         if ordering:
             self.order_by.extend(ordering)
+
+            # Remove the ordering by QuerySet before trying to order the
+            # individual QuerySets.
+            if ordering[0] == '#':
+                ordering = ordering[1:]
+
+        self._querysets = [it.order_by(*ordering) for it in self._querysets]
 
     def clear_ordering(self, force_empty):
         """
@@ -194,10 +199,11 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             self._querysets = self._querysets[::-1]
 
         # If order is necessary, evaluate and start feeding data back.
-        if self.order_by:
+        if self.order_by and self.order_by[0] != '#':
             return self._ordered_iterator()
 
-        # If there is no ordering, evaluation can be pushed off further.
+        # If there is no ordering, or the ordering is specific to each QuerySet,
+        # evaluation can be pushed off further.
 
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
@@ -505,12 +511,105 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 "Cannot filter a query once a slice has been taken."
         clone = self._clone()
 
+        # Separate the kwargs into ones that deal with QuerySets (i.e. are
+        # handled by QuerySetSequence) and ones that will be passed onto each
+        # QuerySet.
+        sequence_kwargs = {}
+        queryset_kwargs = {}
+        for kwarg, value in kwargs.items():
+            if kwarg.startswith('#'):
+                sequence_kwargs[kwarg] = value
+            else:
+                queryset_kwargs[kwarg] = value
+        clone._filter_or_exclude_querysets(negate, **sequence_kwargs)
+
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
         querysets = \
-            [qs._filter_or_exclude(negate, *args, **kwargs) for qs in clone.query._querysets]
+            [qs._filter_or_exclude(negate, *args, **queryset_kwargs) for qs in clone.query._querysets]
 
         clone.query._querysets = querysets
         return clone
+
+    def _filter_or_exclude_querysets(self, negate, **kwargs):
+        """
+        Similar to _filter_or_exclude, but run over the QuerySets in the
+        QuerySetSequence instead of over each QuerySet's fields.
+
+        """
+        # Start with all QuerySets.
+        querysets = list(range(len(self.query._querysets)))
+
+        # Ensure negate is a boolean.
+        negate = bool(negate)
+
+        for kwarg, value in kwargs.items():
+            parts = kwarg.split(LOOKUP_SEP)
+
+            # Ensure this is being used to filter QuerySets.
+            if parts[0] != '#':
+                raise ValueError("Keyword '%s' is not a valid to filter over, "
+                                 "it must begin with '#'." % kwarg)
+
+            # Don't allow __ multiple times.
+            if len(parts) > 2:
+                raise ValueError("Keyword '%s' must not contain multiple "
+                                 "lookup seperators." % kwarg)
+
+            # The actual lookup is the second part.
+            try:
+                lookup = parts[1]
+            except IndexError:
+                lookup = 'exact'
+
+            # Math operators that all have the same logic.
+            LOOKUP_TO_OPERATOR = {
+                'exact': eq,
+                'iexact': eq,
+                'gt': gt,
+                'gte': ge,
+                'lt': lt,
+                'lte': le,
+            }
+            try:
+                operator = LOOKUP_TO_OPERATOR[lookup]
+                querysets = filter(lambda i: operator(i, value) != negate, querysets)
+                continue
+            except KeyError:
+                # It wasn't one of the above operators, keep trying.
+                pass
+
+            # Some of these seem to get handled as bytes.
+            if lookup in ('contains', 'icontains'):
+                value = six.text_type(value)
+                querysets = filter(lambda i: (value in six.text_type(i)) != negate, querysets)
+
+            elif lookup == 'in':
+                querysets = filter(lambda i: (i in value) != negate, querysets)
+
+            elif lookup in ('startswith', 'istartswith'):
+                value = six.text_type(value)
+                querysets = filter(lambda i: six.text_type(i).startswith(value) != negate, querysets)
+
+            elif lookup in ('endswith', 'iendswith'):
+                value = six.text_type(value)
+                querysets = filter(lambda i: six.text_type(i).endswith(value) != negate, querysets)
+
+            elif lookup == 'range':
+                # Inclusive include.
+                start, end = value
+                querysets = filter(lambda i: (start <= i <= end) != negate, querysets)
+
+            else:
+                # Any other field lookup is not supported, e.g. date, year, month,
+                # day, week_day, hour, minute, second, isnull, search, regex, and
+                # iregex.
+                raise ValueError("Unsupported lookup '%s'" % lookup)
+
+            # Keep querysets a list in Python 3.
+            querysets = list(querysets)
+
+        # Finally, trim down the actual QuerySets we care about!
+        self.query._querysets = [self.query._querysets[i] for i in querysets]
 
     def delete(self):
         # Propagate delete to each sub-query.
