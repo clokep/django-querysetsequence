@@ -3,6 +3,14 @@
 Changelog
 #########
 
+0.7 (xxxx-xx-xx)
+================
+
+* [Feature] Allow filtering / querying / ordering by the order of the
+  ``QuerySets`` in the ``QuerySetSequence`` by using ``'#'``. This allows for
+  additional optimizations when using third-party applications, e.g. Django REST
+  Framework.
+
 0.6.1 (2016-08-03)
 ==================
 
