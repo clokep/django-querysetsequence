@@ -511,16 +511,21 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 "Cannot filter a query once a slice has been taken."
         clone = self._clone()
 
-        # TODO Handle # as an arg / kwarg.
+        # Separate the kwargs into ones that deal with QuerySets (i.e. are
+        # handled by QuerySetSequence) and ones that will be passed onto each
+        # QuerySet.
+        sequence_kwargs = {}
         queryset_kwargs = {}
-        for kwarg in kwargs.keys():
+        for kwarg, value in kwargs.items():
             if kwarg.startswith('#'):
-                queryset_kwargs[kwarg] = kwargs.pop(kwarg)
-        clone._filter_or_exclude_querysets(negate, **queryset_kwargs)
+                sequence_kwargs[kwarg] = value
+            else:
+                queryset_kwargs[kwarg] = value
+        clone._filter_or_exclude_querysets(negate, **sequence_kwargs)
 
         # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
         querysets = \
-            [qs._filter_or_exclude(negate, *args, **kwargs) for qs in clone.query._querysets]
+            [qs._filter_or_exclude(negate, *args, **queryset_kwargs) for qs in clone.query._querysets]
 
         clone.query._querysets = querysets
         return clone
