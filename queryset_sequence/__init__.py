@@ -13,6 +13,12 @@ from django.utils import six
 
 from queryset_sequence._inheritance import PartialInheritanceMeta
 
+# Only export the public API for QuerySetSequence. (Note that QuerySequence and
+# QuerySetSequenceModel are considered semi-public: the APIs probably won't
+# change, but implementation is not guaranteed. Other functions/classes are
+# considered implementation details.)
+__all__ = ['QuerySetSequence']
+
 
 def cmp(a, b):
     """Python 2 & 3 version of cmp built-in."""
