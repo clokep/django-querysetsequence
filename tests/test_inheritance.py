@@ -35,6 +35,10 @@ class B(six.with_metaclass(PartialInheritanceMeta, A)):
         return -result
 
 
+class C(six.with_metaclass(PartialInheritanceMeta, A)):
+    """A class that doesn't define INHERITED_ATTRS or NOT_IMPLEMENTED_ATTRS."""
+
+
 class TestPartialInheritanceMeta(TestCase):
     def assertExceptionMessageEquals(self, exception, expected):
         result = exception.message if six.PY2 else exception.args[0]
@@ -123,3 +127,20 @@ class TestPartialInheritanceMeta(TestCase):
 
         self.assertTrue(hasattr(self.b, 'e'))
         self.assertEqual(self.b.e(), -17)
+
+    def test_undefined(self):
+        """
+        Test for when a sub-class doesn't define INHERITED_ATTRS or NOT_IMPLEMENTED_ATTRS.
+
+        Note this is the same as empty lists, so nothing is inherited and nothing raises NotImplemented.
+        """
+        c = C()
+        self.assertFalse(hasattr(c, 'a'))
+        self.assertFalse(hasattr(c, 'b'))
+        self.assertFalse(hasattr(c, 'c'))
+        self.assertFalse(hasattr(c, 'd'))
+        self.assertFalse(hasattr(c, 'e'))
+
+        # This property is dynamically created.
+        self.assertTrue(hasattr(c, 'z'))
+        self.assertEqual(c.z, 42)
