@@ -19,7 +19,8 @@ class TestBase(TestCase):
         # Purposefully ordered such that the pks will be in the opposite order
         # than the names.
         mad_magazine = PeriodicalPublisher.objects.create(name="Mad Magazine")
-        unused_publisher = Publisher.objects.create(name="Unused Publisher")
+        # This publisher is unused, just takes up a PK in the database.
+        Publisher.objects.create(name="Unused Publisher")
         big_books = Publisher.objects.create(name="Big Books",
                                              address="123 Street")
         wacky_website = OnlinePublisher.objects.create(name="Wacky Website")

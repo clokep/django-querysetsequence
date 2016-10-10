@@ -1,13 +1,12 @@
 import functools
 from itertools import chain, dropwhile
-from operator import mul, attrgetter, __not__, lt, le, eq, ne, ge, gt, contains
+from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
-from django.db.models.sql.constants import ORDER_PATTERN
 from django.db.models.sql.query import Query
 from django.utils import six
 
