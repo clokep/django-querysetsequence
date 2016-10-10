@@ -3,7 +3,7 @@ from django.utils import six
 
 from queryset_sequence import QuerySetSequence
 
-from .models import Article
+from tests.models import Article
 
 
 class MetaTestGenerator(type):
