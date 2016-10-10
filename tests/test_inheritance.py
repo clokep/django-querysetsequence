@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from django.utils import six
 
-from queryset_sequence import PartialInheritanceMeta
+from queryset_sequence._inheritance import PartialInheritanceMeta
 
 
 class A(object):
