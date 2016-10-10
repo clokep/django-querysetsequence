@@ -1,5 +1,10 @@
 import functools
 
+
+class PartialInheritanceError(Exception):
+    """An object is incorrectly configured when using PartialInheritanceMeta."""
+
+
 class PartialInheritanceMeta(type):
     """
     A metaclass which allows partial inheritance of attributes from a
@@ -24,7 +29,8 @@ class PartialInheritanceMeta(type):
             INHERITED_ATTRS = dct['INHERITED_ATTRS']
             del dct['INHERITED_ATTRS']
         except KeyError:
-            INHERITED_ATTRS = []
+            raise PartialInheritanceError(
+                "Class '%s' must provide 'INHERITED_ATTRS'." % name)
 
         try:
             NOT_IMPLEMENTED_ATTRS = dct['NOT_IMPLEMENTED_ATTRS']
@@ -39,7 +45,8 @@ class PartialInheritanceMeta(type):
             for attr in NOT_IMPLEMENTED_ATTRS:
                 dct[attr] = functools.partial(not_impl, attr)
         except KeyError:
-            NOT_IMPLEMENTED_ATTRS = []
+            raise PartialInheritanceError(
+                "Class '%s' must provide 'NOT_IMPLEMENTED_ATTRS'." % name)
 
         # Create the actual class.
         cls = type.__new__(meta, name, bases, dct)

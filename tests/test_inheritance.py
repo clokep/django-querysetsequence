@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from django.utils import six
 
-from queryset_sequence._inheritance import PartialInheritanceMeta
+from queryset_sequence._inheritance import (PartialInheritanceError,
+                                            PartialInheritanceMeta)
 
 
 class A(object):
@@ -123,3 +124,22 @@ class TestPartialInheritanceMeta(TestCase):
 
         self.assertTrue(hasattr(self.b, 'e'))
         self.assertEqual(self.b.e(), -17)
+
+    def test_undefined_inherited_attrs(self):
+        """Test for when a sub-class doesn't define INHERITED_ATTRS."""
+        with self.assertRaises(PartialInheritanceError) as exc:
+            class C(six.with_metaclass(PartialInheritanceMeta, A)):
+                """A class that doesn't define INHERITED_ATTRS."""
+
+        self.assertExceptionMessageEquals(exc.exception,
+                                          "Class 'C' must provide 'INHERITED_ATTRS'.")
+
+    def test_undefined_not_implemented_attrs(self):
+        """Test for when a sub-class doesn't define NOT_IMPLEMENTED_ATTRS."""
+        with self.assertRaises(PartialInheritanceError) as exc:
+            class D(six.with_metaclass(PartialInheritanceMeta, A)):
+                """A class that doesn't define NOT_IMPLEMENTED_ATTRS."""
+                INHERITED_ATTRS = []
+
+        self.assertExceptionMessageEquals(exc.exception,
+                                          "Class 'D' must provide 'NOT_IMPLEMENTED_ATTRS'.")
