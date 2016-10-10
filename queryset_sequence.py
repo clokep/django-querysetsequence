@@ -537,7 +537,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
         """
         # Start with all QuerySets.
-        querysets = range(len(self.query._querysets))
+        querysets = list(range(len(self.query._querysets)))
 
         # Ensure negate is a boolean.
         negate = bool(negate)
@@ -580,19 +580,19 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
             # Some of these seem to get handled as bytes.
             if lookup in ('contains', 'icontains'):
-                value = bytes(value)
-                querysets = filter(lambda i:(value in bytes(i)) != negate, querysets)
+                value = six.text_type(value)
+                querysets = filter(lambda i: (value in six.text_type(i)) != negate, querysets)
 
             elif lookup == 'in':
                 querysets = filter(lambda i: (i in value) != negate, querysets)
 
             elif lookup in ('startswith', 'istartswith'):
-                value = bytes(value)
-                querysets = filter(lambda i: bytes(i).startswith(value) != negate, querysets)
+                value = six.text_type(value)
+                querysets = filter(lambda i: six.text_type(i).startswith(value) != negate, querysets)
 
             elif lookup in ('endswith', 'iendswith'):
-                value = bytes(value)
-                querysets = filter(lambda i: bytes(i).endswith(value) != negate, querysets)
+                value = six.text_type(value)
+                querysets = filter(lambda i: six.text_type(i).endswith(value) != negate, querysets)
 
             elif lookup == 'range':
                 # Inclusive include.
@@ -604,6 +604,9 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
                 # day, week_day, hour, minute, second, isnull, search, regex, and
                 # iregex.
                 raise ValueError("Unsupported lookup '%s'" % lookup)
+
+            # Keep querysets a list in Python 3.
+            querysets = list(querysets)
 
         # Finally, trim down the actual QuerySets we care about!
         self.query._querysets = [self.query._querysets[i] for i in querysets]
