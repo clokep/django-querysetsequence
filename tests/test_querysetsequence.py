@@ -3,6 +3,8 @@ from django.core.exceptions import (FieldError, MultipleObjectsReturned,
 from django.db.models.query import EmptyQuerySet, QuerySet
 from django.test import TestCase
 
+from mock import patch
+
 from queryset_sequence import QuerySetSequence
 
 from tests.models import (Article, Author, BlogPost, Book, OnlinePublisher,
@@ -844,20 +846,51 @@ class TestOrderBy(TestBase):
         self.assertEqual(qss.query.order_by, ['#', 'title'])
         self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
 
-        # TODO Ensure that _ordered_iterator isn't called.
+        # Ensure that _ordered_iterator isn't called.
+        with patch('queryset_sequence.QuerySequence._ordered_iterator',
+                   side_effect=AssertionError('_ordered_iterator should not be called')):
+            # Check the titles are properly ordered.
+            data = [it.title for it in qss]
+            expected = [
+                # First the Books, in order.
+                'Biography',
+                'Fiction',
+                # Then the Articles, in order.
+                'Alice in Django-land',
+                'Django Rocks',
+                'Some Article',
+            ]
+            self.assertEqual(data, expected)
 
-        # Check the titles are properly ordered.
-        data = [it.title for it in qss]
-        expected = [
-            # First the Books, in order.
-            'Biography',
-            'Fiction',
-            # Then the Articles, in order.
-            'Alice in Django-land',
-            'Django Rocks',
-            'Some Article',
-        ]
-        self.assertEqual(data, expected)
+    def test_order_by_queryset_reverse(self):
+        """
+        It is possible to reverse the order of the internal QuerySets.
+
+        Note that this is *NOT* the same as calling reverse(), as that results
+        the contents of each QuerySet as well.
+        """
+        # Order by title, but don't interleave each QuerySet. And reverse
+        # QuerySets.
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('-#', 'title')
+        self.assertEqual(qss.query.order_by, ['-#', 'title'])
+        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+
+        # Ensure that _ordered_iterator isn't called.
+        with patch('queryset_sequence.QuerySequence._ordered_iterator',
+                   side_effect=AssertionError('_ordered_iterator should not be called')):
+            # Check the titles are properly ordered.
+            data = [it.title for it in qss]
+            expected = [
+                # The articles, in order.
+                'Alice in Django-land',
+                'Django Rocks',
+                'Some Article',
+                # Then the Books, in order.
+                'Biography',
+                'Fiction',
+            ]
+            self.assertEqual(data, expected)
 
 
 class TestReverse(TestBase):

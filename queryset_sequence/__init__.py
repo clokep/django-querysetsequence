@@ -108,7 +108,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
             # Remove the ordering by QuerySet before trying to order the
             # individual QuerySets.
-            if ordering[0] == '#':
+            if ordering[0].lstrip('-') == '#':
                 ordering = ordering[1:]
 
         self._querysets = [it.order_by(*ordering) for it in self._querysets]
@@ -142,8 +142,17 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
             self._querysets = self._querysets[::-1]
 
         # If order is necessary, evaluate and start feeding data back.
-        if self.order_by and self.order_by[0] != '#':
-            return self._ordered_iterator()
+        if self.order_by:
+            # If the first element of order_by is '#', this means first order by
+            # QuerySet. If it isn't this, then returned the interleaved
+            # iterator.
+            if self.order_by[0].lstrip('-') != '#':
+                return self._ordered_iterator()
+
+            # Otherwise, order by QuerySet first. Handle reversing the
+            # QuerySets, if necessary.
+            elif self.order_by[0].startswith('-'):
+                self._querysets = self._querysets[::-1]
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
