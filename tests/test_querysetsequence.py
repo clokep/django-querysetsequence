@@ -112,6 +112,17 @@ class TestQuerySetSequence(TestBase):
         self.assertEqual(data, self.EXPECTED_WITH_BOOK_MODEL)
 
 
+class TestQuerySequence(TestBase):
+    def test_queryset_number(self):
+        data = map(lambda d: getattr(d, '#'), self.all._clone())
+        self.assertEqual([0, 0, 1, 1, 1], data)
+
+    def test_queryset_number_(self):
+        """The number shouldn't change during filter, etc."""
+        data = map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1}))
+        self.assertEqual([1, 1, 1], data)
+
+
 class TestLength(TestBase):
     """
     Ensure that count() and len() are properly summed over the children

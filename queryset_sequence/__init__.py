@@ -73,6 +73,9 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
     def __init__(self, *args):
         self._querysets = list(args)
+        # Mark each QuerySet's Model with the number of the QuerySet it is.
+        for i, qs in enumerate(self._querysets):
+            setattr(qs.model, '#', i)
 
         # Call super to pick up a variety of properties.
         super(QuerySequence, self).__init__(model=None)
