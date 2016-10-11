@@ -3,6 +3,11 @@ from django.core.exceptions import (FieldError, MultipleObjectsReturned,
 from django.db.models.query import EmptyQuerySet, QuerySet
 from django.test import TestCase
 
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
+
 from queryset_sequence import QuerySetSequence
 
 from tests.models import (Article, Author, BlogPost, Book, OnlinePublisher,
@@ -110,6 +115,17 @@ class TestQuerySetSequence(TestBase):
 
         data = [it.title for it in qss]
         self.assertEqual(data, self.EXPECTED_WITH_BOOK_MODEL)
+
+
+class TestQuerySequence(TestBase):
+    def test_queryset_number(self):
+        data = list(map(lambda d: getattr(d, '#'), self.all._clone()))
+        self.assertEqual([0, 0, 1, 1, 1], data)
+
+    def test_queryset_number_(self):
+        """The number shouldn't change during filter, etc."""
+        data = list(map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1})))
+        self.assertEqual([1, 1, 1], data)
 
 
 class TestLength(TestBase):
@@ -461,7 +477,6 @@ class TestFilter(TestBase):
             ]
             self.assertEqual(data, expected)
 
-
     def test_queryset_range(self):
         """Try filtering the QuerySets by the range lookup."""
         qss = self._get_qss().filter(**{'#__range': [1, 2]})
@@ -481,6 +496,29 @@ class TestFilter(TestBase):
         """Try filtering the QuerySets by a lookup that doesn't make sense."""
         with self.assertRaises(ValueError):
             self._get_qss().filter(**{'#__year': 1})
+
+    def test_queryset_multiple(self):
+        """
+        When using multiple paramters to filter they get ANDed together. Ensure
+        this works when filtering by QuerySet.
+        """
+        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Django Rocks'})
+
+        data = [it.title for it in qss]
+        expected = [
+            # Some of the Articles and the BlogPosts.
+            'Some Article',
+            'Post',
+        ]
+        self.assertEqual(data, expected)
+
+        # This would only look at Articles and BlogPosts, but neither of those
+        # have a title > "Some Article."
+        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Some Article'})
+
+        # Only the articles are here because it's the second queryset.
+        data = [it.title for it in qss]
+        self.assertEqual(data, [])
 
 
 class TestExclude(TestBase):
@@ -811,20 +849,51 @@ class TestOrderBy(TestBase):
         self.assertEqual(qss.query.order_by, ['#', 'title'])
         self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
 
-        # TODO Ensure that _ordered_iterator isn't called.
+        # Ensure that _ordered_iterator isn't called.
+        with patch('queryset_sequence.QuerySequence._ordered_iterator',
+                   side_effect=AssertionError('_ordered_iterator should not be called')):
+            # Check the titles are properly ordered.
+            data = [it.title for it in qss]
+            expected = [
+                # First the Books, in order.
+                'Biography',
+                'Fiction',
+                # Then the Articles, in order.
+                'Alice in Django-land',
+                'Django Rocks',
+                'Some Article',
+            ]
+            self.assertEqual(data, expected)
 
-        # Check the titles are properly ordered.
-        data = [it.title for it in qss]
-        expected = [
-            # First the Books, in order.
-            'Biography',
-            'Fiction',
-            # Then the Articles, in order.
-            'Alice in Django-land',
-            'Django Rocks',
-            'Some Article',
-        ]
-        self.assertEqual(data, expected)
+    def test_order_by_queryset_reverse(self):
+        """
+        It is possible to reverse the order of the internal QuerySets.
+
+        Note that this is *NOT* the same as calling reverse(), as that results
+        the contents of each QuerySet as well.
+        """
+        # Order by title, but don't interleave each QuerySet. And reverse
+        # QuerySets.
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('-#', 'title')
+        self.assertEqual(qss.query.order_by, ['-#', 'title'])
+        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+
+        # Ensure that _ordered_iterator isn't called.
+        with patch('queryset_sequence.QuerySequence._ordered_iterator',
+                   side_effect=AssertionError('_ordered_iterator should not be called')):
+            # Check the titles are properly ordered.
+            data = [it.title for it in qss]
+            expected = [
+                # The articles, in order.
+                'Alice in Django-land',
+                'Django Rocks',
+                'Some Article',
+                # Then the Books, in order.
+                'Biography',
+                'Fiction',
+            ]
+            self.assertEqual(data, expected)
 
 
 class TestReverse(TestBase):
