@@ -3,7 +3,10 @@ from django.core.exceptions import (FieldError, MultipleObjectsReturned,
 from django.db.models.query import EmptyQuerySet, QuerySet
 from django.test import TestCase
 
-from mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 from queryset_sequence import QuerySetSequence
 
@@ -116,12 +119,12 @@ class TestQuerySetSequence(TestBase):
 
 class TestQuerySequence(TestBase):
     def test_queryset_number(self):
-        data = map(lambda d: getattr(d, '#'), self.all._clone())
+        data = list(map(lambda d: getattr(d, '#'), self.all._clone()))
         self.assertEqual([0, 0, 1, 1, 1], data)
 
     def test_queryset_number_(self):
         """The number shouldn't change during filter, etc."""
-        data = map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1}))
+        data = list(map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1})))
         self.assertEqual([1, 1, 1], data)
 
 
