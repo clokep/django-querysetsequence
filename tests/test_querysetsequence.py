@@ -472,7 +472,6 @@ class TestFilter(TestBase):
             ]
             self.assertEqual(data, expected)
 
-
     def test_queryset_range(self):
         """Try filtering the QuerySets by the range lookup."""
         qss = self._get_qss().filter(**{'#__range': [1, 2]})
@@ -492,6 +491,29 @@ class TestFilter(TestBase):
         """Try filtering the QuerySets by a lookup that doesn't make sense."""
         with self.assertRaises(ValueError):
             self._get_qss().filter(**{'#__year': 1})
+
+    def test_queryset_multiple(self):
+        """
+        When using multiple paramters to filter they get ANDed together. Ensure
+        this works when filtering by QuerySet.
+        """
+        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Django Rocks'})
+
+        data = [it.title for it in qss]
+        expected = [
+            # Some of the Articles and the BlogPosts.
+            'Some Article',
+            'Post',
+        ]
+        self.assertEqual(data, expected)
+
+        # This would only look at Articles and BlogPosts, but neither of those
+        # have a title > "Some Article."
+        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Some Article'})
+
+        # Only the articles are here because it's the second queryset.
+        data = [it.title for it in qss]
+        self.assertEqual(data, [])
 
 
 class TestExclude(TestBase):
