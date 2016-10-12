@@ -401,6 +401,20 @@ class TestFilter(TestBase):
         ]
         self.assertEqual(data, expected)
 
+        # Additionally this should cast a string input to an int.
+        qss = self._get_qss().filter(**{'#__gt': '0'})
+
+        # Only the articles are here because it's the second queryset.
+        data = [it.title for it in qss]
+        expected = [
+            # The Articles and BlogPosts.
+            'Django Rocks',
+            'Alice in Django-land',
+            'Some Article',
+            'Post',
+        ]
+        self.assertEqual(data, expected)
+
     def test_queryset_gte(self):
         """Test filtering the QuerySets by >= lookup."""
         qss = self._get_qss().filter(**{'#__gte': 1})
