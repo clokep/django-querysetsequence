@@ -376,7 +376,6 @@ class TestFilter(TestBase):
         for key in ['#', '#__exact', '#__iexact']:
             qss = self._get_qss().filter(**{key: 1})
 
-            # Only the articles are here because it's the second queryset.
             data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
@@ -390,7 +389,6 @@ class TestFilter(TestBase):
         """Test filtering the QuerySets by > lookup."""
         qss = self._get_qss().filter(**{'#__gt': 0})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
@@ -404,7 +402,6 @@ class TestFilter(TestBase):
         # Additionally this should cast a string input to an int.
         qss = self._get_qss().filter(**{'#__gt': '0'})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
@@ -419,7 +416,6 @@ class TestFilter(TestBase):
         """Test filtering the QuerySets by >= lookup."""
         qss = self._get_qss().filter(**{'#__gte': 1})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
@@ -434,7 +430,6 @@ class TestFilter(TestBase):
         """Test filtering the QuerySets by < lookup."""
         qss = self._get_qss().filter(**{'#__lt': 2})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Books and Articles.
@@ -450,7 +445,6 @@ class TestFilter(TestBase):
         """Test filtering the QuerySets by <= lookup."""
         qss = self._get_qss().filter(**{'#__lte': 1})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Books and Articles.
@@ -466,7 +460,6 @@ class TestFilter(TestBase):
         """Filter the QuerySets with the in lookup."""
         qss = self._get_qss().filter(**{'#__in': [1]})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # The Articles.
@@ -481,7 +474,6 @@ class TestFilter(TestBase):
         for key in ['#__contains', '#__icontains', '#__startswith', '#__istartswith', '#__endswith', '#__iendswith']:
             qss = self._get_qss().filter(**{key: 1})
 
-            # Only the articles are here because it's the second queryset.
             data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
@@ -495,7 +487,6 @@ class TestFilter(TestBase):
         """Try filtering the QuerySets by the range lookup."""
         qss = self._get_qss().filter(**{'#__range': [1, 2]})
 
-        # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
         expected = [
             # Just the Articles.
