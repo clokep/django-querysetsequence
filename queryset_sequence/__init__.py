@@ -524,6 +524,13 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
             }
             try:
                 operator = LOOKUP_TO_OPERATOR[lookup]
+
+                # These expect integers, this matches the logic in
+                # IntegerField.get_prep_value(). (Essentially treat the '#'
+                # field as an IntegerField.)
+                if value is not None:
+                    value = int(value)
+
                 querysets = filter(lambda i: operator(i, value) != negate, querysets)
                 continue
             except KeyError:
