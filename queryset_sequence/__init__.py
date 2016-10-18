@@ -73,12 +73,35 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
     def __init__(self, *args):
         self._querysets = list(args)
-        # Mark each QuerySet's Model with the number of the QuerySet it is.
+        # Mark each QuerySet's Model with the number of the QuerySet it is. Note
+        # that we generate a Proxy model and then modify that to allow for the
+        # same Model to be used in multiple QuerySetSequences at once.
         for i, qs in enumerate(self._querysets):
+            qs.model = self._get_model(qs.model)
+            # Also push this to the Query object since that actually holds a
+            # reference to QuerySet.model instead of asking the QuerySet for it.
+            qs.query.model = qs.model
+
+            # Actually set the attribute.
             setattr(qs.model, '#', i)
 
         # Call super to pick up a variety of properties.
         super(QuerySequence, self).__init__(model=None)
+
+    def _get_model(self, model):
+        # Create a proxy model which subclasses the actual model on the
+        # QuerySet. This allows different attributes for each QuerySet.
+        model_meta = getattr(model, 'Meta', object)
+
+        import uuid
+        class QuerySequenceModel(model):
+            class Meta(model_meta):
+                proxy = True
+                # Note that we must give an app_label or Django complains, it
+                # doesnt' seem to get used, however.
+                app_label = ('queryset_sequence.%s' % uuid.uuid4()).replace('-', '')
+
+        return QuerySequenceModel
 
     def __str__(self):
         """Return the class-name and memory location; there's no SQL to show."""

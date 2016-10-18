@@ -120,13 +120,37 @@ class TestQuerySetSequence(TestBase):
 
 
 class TestQuerySequence(TestBase):
-    def test_queryset_number_model(self):
+    def test_model(self):
+        """The model should be an instance of Book."""
+        # The replaced model should be on both the QuerySet and Query.
+        self.assertIs(self.all.query._querysets[0].model,
+                      self.all.query._querysets[0].query.model)
+
+        # It's still an instance of the original model.
+        first = self.all[0]
+        self.assertIsInstance(first, Book)
+        # But it also has a new superclass.
+        self.assertIn('queryset_sequence.QuerySequenceModel',
+                      map(lambda cls: cls.__module__ + '.' + cls.__name__,
+                          first.__class__.__mro__))
+
+        # Note that a bunch of meta properties get re-labeled. This is OK.
+        options = first._meta
+        self.assertTrue(
+            options.app_label.startswith('queryset_sequence.'))
+        self.assertEquals(options.model_name, 'querysequencemodel')
+        self.assertTrue(
+            options.label.startswith('queryset_sequence'))
+        self.assertTrue(
+            options.label.endswith('QuerySequenceModel'))
+
+    def test_queryset_number(self):
         """Ensure that the QuerySet number is correct on the model."""
         data = list(map(attrgetter('#'), self.all._clone()))
         self.assertEqual([0, 0, 1, 1, 1], data)
 
-    def test_queryset_number_model_filter(self):
-        """The number shouldn't change during filter, etc."""
+    def test_queryset_number_filter(self):
+        """The QuerySet number shouldn't change after filtering, etc."""
         data = list(map(attrgetter('#'), self.all.filter(**{'#': 1})))
         self.assertEqual([1, 1, 1], data)
 
