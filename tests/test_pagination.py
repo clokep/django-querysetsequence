@@ -41,7 +41,7 @@ class TestSequenceCursorPagination(TestCase):
         publisher = Publisher.objects.create(name="Pablo's Publishing",
                                              address="123 Publishing Street")
 
-        for d in xrange(1, 15):
+        for d in range(1, 15):
             book = Book.objects.create(title='Book %s' % d,
                                        author=author,
                                        publisher=publisher,
