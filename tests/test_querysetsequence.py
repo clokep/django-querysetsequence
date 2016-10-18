@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -118,14 +120,24 @@ class TestQuerySetSequence(TestBase):
 
 
 class TestQuerySequence(TestBase):
-    def test_queryset_number(self):
-        data = list(map(lambda d: getattr(d, '#'), self.all._clone()))
+    def test_queryset_number_model(self):
+        """Ensure that the QuerySet number is correct on the model."""
+        data = list(map(attrgetter('#'), self.all._clone()))
         self.assertEqual([0, 0, 1, 1, 1], data)
 
-    def test_queryset_number_(self):
+    def test_queryset_number_model_filter(self):
         """The number shouldn't change during filter, etc."""
-        data = list(map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1})))
+        data = list(map(attrgetter('#'), self.all.filter(**{'#': 1})))
         self.assertEqual([1, 1, 1], data)
+
+    def test_same_model(self):
+        """
+        If a QuerySetSequence is made of the same model multiple times, the #
+        attribute must be different on each.
+        """
+        queryset = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        data = list(map(attrgetter('#'), queryset))
+        self.assertEqual([0, 0, 1, 1], data)
 
 
 class TestLength(TestBase):
