@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -118,14 +120,55 @@ class TestQuerySetSequence(TestBase):
 
 
 class TestQuerySequence(TestBase):
+    def test_model(self):
+        """The model should be an instance of Book."""
+        # The replaced model should be on both the QuerySet and Query.
+        self.assertIs(self.all.query._querysets[0].model,
+                      self.all.query._querysets[0].query.model)
+
+        # It's still an instance of the original model.
+        first = self.all[0]
+        self.assertIsInstance(first, Book)
+        # But it also has a new superclass.
+        self.assertIn('queryset_sequence.QuerySequenceModel',
+                      map(lambda cls: cls.__module__ + '.' + cls.__name__,
+                          first.__class__.__mro__))
+
+        # Note that a bunch of meta properties get re-labeled. This is OK.
+        options = first._meta
+        self.assertTrue(
+            options.app_label.startswith('queryset_sequence.'))
+        self.assertEquals(options.model_name, 'querysequencemodel')
+        self.assertEquals(options.object_name, 'QuerySequenceModel')
+
+        # Django >= 1.9 the label attribute exists. Otherwise, cast to a string.
+        object_name = 'QuerySequenceModel'
+        try:
+            label = options.label
+        except AttributeError:
+            label = str(options)
+            object_name = object_name.lower()
+        self.assertTrue(label.startswith('queryset_sequence'))
+        self.assertTrue(label.endswith(object_name))
+
     def test_queryset_number(self):
-        data = list(map(lambda d: getattr(d, '#'), self.all._clone()))
+        """Ensure that the QuerySet number is correct on the model."""
+        data = list(map(attrgetter('#'), self.all._clone()))
         self.assertEqual([0, 0, 1, 1, 1], data)
 
-    def test_queryset_number_(self):
-        """The number shouldn't change during filter, etc."""
-        data = list(map(lambda d: getattr(d, '#'), self.all.filter(**{'#': 1})))
+    def test_queryset_number_filter(self):
+        """The QuerySet number shouldn't change after filtering, etc."""
+        data = list(map(attrgetter('#'), self.all.filter(**{'#': 1})))
         self.assertEqual([1, 1, 1], data)
+
+    def test_same_model(self):
+        """
+        If a QuerySetSequence is made of the same model multiple times, the #
+        attribute must be different on each.
+        """
+        queryset = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        data = list(map(attrgetter('#'), queryset))
+        self.assertEqual([0, 0, 1, 1], data)
 
 
 class TestLength(TestBase):
