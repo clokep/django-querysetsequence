@@ -19,6 +19,13 @@ from queryset_sequence import QuerySetSequence
 from tests.models import Author, Book, Publisher
 
 
+class _TestPagination(SequenceCursorPagination):
+    """A SequenceCursorPagination with a small page_size."""
+    page_size = 5
+    # The test models don't have a 'created' field.
+    ordering = 'pages'
+
+
 @unittest.skipIf(not factory, 'Must have Django REST Framework installed to run pagination tests.')
 class TestSequenceCursorPagination(TestCase):
     """
@@ -32,22 +39,17 @@ class TestSequenceCursorPagination(TestCase):
     PAGE_3 = [11, 12, 13, 14]
 
     def setUp(self):
-        class ExamplePagination(SequenceCursorPagination):
-            page_size = 5
-            # The test models don't have a 'created' field.
-            ordering = 'pages'
-
         author = Author.objects.create(name="Jane Doe")
         publisher = Publisher.objects.create(name="Pablo's Publishing",
                                              address="123 Publishing Street")
 
         for d in range(1, 15):
-            book = Book.objects.create(title='Book %s' % d,
+            book = Book.objects.create(title='Book %s' % (d % 2),
                                        author=author,
                                        publisher=publisher,
                                        pages=d)
 
-        self.pagination = ExamplePagination()
+        self.pagination = _TestPagination()
         self.queryset = QuerySetSequence(Book.objects.filter(pages__lte=7),
                                          Book.objects.filter(pages__gt=7))
 
@@ -129,3 +131,86 @@ class TestSequenceCursorPagination(TestCase):
         self.assertEqual(previous, self.PAGE_2)
         self.assertEqual(current, self.PAGE_3)
         self.assertIsNone(next)
+
+    def test_cursor_stableness(self):
+        """
+        Test what happens if we remove domains after loading a page.
+        Pages should be independent, i.e. a cursor points to a particular
+        domain, and shouldn't affect offsets.
+        """
+        (previous, current, next, previous_url, next_url) = self.get_pages('/')
+
+        # The first page is as normal.
+        self.assertIsNone(previous)
+        self.assertEqual(current, self.PAGE_1)
+        self.assertEqual(next, self.PAGE_2)
+
+        # Delete Books, this shouldn't affect the next request.
+        Book.objects.filter(pages__lte=3).delete()
+        Book.objects.filter(pages__gte=13).delete()
+
+        (previous, current, next, _, old_next_url) = self.get_pages(next_url)
+
+        # Should be some missing items
+        self.assertEqual(previous, [4, 5])
+        self.assertEqual(current, self.PAGE_2)
+        self.assertEqual(next, [11, 12])
+
+        # Deleting some from the current page and reloading should have the page
+        # offset.
+        Book.objects.get(pages=7).delete()
+
+        (previous, current, next, _, new_next_url) = self.get_pages(next_url)
+
+        # Should be some missing items
+        self.assertEqual(previous, [4, 5])
+        self.assertEqual(current, [6, 8, 9, 10, 11])
+        self.assertEqual(next, [12])
+
+        # The next_url returned with the different items missing will actually
+        # be different.
+        self.assertNotEqual(old_next_url, new_next_url)
+
+    def test_multiple_ordering(self):
+        """Test a Pagination with multiple items in the ordering attribute."""
+
+        # This will order by:
+        #   1. Even pages
+        #   2. Odd pages
+        #   3. Both of the above will be done in increasing order.
+        #   4. Ordering happens for 1 - 7, then 8 - 14.
+        class TestPagination(_TestPagination):
+            ordering = ['title', 'pages']
+
+        self.pagination = TestPagination()
+
+        PAGE_1 = [2, 4, 6, 1, 3]
+        PAGE_2 = [5, 7, 8, 10, 12]
+        PAGE_3 = [14, 9, 11, 13]
+
+        # Check that the ordering is as expected.
+        pages = [b.pages for b in self.queryset.order_by('#', *self.pagination.ordering)]
+        self.assertEqual(pages, PAGE_1 + PAGE_2 + PAGE_3)
+
+        # Now perform pretty much the same test as test_cursor_pagination, but
+        # the ordering will be different.
+        (previous, current, next, previous_url, next_url) = self.get_pages('/')
+
+        self.assertIsNone(previous)
+        self.assertEqual(current, PAGE_1)
+        self.assertEqual(next, PAGE_2)
+
+        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+
+        self.assertEqual(previous, PAGE_1)
+        self.assertEqual(current, PAGE_2)
+        self.assertEqual(next, PAGE_3)
+
+        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+
+        self.assertEqual(previous, PAGE_2)
+        self.assertEqual(current, PAGE_3)
+        self.assertIsNone(next)
+
+    def test_duplicates(self):
+        """Ensure that pagination works over an 'extreme' number of duplicates."""
