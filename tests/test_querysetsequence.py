@@ -139,10 +139,17 @@ class TestQuerySequence(TestBase):
         self.assertTrue(
             options.app_label.startswith('queryset_sequence.'))
         self.assertEquals(options.model_name, 'querysequencemodel')
-        self.assertTrue(
-            options.label.startswith('queryset_sequence'))
-        self.assertTrue(
-            options.label.endswith('QuerySequenceModel'))
+        self.assertEquals(options.object_name, 'QuerySequenceModel')
+
+        # Django >= 1.9 the label attribute exists. Otherwise, cast to a string.
+        object_name = 'QuerySequenceModel'
+        try:
+            label = options.label
+        except AttributeError:
+            label = str(options)
+            object_name = object_name.lower()
+        self.assertTrue(label.startswith('queryset_sequence'))
+        self.assertTrue(label.endswith(object_name))
 
     def test_queryset_number(self):
         """Ensure that the QuerySet number is correct on the model."""
