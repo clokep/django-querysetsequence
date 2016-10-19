@@ -209,7 +209,7 @@ class SequenceCursorPagination(CursorPagination):
             reverse = bool(int(reverse))
 
             # The difference. Don't get just the 0th entry: get all entries.
-            position = tokens.get('p', [None])
+            position = tokens.get('p', None)
         except (TypeError, ValueError):
             raise NotFound(self.invalid_cursor_message)
 

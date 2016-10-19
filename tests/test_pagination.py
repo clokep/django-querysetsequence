@@ -39,14 +39,14 @@ class TestSequenceCursorPagination(TestCase):
     PAGE_3 = [11, 12, 13, 14]
 
     def setUp(self):
-        author = Author.objects.create(name="Jane Doe")
-        publisher = Publisher.objects.create(name="Pablo's Publishing",
-                                             address="123 Publishing Street")
+        self.author = Author.objects.create(name="Jane Doe")
+        self.publisher = Publisher.objects.create(name="Pablo's Publishing",
+                                                  address="123 Publishing Street")
 
         for d in range(1, 15):
             book = Book.objects.create(title='Book %s' % (d % 2),
-                                       author=author,
-                                       publisher=publisher,
+                                       author=self.author,
+                                       publisher=self.publisher,
                                        pages=d)
 
         self.pagination = _TestPagination()
@@ -214,3 +214,30 @@ class TestSequenceCursorPagination(TestCase):
 
     def test_duplicates(self):
         """Ensure that pagination works over an 'extreme' number of duplicates."""
+        PAGES = 100 # This must be unique from other fixture data.
+
+        # Create a bunch of books that are the same.
+        for i in range(15):
+            book = Book.objects.create(title=str(i),
+                                       author=self.author,
+                                       publisher=self.publisher,
+                                       pages=PAGES)
+
+        # And use only those duplicate books.
+        self.queryset = QuerySetSequence(Book.objects.filter(pages=PAGES))
+
+        titles = [item.title for item in self.queryset]
+
+        # Look at both the pages (which should all be 1) and the IDs.
+        next_url = '/'
+        for i in range(3):
+            request = Request(factory.get(next_url))
+            queryset = self.pagination.paginate_queryset(self.queryset, request)
+            titles, pages = zip(*[(item.title, item.pages) for item in queryset])
+
+            self.assertEqual(titles, tuple(map(lambda d: str(d + (i * 5)), [0, 1, 2, 3, 4])))
+            self.assertEqual(pages, (PAGES, ) * 5)
+
+            next_url = self.pagination.get_next_link()
+
+        self.assertIsNone(next_url)
