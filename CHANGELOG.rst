@@ -10,10 +10,17 @@ Changelog
   ``QuerySets`` in the ``QuerySetSequence`` by using ``'#'``. This allows for
   additional optimizations when using third-party applications, e.g. Django REST
   Framework.
+* [Feature] `Django REST Framework`_ integration: includes a subclass of the
+  ``CursorPagination`` from Django REST Framework under
+  ``queryset_sequence.pagination.SequenceCursorPagination`` which is designed to
+  work efficiently with a ``QuerySetSequence`` by first ordering by internal
+  ``QuerySet``, then by the ``ordering`` attribute.
 * [Enhancement] Move ``queryset_sequence`` to an actual module in order to hide
   some implementation details.
 * [Bugfix] ``PartialInheritanceMeta`` must be provided ``INHERITED_ATTRS`` and
   ``NOT_IMPLEMENTED_ATTRS``.
+
+.. _Django REST Framework: http://www.django-rest-framework.org/
 
 0.6.1 (2016-08-03)
 ==================
