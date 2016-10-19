@@ -13,6 +13,7 @@ try:
     from queryset_sequence.pagination import SequenceCursorPagination
 except ImportError:
     factory = None
+    SequenceCursorPagination = object
 
 from queryset_sequence import QuerySetSequence
 
