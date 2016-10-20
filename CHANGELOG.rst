@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.7 (xxxx-xx-xx)
+0.7 (2016-10-20)
 ================
 
 * [Feature] Allow filtering / querying / ordering by the order of the
