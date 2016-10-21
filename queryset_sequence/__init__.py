@@ -521,7 +521,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
             # Ensure this is being used to filter QuerySets.
             if parts[0] != '#':
-                raise ValueError("Keyword '%s' is not a valid to filter over, "
+                raise ValueError("Keyword '%s' is not a valid keyword to filter over, "
                                  "it must begin with '#'." % kwarg)
 
             # Don't allow __ multiple times.
