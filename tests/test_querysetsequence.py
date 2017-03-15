@@ -1088,6 +1088,27 @@ class TestSlicing(TestBase):
         self.assertEqual(data[0], 'Biography')
         self.assertEqual(data[1], 'Django Rocks')
 
+    def test_open_slice(self):
+        """Test slicing without an end."""
+        articles = Article.objects.all()
+        qs = articles[1:]
+        qss = QuerySetSequence(articles)[1:]
+
+        self.assertEqual(len(qs), len(qss))
+        self.assertEqual(list(qs), list(qss))
+
+    def test_closed_slice_single_qs(self):
+        """Test slicing if the start and end are within the same QuerySet."""
+        Article.objects.create(title='Another Article', author=self.bob,
+                               publisher=self.mad_magazine)
+
+        articles = Article.objects.all()
+        qs = articles[1:3]
+        qss = QuerySetSequence(articles)[1:3]
+
+        # The length should be the same.
+        self.assertEqual(len(qs), len(qss))
+
 
 class TestGet(TestBase):
     def test_get(self):
