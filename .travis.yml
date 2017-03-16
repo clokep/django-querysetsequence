@@ -6,3 +6,5 @@ notifications:
   email: false
 install:
   - pip install tox coveralls
+after_success:
+  - coveralls
