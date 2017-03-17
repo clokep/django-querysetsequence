@@ -31,8 +31,8 @@ class OnlinePublisher(models.Model):
 
 class Article(models.Model):
     title = models.CharField(max_length=100)
-    author = models.ForeignKey(Author)
-    publisher = models.ForeignKey(PeriodicalPublisher)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    publisher = models.ForeignKey(PeriodicalPublisher, on_delete=models.CASCADE)
     release = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -41,14 +41,14 @@ class Article(models.Model):
 
 class BlogPost(models.Model):
     title = models.CharField(max_length=100)
-    author = models.ForeignKey(Author)
-    publisher = models.ForeignKey(OnlinePublisher)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    publisher = models.ForeignKey(OnlinePublisher, on_delete=models.CASCADE)
 
 
 class Book(models.Model):
     title = models.CharField(max_length=50)
-    author = models.ForeignKey(Author)
-    publisher = models.ForeignKey(Publisher)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
     release = models.DateTimeField(auto_now_add=True)
     pages = models.PositiveSmallIntegerField()
 
