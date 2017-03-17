@@ -38,7 +38,7 @@ class PartialInheritanceMeta(type):
 
             # For each not implemented attribute, add a method raising
             # NotImplementedError.
-            def not_impl(attr):
+            def not_impl(attr, *args, **kwargs):
                 raise NotImplementedError("%s does not implement %s()" %
                                           (name, attr))
 
