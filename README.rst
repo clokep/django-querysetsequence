@@ -277,9 +277,9 @@ multiple ``QuerySets``:
 Requirements
 ============
 
-* Python (2.7, 3.4, 3.5)
-* Django (1.8, 1.9, 1.10)
-* (Optionally) Django REST Framework (3.2, 3.3, 3.4)
+* Python (2.7, 3.4, 3.5, 3.6)
+* Django (1.8, 1.9, 1.10, 1.11)
+* (Optionally) Django REST Framework (3.2, 3.3, 3.4, 3.5, 3.6)
 
 .. list-table:: ``QuerySetSequence`` versions with support for Django/Django REST Framework
     :header-rows: 1
@@ -289,18 +289,32 @@ Requirements
       - Django 1.8
       - Django 1.9
       - Django 1.10
+      - Django 1.11
     * - Django REST Framework 3.2
       - 0.7
+      - |xmark|
       - |xmark|
       - |xmark|
     * - Django REST Framework 3.3
       - 0.7
       - 0.7
       - |xmark|
+      - |xmark|
     * - Django REST Framework 3.4
       - 0.7
       - 0.7
       - 0.7
+      - 0.7.1
+    * - Django REST Framework 3.5
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
+    * - Django REST Framework 3.6
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
 
 Installation
 ============
