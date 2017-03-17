@@ -3,6 +3,12 @@
 Changelog
 #########
 
+0.7.1 (2017-03-17)
+==================
+
+* [Bugfix] Slicing a ``QuerySetSequence`` did not work properly when the slice
+  reduced the ``QuerySetSequence`` to a single ``QuerySet``. See #23, #24.
+
 0.7 (2016-10-20)
 ================
 

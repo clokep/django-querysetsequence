@@ -224,13 +224,13 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         # from it.
         self.high_mark -= counts[end_index - 1]
 
+        # Some optimization, if there is only one QuerySet, iterate through it.
+        if len(self._querysets) == 1:
+            return iter(self._querysets[0][self.low_mark:self.high_mark])
+
         # Apply the offsets to the edge QuerySets.
         self._querysets[0] = self._querysets[0][self.low_mark:]
         self._querysets[-1] = self._querysets[-1][:self.high_mark]
-
-        # Some optimization, if there is only one QuerySet, iterate through it.
-        if len(self._querysets) == 1:
-            return iter(self._querysets[0])
 
         # For anything left, just chain the QuerySets together.
         return chain(*self._querysets)
