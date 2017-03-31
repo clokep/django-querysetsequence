@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.7.1 (2017-03-17)
+0.7.1 (2017-03-31)
 ==================
 
 * [Bugfix] Slicing a ``QuerySetSequence`` did not work properly when the slice
