@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.7.2 (2017-04-xx)
+0.7.2 (2017-04-04)
 ==================
 
 * [Bugfix] Calling an unimplemented method with parameters on
