@@ -15,6 +15,10 @@ class A(object):
     def e(self):
         return 17
 
+    def g(self, arg):
+        """A method with an argument."""
+        return 24
+
     def __init__(self):
         self.z = 42
 
@@ -24,7 +28,7 @@ class A(object):
 
 class B(six.with_metaclass(PartialInheritanceMeta, A)):
     INHERITED_ATTRS = ['a', 'e']
-    NOT_IMPLEMENTED_ATTRS = ['b', 'd']
+    NOT_IMPLEMENTED_ATTRS = ['b', 'd', 'g']
 
     f = True
 
@@ -69,6 +73,7 @@ class TestPartialInheritanceMeta(TestCase):
         self.assertEqual(self.b.y, 24)
 
     def test_not_implemented(self):
+        """An attribute that is marked as not implemented raises the proper exception."""
         self.assertTrue(hasattr(self.a, 'b'))
         self.assertEqual(self.a.b, True)
 
@@ -77,6 +82,17 @@ class TestPartialInheritanceMeta(TestCase):
             self.b.b()
         self.assertExceptionMessageEquals(exc.exception,
                                           'B does not implement b()')
+
+    def test_not_implemented_args(self):
+        """A method (with arguments) that is marked as not implemented raises the proper exception."""
+        self.assertTrue(hasattr(self.a, 'g'))
+        self.assertEqual(self.a.g(1), 24)
+
+        self.assertTrue(hasattr(self.b, 'g'))
+        with self.assertRaises(NotImplementedError) as exc:
+            self.b.g(1)
+        self.assertExceptionMessageEquals(exc.exception,
+                                          'B does not implement g()')
 
     def test_attr_error(self):
         self.assertTrue(hasattr(self.a, 'c'))
