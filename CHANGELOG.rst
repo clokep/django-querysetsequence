@@ -3,6 +3,12 @@
 Changelog
 #########
 
+0.7.2 (2017-04-xx)
+==================
+
+* [Bugfix] Calling an unimplemented method with parameters on
+  ``QuerySetSequence`` raised a non-sensical error.
+
 0.7.1 (2017-03-31)
 ==================
 
