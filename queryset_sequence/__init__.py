@@ -179,6 +179,10 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
 
+        # Some optimization, if there is no slicing, iterate through querysets.
+        if self.low_mark == 0 and self.high_mark is None:
+            return chain(*self._querysets)
+
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
         counts.extend(cumsum([it.count() for it in self._querysets]))

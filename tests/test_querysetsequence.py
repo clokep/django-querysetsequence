@@ -211,11 +211,11 @@ class TestIterator(TestBase):
         qss = self.all._clone()
 
         # Ensure that calling iterator twice re-evaluates the query.
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             data = [it.title for it in qss.iterator()]
             self.assertEqual(data, TestIterator.EXPECTED)
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             data = [it.title for it in qss.iterator()]
             self.assertEqual(data, TestIterator.EXPECTED)
 
@@ -228,7 +228,7 @@ class TestIterator(TestBase):
         """Ensure that iterating the QuerySet caches."""
         qss = self.all._clone()
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             data = [it.title for it in qss]
             self.assertEqual(data, TestIterator.EXPECTED)
 
@@ -287,7 +287,8 @@ class TestAll(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
-        data = [it.title for it in copy]
+        with self.assertNumQueries(2):
+            data = [it.title for it in copy]
         self.assertEqual(data, expected)
 
         # The copy was evaluated, not qss.
@@ -298,14 +299,14 @@ class TestSelectRelated(TestBase):
     def test_select_related(self):
         # Check behavior first.
         qss = self.all._clone()
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             books = list(qss)
         with self.assertNumQueries(5):
             normal_authors = [b.author for b in books]
 
         # Now ensure no database query to get the author.
         qss = self.all._clone()
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             qss = qss.select_related('author')
             books = list(qss)
         with self.assertNumQueries(0):
@@ -317,14 +318,14 @@ class TestSelectRelated(TestBase):
     def test_clear_select_related(self):
         # Ensure no database query.
         qss = self.all._clone()
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             qss = qss.select_related('author')
             books = list(qss)
         with self.assertNumQueries(0):
             authors = [b.author for b in books]
 
         # Ensure there is a database query.
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             qss = qss.select_related(None)
             books = list(qss)
         with self.assertNumQueries(5):
@@ -336,14 +337,14 @@ class TestPrefetchRelated(TestBase):
     def test_prefetch_related(self):
         # Check behavior first, one database query per author access.
         qss = self.all._clone()
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             books = list(qss)
         with self.assertNumQueries(5):
             normal_authors = [b.author for b in books]
 
         # Now ensure one database query for all authors.
         qss = self.all._clone()
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(4):
             qss = qss.prefetch_related('author')
             books = list(qss)
         with self.assertNumQueries(0):
@@ -355,14 +356,14 @@ class TestPrefetchRelated(TestBase):
     def test_clear_prefetch_related(self):
         # Ensure no database query.
         qss = self.all._clone()
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(4):
             qss = qss.prefetch_related('author')
             books = list(qss)
         with self.assertNumQueries(0):
             authors = [b.author for b in books]
 
         # Ensure there is a database query.
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(2):
             qss = qss.prefetch_related(None)
             books = list(qss)
         with self.assertNumQueries(5):
