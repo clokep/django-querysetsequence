@@ -3,6 +3,12 @@
 Changelog
 #########
 
+0.7.3 (xxxx-xx-xx)
+==================
+
+* [Enhancement] Optimize iteration when *not* slicing a ``QuerySetSequence``.
+  See #29.
+
 0.7.2 (2017-04-04)
 ==================
 
