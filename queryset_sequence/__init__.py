@@ -45,7 +45,7 @@ def cumsum(seq):
 # iterator.
 class SequenceIterable(object):
     def __init__(self, queryset, *args, **kwargs):
-        self.queryset = queryset
+        self.queryset = queryset._clone()
 
     def __iter__(self):
         return iter(self.queryset.query)
