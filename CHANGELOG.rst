@@ -6,10 +6,16 @@ Changelog
 0.8 (2017-09-05)
 ================
 
-* [Bugfix] Calling an unimplemented method with parameters on
-  ``QuerySetSequence`` raised a non-sensical error.
+* [Enhancement] Optimize iteration when *not* slicing a ``QuerySetSequence``.
+  See #29.
 * [Enhancement] Officially support Django 1.11.
 * [Enhancement] Officially support Django REST Framework 3.5 and 3.6.
+
+0.7.2 (2017-04-04)
+==================
+
+* [Bugfix] Calling an unimplemented method with parameters on
+  ``QuerySetSequence`` raised a non-sensical error.
 
 0.7.1 (2017-03-31)
 ==================
