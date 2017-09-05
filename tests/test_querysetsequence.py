@@ -891,11 +891,16 @@ class TestOrderBy(TestBase):
 
     def test_order_by_queryset(self):
         """Ensure we can order by QuerySet and then other fields."""
+        from django import VERSION as DJANGO_VERSION
+
         # Order by title, but don't interleave each QuerySet.
         with self.assertNumQueries(0):
             qss = self.all.order_by('#', 'title')
         self.assertEqual(qss.query.order_by, ['#', 'title'])
-        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+        self.assertEqual(
+            qss.query._querysets[0].query.order_by,
+            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
+        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequence._ordered_iterator',
@@ -920,12 +925,17 @@ class TestOrderBy(TestBase):
         Note that this is *NOT* the same as calling reverse(), as that results
         the contents of each QuerySet as well.
         """
+        from django import VERSION as DJANGO_VERSION
+
         # Order by title, but don't interleave each QuerySet. And reverse
         # QuerySets.
         with self.assertNumQueries(0):
             qss = self.all.order_by('-#', 'title')
         self.assertEqual(qss.query.order_by, ['-#', 'title'])
-        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+        self.assertEqual(
+            qss.query._querysets[0].query.order_by,
+            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
+        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequence._ordered_iterator',
