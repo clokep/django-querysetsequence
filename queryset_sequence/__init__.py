@@ -41,6 +41,16 @@ def cumsum(seq):
         yield s
 
 
+# Bridge the Django >= 1.11 Iterable object back to the Query object being an
+# iterator.
+class SequenceIterable(object):
+    def __init__(self, queryset, *args, **kwargs):
+        self.queryset = queryset._clone()
+
+    def __iter__(self):
+        return iter(self.queryset.query)
+
+
 class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
     """
     A Query that handles multiple QuerySets.
@@ -105,6 +115,12 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
     def __str__(self):
         """Return the class-name and memory location; there's no SQL to show."""
         return object.__str__(self)
+
+    def chain(self, *args, **kwargs):
+        obj = super(QuerySequence, self).chain(*args, **kwargs)
+
+        obj._querysets = [qs._chain() for qs in self._querysets]
+        return obj
 
     def clone(self, *args, **kwargs):
         obj = super(QuerySequence, self).clone(*args, **kwargs)
@@ -419,6 +435,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'db',
 
         # Private methods.
+        '_chain',
         '_clone',
         '_fetch_all',
         '_merge_sanity_check',
@@ -471,6 +488,10 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
             kwargs['model'] = QuerySetSequenceModel
 
         super(QuerySetSequence, self).__init__(**kwargs)
+
+        # Override the iterator that will be used. (Currently used only in
+        # Django >= 1.11.)
+        self._iterable_class = SequenceIterable
 
     def iterator(self):
         # Create a clone so that each call re-evaluates the QuerySets.

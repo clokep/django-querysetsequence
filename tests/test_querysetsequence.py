@@ -1,5 +1,6 @@
 from operator import attrgetter
 
+from django import VERSION as DJANGO_VERSION
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -896,7 +897,10 @@ class TestOrderBy(TestBase):
         with self.assertNumQueries(0):
             qss = self.all.order_by('#', 'title')
         self.assertEqual(qss.query.order_by, ['#', 'title'])
-        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+        self.assertEqual(
+            qss.query._querysets[0].query.order_by,
+            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
+        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequence._ordered_iterator',
@@ -926,7 +930,10 @@ class TestOrderBy(TestBase):
         with self.assertNumQueries(0):
             qss = self.all.order_by('-#', 'title')
         self.assertEqual(qss.query.order_by, ['-#', 'title'])
-        self.assertEqual(qss.query._querysets[0].query.order_by, ['title'])
+        self.assertEqual(
+            qss.query._querysets[0].query.order_by,
+            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
+        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequence._ordered_iterator',

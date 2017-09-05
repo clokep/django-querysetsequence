@@ -3,11 +3,13 @@
 Changelog
 #########
 
-0.7.3 (xxxx-xx-xx)
-==================
+0.8 (2017-09-05)
+================
 
 * [Enhancement] Optimize iteration when *not* slicing a ``QuerySetSequence``.
   See #29.
+* [Enhancement] Officially support Django 1.11.
+* [Enhancement] Officially support Django REST Framework 3.5 and 3.6.
 
 0.7.2 (2017-04-04)
 ==================
@@ -43,7 +45,7 @@ Changelog
 0.6.1 (2016-08-03)
 ==================
 
-* [Enhancement] Officially, support Django 1.10.
+* [Enhancement] Officially support Django 1.10.
 
 0.6 (2016-06-07)
 ================

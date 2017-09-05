@@ -81,6 +81,15 @@ multiple ``QuerySets``:
     * - |all|_
       - |check|
       -
+    * - |union|_
+      - |xmark|
+      -
+    * - |intersection|_
+      - |xmark|
+      -
+    * - |difference|_
+      - |xmark|
+      -
     * - |select_related|_
       - |check|
       - 
@@ -155,7 +164,7 @@ multiple ``QuerySets``:
       - 
     * - |as_manager|_
       - |check|
-      - 
+      -
 
 .. |filter| replace:: ``filter()``
 .. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter
@@ -172,7 +181,7 @@ multiple ``QuerySets``:
 .. |values| replace:: ``values()``
 .. _values: https://docs.djangoproject.com/en/dev/ref/models/querysets/#values
 .. |values_list| replace:: ``values_list()``
-.. _values_list: https://docs.djangoproject.com/en/dev/ref/models/querysets/#values_list
+.. _values_list: https://docs.djangoproject.com/en/dev/ref/models/querysets/#values-list
 .. |dates| replace:: ``dates()``
 .. _dates: https://docs.djangoproject.com/en/dev/ref/models/querysets/#dates
 .. |datetimes| replace:: ``datetimes()``
@@ -181,10 +190,16 @@ multiple ``QuerySets``:
 .. _none: https://docs.djangoproject.com/en/dev/ref/models/querysets/#none
 .. |all| replace:: ``all()``
 .. _all: https://docs.djangoproject.com/en/dev/ref/models/querysets/#all
+.. |union| replace:: ``union()``
+.. _union: https://docs.djangoproject.com/en/dev/ref/models/querysets/#union
+.. |intersection| replace:: ``intersection()``
+.. _intersection: https://docs.djangoproject.com/en/dev/ref/models/querysets/#intersection
+.. |difference| replace:: ``difference()``
+.. _difference: https://docs.djangoproject.com/en/dev/ref/models/querysets/#difference
 .. |select_related| replace:: ``select_related()``
-.. _select_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select_related
+.. _select_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related
 .. |prefetch_related| replace:: ``prefetch_related()``
-.. _prefetch_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#prefetch_related
+.. _prefetch_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#prefetch-related
 .. |extra| replace:: ``extra()``
 .. _extra: https://docs.djangoproject.com/en/dev/ref/models/querysets/#extra
 .. |defer| replace:: ``defer()``
@@ -194,7 +209,7 @@ multiple ``QuerySets``:
 .. |using| replace:: ``using()``
 .. _using: https://docs.djangoproject.com/en/dev/ref/models/querysets/#using
 .. |select_for_update| replace:: ``select_for_update()``
-.. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select_for_update
+.. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-for-update
 .. |raw| replace:: ``raw()``
 .. _raw: https://docs.djangoproject.com/en/dev/ref/models/querysets/#raw
 .. |get| replace:: ``get()``
@@ -202,11 +217,11 @@ multiple ``QuerySets``:
 .. |create| replace:: ``create()``
 .. _create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#create
 .. |get_or_create| replace:: ``get_or_create()``
-.. _get_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get_or_create
+.. _get_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get-or-create
 .. |update_or_create| replace:: ``update_or_create()``
-.. _update_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update_or_create
+.. _update_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create
 .. |bulk_create| replace:: ``bulk_create()``
-.. _bulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk_create
+.. _bulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
 .. |count| replace:: ``count()``
 .. _count: https://docs.djangoproject.com/en/dev/ref/models/querysets/#count
 .. |in_bulk| replace:: ``in_bulk()``
@@ -230,7 +245,7 @@ multiple ``QuerySets``:
 .. |delete| replace:: ``delete()``
 .. _delete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
 .. |as_manager| replace:: ``as_manager()``
-.. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as_manager
+.. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as-manager
 
 
 .. [1]  ``QuerySetSequence`` supports a special field lookup that looks up the
@@ -277,9 +292,9 @@ multiple ``QuerySets``:
 Requirements
 ============
 
-* Python (2.7, 3.4, 3.5)
-* Django (1.8, 1.9, 1.10)
-* (Optionally) Django REST Framework (3.2, 3.3, 3.4)
+* Python (2.7, 3.4, 3.5, 3.6)
+* Django (1.8, 1.9, 1.10, 1.11)
+* (Optionally) Django REST Framework (3.2, 3.3, 3.4, 3.5, 3.6)
 
 .. list-table:: ``QuerySetSequence`` versions with support for Django/Django REST Framework
     :header-rows: 1
@@ -289,18 +304,32 @@ Requirements
       - Django 1.8
       - Django 1.9
       - Django 1.10
+      - Django 1.11
     * - Django REST Framework 3.2
       - 0.7
+      - |xmark|
       - |xmark|
       - |xmark|
     * - Django REST Framework 3.3
       - 0.7
       - 0.7
       - |xmark|
+      - |xmark|
     * - Django REST Framework 3.4
       - 0.7
       - 0.7
       - 0.7
+      - 0.7.1
+    * - Django REST Framework 3.5
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
+      - 0.7.1
+    * - Django REST Framework 3.6
+      - 0.8
+      - 0.8
+      - 0.8
+      - 0.8
 
 Installation
 ============

@@ -8,8 +8,6 @@ DATABASES = {
     }
 }
 
-ROOT_URLCONF = 'tests/urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -29,7 +27,6 @@ TEMPLATES = [
 MIDDLEWARE_CLASSES = tuple()
 
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 INSTALLED_APPS = (
     'tests',

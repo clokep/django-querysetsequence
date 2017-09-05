@@ -10,7 +10,7 @@ def long_description():
 setup(
     name='django-querysetsequence',
     packages=find_packages(),
-    version='0.7.2',
+    version='0.8',
     description='Chain together multiple (disparate) QuerySets to treat them as a single QuerySet.',
     long_description=long_description(),
     author='Percipient Networks, LLC',
@@ -30,6 +30,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Framework :: Django',
         'License :: OSI Approved :: ISC License (ISCL)',
     ],
