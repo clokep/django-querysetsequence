@@ -81,6 +81,15 @@ multiple ``QuerySets``:
     * - |all|_
       - |check|
       -
+    * - |union|_
+      - |xmark|
+      -
+    * - |intersection|_
+      - |xmark|
+      -
+    * - |difference|_
+      - |xmark|
+      -
     * - |select_related|_
       - |check|
       - 
@@ -155,7 +164,7 @@ multiple ``QuerySets``:
       - 
     * - |as_manager|_
       - |check|
-      - 
+      -
 
 .. |filter| replace:: ``filter()``
 .. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter
@@ -181,6 +190,12 @@ multiple ``QuerySets``:
 .. _none: https://docs.djangoproject.com/en/dev/ref/models/querysets/#none
 .. |all| replace:: ``all()``
 .. _all: https://docs.djangoproject.com/en/dev/ref/models/querysets/#all
+.. |union| replace:: ``union()``
+.. _union: https://docs.djangoproject.com/en/dev/ref/models/querysets/#union
+.. |intersection| replace:: ``intersection()``
+.. _intersection: https://docs.djangoproject.com/en/dev/ref/models/querysets/#intersection
+.. |difference| replace:: ``difference()``
+.. _difference: https://docs.djangoproject.com/en/dev/ref/models/querysets/#difference
 .. |select_related| replace:: ``select_related()``
 .. _select_related: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select_related
 .. |prefetch_related| replace:: ``prefetch_related()``
@@ -311,10 +326,10 @@ Requirements
       - 0.7.1
       - 0.7.1
     * - Django REST Framework 3.6
-      - 0.7.1
-      - 0.7.1
-      - 0.7.1
-      - 0.7.1
+      - 0.8
+      - 0.8
+      - 0.8
+      - 0.8
 
 Installation
 ============
