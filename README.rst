@@ -294,7 +294,7 @@ Requirements
 
 * Python (2.7, 3.4, 3.5, 3.6)
 * Django (1.8, 1.9, 1.10, 1.11)
-* (Optionally) Django REST Framework (3.2, 3.3, 3.4, 3.5, 3.6)
+* (Optionally) `Django REST Framework`_ (3.2, 3.3, 3.4, 3.5, 3.6, 3.7)
 
 .. list-table:: ``QuerySetSequence`` versions with support for Django/Django REST Framework
     :header-rows: 1
@@ -330,6 +330,13 @@ Requirements
       - 0.8
       - 0.8
       - 0.8
+    * - Django REST Framework 3.7
+      - |xmark|
+      - |xmark|
+      - 0.8
+      - 0.8
+
+.. _Django REST Framework: http://www.django-rest-framework.org/
 
 Installation
 ============
