@@ -84,6 +84,7 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
 
     def __init__(self, *args):
         self._querysets = list(args)
+        self._args = list(args)
         # Mark each QuerySet's Model with the number of the QuerySet it is.
         for i, qs in enumerate(self._querysets):
             # Generate a Proxy model and then modify that to allow for the same
