@@ -34,6 +34,6 @@ setup(
         'License :: OSI Approved :: ISC License (ISCL)',
     ],
     install_requires=[
-        'django>=1.8.0',
+        'django>=1.11',
     ],
 )
