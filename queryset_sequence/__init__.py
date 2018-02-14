@@ -41,14 +41,240 @@ def cumsum(seq):
         yield s
 
 
-# Bridge the Django >= 1.11 Iterable object back to the Query object being an
-# iterator.
-class SequenceIterable(object):
+class QuerySequenceIterable(object):
     def __init__(self, queryset, *args, **kwargs):
+        # Create a clone so that subsequent calls to iterate are kept separate.
         self.queryset = queryset._clone()
 
+    @classmethod
+    def _get_field_names(cls, model):
+        """Return a list of field names that are part of a model."""
+        return [f.name for f in model._meta.get_fields()]
+
+    @classmethod
+    def _cmp(cls, value1, value2):
+        """
+        Comparison method that takes into account Django's special rules when
+        ordering by a field that is a model:
+
+            1. Try following the default ordering on the related model.
+            2. Order by the model's primary key, if there is no Meta.ordering.
+
+        """
+        if isinstance(value1, Model) and isinstance(value2, Model):
+            field_names = value1._meta.ordering
+
+            # Assert that the ordering is the same between different models.
+            if field_names != value2._meta.ordering:
+                valid_field_names = (set(cls._get_field_names(value1)) &
+                                     set(cls._get_field_names(value2)))
+                raise FieldError(
+                    "Ordering differs between models. Choices are: %s" %
+                    ', '.join(valid_field_names))
+
+            # By default, order by the pk.
+            if not field_names:
+                field_names = ['pk']
+
+            # TODO Figure out if we don't need to generate this comparator every
+            # time.
+            return cls._generate_comparator(field_names)(value1, value2)
+
+        return cmp(value1, value2)
+
+    @classmethod
+    def _generate_comparator(cls, field_names):
+        """
+        Construct a comparator function based on the field names. The comparator
+        returns the first non-zero comparison value.
+
+        Inputs:
+            field_names (iterable of strings): The field names to sort on.
+
+        Returns:
+            A comparator function.
+        """
+
+        # For fields that start with a '-', reverse the ordering of the
+        # comparison.
+        reverses = [1] * len(field_names)
+        for i, field_name in enumerate(field_names):
+            if field_name[0] == '-':
+                reverses[i] = -1
+                field_names[i] = field_name[1:]
+
+        field_names = [f.replace(LOOKUP_SEP, '.') for f in field_names]
+
+        def comparator(i1, i2):
+            # Get a tuple of values for comparison.
+            v1 = attrgetter(*field_names)(i1)
+            v2 = attrgetter(*field_names)(i2)
+
+            # If there's only one arg supplied, attrgetter returns a single
+            # item, directly return the result in this case.
+            if len(field_names) == 1:
+                return cls._cmp(v1, v2) * reverses[0]
+
+            # Compare each field for the two items, reversing if necessary.
+            order = multiply_iterables(list(map(cls._cmp, v1, v2)), reverses)
+
+            try:
+                # The first non-zero element.
+                return next(dropwhile(__not__, order))
+            except StopIteration:
+                # Everything was equivalent.
+                return 0
+
+        return comparator
+
+    def _ordered_iterator(self, query, querysets):
+        """An iterator that takes into account the requested ordering."""
+
+        # A mapping of iterable to the current item in that iterable. (Remember
+        # that each QuerySet is already sorted.)
+        not_empty_qss = [iter(it) for it in querysets if it]
+        values = {it: next(it) for it in not_empty_qss}
+
+        # The offset of items returned.
+        index = 0
+
+        # Create a comparison function based on the requested ordering.
+        _comparator = self._generate_comparator(query.order_by)
+        def comparator(i1, i2):
+            # Actually compare the 2nd element in each tuple, the 1st element is
+            # the generator.
+            return _comparator(i1[1], i2[1])
+        comparator = functools.cmp_to_key(comparator)
+
+        # If in reverse mode, get the last value instead of the first value from
+        # ordered_values below.
+        if query.standard_ordering:
+            next_value_ind = 0
+        else:
+            next_value_ind = -1
+
+        # Iterate until all the values are gone.
+        while values:
+            # If there's only one iterator left, don't bother sorting.
+            if len(values) > 1:
+                # Sort the current values for each iterable.
+                ordered_values = sorted(values.items(), key=comparator)
+
+                # The next ordering item is in the first position, unless we're
+                # in reverse mode.
+                qss, value = ordered_values.pop(next_value_ind)
+            else:
+                qss, value = list(values.items())[0]
+
+            # Return it if we're within the slice of interest.
+            if query.low_mark <= index:
+                yield value
+            index += 1
+            # We've left the slice of interest, we're done.
+            if index == query.high_mark:
+                return
+
+            # Iterate the iterable that just lost a value.
+            try:
+                values[qss] = next(qss)
+            except StopIteration:
+                # This iterator is done, remove it.
+                del values[qss]
+
     def __iter__(self):
-        return iter(self.queryset.query)
+        # Pull out the attributes we care about.
+        query = self.queryset.query
+        querysets = query._querysets
+
+        # If this is explicitly marked as empty or there's no QuerySets, just
+        # return an empty iterator.
+        if not len(querysets) or query.is_empty():
+            return iter([])
+
+        # Apply any select related calls.
+        if isinstance(query.select_related, (list, tuple)):
+            querysets = [it.select_related(*query.select_related) for it in querysets]
+
+        # Reverse the ordering, if necessary. Apply this to both the individual
+        # QuerySets and the ordering of the QuerySets themselves.
+        if not query.standard_ordering:
+            querysets = [it.reverse() for it in querysets]
+            querysets = querysets[::-1]
+
+        # If order is necessary, evaluate and start feeding data back.
+        if query.order_by:
+            # If the first element of order_by is '#', this means first order by
+            # QuerySet. If it isn't this, then returned the interleaved
+            # iterator.
+            if query.order_by[0].lstrip('-') != '#':
+                return self._ordered_iterator(query, querysets)
+
+            # Otherwise, order by QuerySet first. Handle reversing the
+            # QuerySets, if necessary.
+            elif query.order_by[0].startswith('-'):
+                querysets = querysets[::-1]
+
+        # If there is no ordering, or the ordering is specific to each QuerySet,
+        # evaluation can be pushed off further.
+
+        # Some optimization, if there is no slicing, iterate through querysets.
+        if query.low_mark == 0 and query.high_mark is None:
+            return chain(*querysets)
+
+        # First trim any QuerySets based on the currently set limits!
+        counts = [0]
+        counts.extend(cumsum([it.count() for it in querysets]))
+
+        # Trim the beginning of the QuerySets, if necessary.
+        start_index = 0
+        low_mark, high_mark = query.low_mark, query.high_mark
+        if low_mark is not 0:
+            # Convert a negative index into a positive.
+            if low_mark < 0:
+                low_mark += counts[-1]
+
+            # Find the point when low_mark crosses a threshold.
+            for i, offset in enumerate(counts):
+                if offset <= low_mark:
+                    start_index = i
+                if low_mark < offset:
+                    break
+
+        # Trim the end of the QuerySets, if necessary.
+        end_index = len(querysets)
+        if high_mark is None:
+            # If it was unset (meaning all), set it to the maximum.
+            high_mark = counts[-1]
+        elif high_mark:
+            # Convert a negative index into a positive.
+            if high_mark < 0:
+                high_mark += counts[-1]
+
+            # Find the point when high_mark crosses a threshold.
+            for i, offset in enumerate(counts):
+                if high_mark <= offset:
+                    end_index = i
+                    break
+
+        # Remove QuerySets we don't care about.
+        querysets = querysets[start_index:end_index]
+
+        # The low_mark needs the removed QuerySets subtracted from it.
+        low_mark -= counts[start_index]
+        # The high_mark needs the count of all QuerySets before it subtracted
+        # from it.
+        high_mark -= counts[end_index - 1]
+
+        # Some optimization, if there is only one QuerySet, iterate through it.
+        if len(querysets) == 1:
+            return iter(querysets[0][low_mark:high_mark])
+
+        # Apply the offsets to the edge QuerySets.
+        querysets[0] = querysets[0][low_mark:]
+        querysets[-1] = querysets[-1][:high_mark]
+
+        # For anything left, just chain the QuerySets together.
+        return chain(*querysets)
 
 
 class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
@@ -163,233 +389,6 @@ class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
         # Don't bother splitting this by field sep, etc.
         self.select_related = fields
 
-    def __iter__(self):
-        # If this is explicitly marked as empty or there's no QuerySets, just
-        # return an empty iterator.
-        if not len(self._querysets) or self.is_empty():
-            return iter([])
-
-        # Apply any select related calls.
-        if isinstance(self.select_related, (list, tuple)):
-            self._querysets = [it.select_related(*self.select_related) for it in self._querysets]
-
-        # Reverse the ordering, if necessary. Apply this to both the individual
-        # QuerySets and the ordering of the QuerySets themselves.
-        if not self.standard_ordering:
-            self._querysets = [it.reverse() for it in self._querysets]
-            self._querysets = self._querysets[::-1]
-
-        # If order is necessary, evaluate and start feeding data back.
-        if self.order_by:
-            # If the first element of order_by is '#', this means first order by
-            # QuerySet. If it isn't this, then returned the interleaved
-            # iterator.
-            if self.order_by[0].lstrip('-') != '#':
-                return self._ordered_iterator()
-
-            # Otherwise, order by QuerySet first. Handle reversing the
-            # QuerySets, if necessary.
-            elif self.order_by[0].startswith('-'):
-                self._querysets = self._querysets[::-1]
-
-        # If there is no ordering, or the ordering is specific to each QuerySet,
-        # evaluation can be pushed off further.
-
-        # Some optimization, if there is no slicing, iterate through querysets.
-        if self.low_mark == 0 and self.high_mark is None:
-            return chain(*self._querysets)
-
-        # First trim any QuerySets based on the currently set limits!
-        counts = [0]
-        counts.extend(cumsum([it.count() for it in self._querysets]))
-
-        # TODO Do we need to work with a clone of _querysets?
-
-        # Trim the beginning of the QuerySets, if necessary.
-        start_index = 0
-        if self.low_mark is not 0:
-            # Convert a negative index into a positive.
-            if self.low_mark < 0:
-                self.low_mark += counts[-1]
-
-            # Find the point when low_mark crosses a threshold.
-            for i, offset in enumerate(counts):
-                if offset <= self.low_mark:
-                    start_index = i
-                if self.low_mark < offset:
-                    break
-
-        # Trim the end of the QuerySets, if necessary.
-        end_index = len(self._querysets)
-        if self.high_mark is None:
-            # If it was unset (meaning all), set it to the maximum.
-            self.high_mark = counts[-1]
-        elif self.high_mark:
-            # Convert a negative index into a positive.
-            if self.high_mark < 0:
-                self.high_mark += counts[-1]
-
-            # Find the point when high_mark crosses a threshold.
-            for i, offset in enumerate(counts):
-                if self.high_mark <= offset:
-                    end_index = i
-                    break
-
-        # Remove iterables we don't care about.
-        self._querysets = self._querysets[start_index:end_index]
-
-        # The low_mark needs the removed QuerySets subtracted from it.
-        self.low_mark -= counts[start_index]
-        # The high_mark needs the count of all QuerySets before it subtracted
-        # from it.
-        self.high_mark -= counts[end_index - 1]
-
-        # Some optimization, if there is only one QuerySet, iterate through it.
-        if len(self._querysets) == 1:
-            return iter(self._querysets[0][self.low_mark:self.high_mark])
-
-        # Apply the offsets to the edge QuerySets.
-        self._querysets[0] = self._querysets[0][self.low_mark:]
-        self._querysets[-1] = self._querysets[-1][:self.high_mark]
-
-        # For anything left, just chain the QuerySets together.
-        return chain(*self._querysets)
-
-    @classmethod
-    def _get_field_names(cls, model):
-        """Return a list of field names that are part of a model."""
-        return [f.name for f in model._meta.get_fields()]
-
-    @classmethod
-    def _cmp(cls, value1, value2):
-        """
-        Comparison method that takes into account Django's special rules when
-        ordering by a field that is a model:
-
-            1. Try following the default ordering on the related model.
-            2. Order by the model's primary key, if there is no Meta.ordering.
-
-        """
-        if isinstance(value1, Model) and isinstance(value2, Model):
-            field_names = value1._meta.ordering
-
-            # Assert that the ordering is the same between different models.
-            if field_names != value2._meta.ordering:
-                valid_field_names = (set(cls._get_field_names(value1)) &
-                                     set(cls._get_field_names(value2)))
-                raise FieldError(
-                    "Ordering differs between models. Choices are: %s" %
-                    ', '.join(valid_field_names))
-
-            # By default, order by the pk.
-            if not field_names:
-                field_names = ['pk']
-
-            # TODO Figure out if we don't need to generate this comparator every
-            # time.
-            return cls._generate_comparator(field_names)(value1, value2)
-
-        return cmp(value1, value2)
-
-    @classmethod
-    def _generate_comparator(cls, field_names):
-        """
-        Construct a comparator function based on the field names. The comparator
-        returns the first non-zero comparison value.
-
-        Inputs:
-            field_names (iterable of strings): The field names to sort on.
-
-        Returns:
-            A comparator function.
-        """
-
-        # For fields that start with a '-', reverse the ordering of the
-        # comparison.
-        reverses = [1] * len(field_names)
-        for i, field_name in enumerate(field_names):
-            if field_name[0] == '-':
-                reverses[i] = -1
-                field_names[i] = field_name[1:]
-
-        field_names = [f.replace(LOOKUP_SEP, '.') for f in field_names]
-
-        def comparator(i1, i2):
-            # Get a tuple of values for comparison.
-            v1 = attrgetter(*field_names)(i1)
-            v2 = attrgetter(*field_names)(i2)
-
-            # If there's only one arg supplied, attrgetter returns a single
-            # item, directly return the result in this case.
-            if len(field_names) == 1:
-                return cls._cmp(v1, v2) * reverses[0]
-
-            # Compare each field for the two items, reversing if necessary.
-            order = multiply_iterables(list(map(cls._cmp, v1, v2)), reverses)
-
-            try:
-                # The first non-zero element.
-                return next(dropwhile(__not__, order))
-            except StopIteration:
-                # Everything was equivalent.
-                return 0
-
-        return comparator
-
-    def _ordered_iterator(self):
-        """An iterator that takes into account the requested ordering."""
-
-        # A mapping of iterable to the current item in that iterable. (Remember
-        # that each QuerySet is already sorted.)
-        not_empty_qss = [iter(it) for it in self._querysets if it]
-        values = {it: next(it) for it in not_empty_qss}
-
-        # The offset of items returned.
-        index = 0
-
-        # Create a comparison function based on the requested ordering.
-        _comparator = self._generate_comparator(self.order_by)
-        def comparator(i1, i2):
-            # Actually compare the 2nd element in each tuple, the 1st element is
-            # the generator.
-            return _comparator(i1[1], i2[1])
-        comparator = functools.cmp_to_key(comparator)
-
-        # If in reverse mode, get the last value instead of the first value from
-        # ordered_values below.
-        if self.standard_ordering:
-            next_value_ind = 0
-        else:
-            next_value_ind = -1
-
-        # Iterate until all the values are gone.
-        while values:
-            # If there's only one iterator left, don't bother sorting.
-            if len(values) > 1:
-                # Sort the current values for each iterable.
-                ordered_values = sorted(values.items(), key=comparator)
-
-                # The next ordering item is in the first position, unless we're
-                # in reverse mode.
-                qss, value = ordered_values.pop(next_value_ind)
-            else:
-                qss, value = list(values.items())[0]
-
-            # Return it if we're within the slice of interest.
-            if self.low_mark <= index:
-                yield value
-            index += 1
-            # We've left the slice of interest, we're done.
-            if index == self.high_mark:
-                return
-
-            # Iterate the iterable that just lost a value.
-            try:
-                values[qss] = next(qss)
-            except StopIteration:
-                # This iterator is done, remove it.
-                del values[qss]
-
 
 # TODO Inherit from django.db.models.base.Model.
 class QuerySetSequenceModel(object):
@@ -429,6 +428,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         'count',
         'as_manager',
         'exists',
+        'iterator',
 
         # Public introspection attributes.
         'ordered',
@@ -489,13 +489,8 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
 
         super(QuerySetSequence, self).__init__(**kwargs)
 
-        # Override the iterator that will be used. (Currently used only in
-        # Django >= 1.11.)
-        self._iterable_class = SequenceIterable
-
-    def iterator(self):
-        # Create a clone so that each call re-evaluates the QuerySets.
-        return self.query.clone()
+        # Override the iterator that will be used.
+        self._iterable_class = QuerySequenceIterable
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
         """
