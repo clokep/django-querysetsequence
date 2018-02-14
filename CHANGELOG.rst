@@ -7,6 +7,7 @@ Changelog
 ================
 
 * [Enhancement] Officially support Django REST Framework 3.7.
+* [Enhancement] Officially support Django 2.0.
 * [Incompatible change] Drop support for Django < 1.11. Django 1.11 and above
   are supported. This also drops support for Django REST Framework < 3.4, which
   since they do not support Django 1.11.
