@@ -440,6 +440,7 @@ class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
         '_fetch_all',
         '_merge_sanity_check',
         '_prepare',
+        '_iterator',
     ]
     NOT_IMPLEMENTED_ATTRS = [
         # Public methods that return QuerySets.

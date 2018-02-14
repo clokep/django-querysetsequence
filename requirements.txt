@@ -3,5 +3,5 @@
 -e .
 
 # Not tested with older versions of Django.
-Django>=1.8.0
+Django>=1.11
 mock
