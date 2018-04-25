@@ -1,5 +1,5 @@
 import functools
-from itertools import chain, dropwhile
+from itertools import chain, dropwhile, imap
 from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
 import uuid
 
@@ -294,12 +294,18 @@ class QuerySetSequence(object):
 
         return clone
 
-    def __iter__(self):
-        return iter(QuerySequenceIterable(self._querysets, self._order_by, self._standard_ordering, self._low_mark, self._high_mark))
-
     def __len__(self):
         # Call len() on each QuerySet to properly cache results.
         return sum(map(len, self._querysets))
+
+    def __iter__(self):
+        return iter(QuerySequenceIterable(self._querysets, self._order_by, self._standard_ordering, self._low_mark, self._high_mark))
+
+    def __bool__(self):
+        return any(imap(bool, self._querysets))
+
+    def __nonzero__(self):      # Python 2 compatibility
+        return type(self).__bool__(self)
 
     # Methods that return new QuerySets
     def filter(self, **kwargs):
@@ -349,7 +355,7 @@ class QuerySetSequence(object):
         pass
 
     def exists(self):
-        pass
+        return any(qs.exists() for qs in self._querysets)
 
     def delete(self):
         pass

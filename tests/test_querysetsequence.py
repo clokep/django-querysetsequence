@@ -1136,35 +1136,45 @@ class TestBoolean(TestBase):
     """Tests related to casting the QuerySetSequence to a boolean."""
     def test_exists(self):
         """Ensure that it casts to True if the item is found."""
-        self.assertTrue(self.all.filter(title='Biography'))
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.filter(title='Biography'))
+
+    def test_exists_second(self):
+        """Ensure that it casts to True if the item is found in a subsequent QuerySet."""
+        with self.assertNumQueries(2):
+            self.assertTrue(self.all.filter(title="Alice in Django-land"))
 
     def test_not_found(self):
         """Ensure that exists() returns False if the item is not found."""
-        self.assertFalse(self.all.filter(title=''))
+        with self.assertNumQueries(2):
+            self.assertFalse(self.all.filter(title=''))
 
     def test_multi_found(self):
-        self.assertTrue(self.all.filter(author=self.bob))
-
-    def test_related_model(self):
-        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
-        self.assertTrue(qss.filter(publisher__name="Wacky Website"))
+        """Ensure that it casts to True if multiple items are found."""
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.filter(author=self.bob))
 
 
 class TestExists(TestBase):
     def test_exists(self):
-        """Ensure that exists() returns True if the item is found."""
-        self.assertTrue(self.all.filter(title='Biography').exists())
+        """Ensure that exists() returns True if the item is found in the first QuerySet."""
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.filter(title='Biography').exists())
+
+    def test_exists_second(self):
+        """Ensure that exists() returns True if the item is found in a subsequent QuerySet."""
+        with self.assertNumQueries(2):
+            self.assertTrue(self.all.filter(title="Alice in Django-land").exists())
 
     def test_not_found(self):
         """Ensure that exists() returns False if the item is not found."""
-        self.assertFalse(self.all.filter(title='').exists())
+        with self.assertNumQueries(2):
+            self.assertFalse(self.all.filter(title='').exists())
 
     def test_multi_found(self):
-        self.assertTrue(self.all.filter(author=self.bob).exists())
-
-    def test_related_model(self):
-        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
-        self.assertTrue(qss.filter(publisher__name="Wacky Website").exists())
+        """Ensure that exists() returns True if multiple items are found."""
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.filter(author=self.bob).exists())
 
 
 class TestDelete(TestBase):
