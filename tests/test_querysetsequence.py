@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from operator import attrgetter
 
 from django import VERSION as DJANGO_VERSION
@@ -167,22 +169,22 @@ class TestLength(TestBase):
     """
 
     def test_count(self):
-        qss = self.all._clone()
-
         # The proper length should be returned via database queries.
-        self.assertEqual(qss.count(), 5)
-        self.assertIsNone(qss._result_cache)
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.count(), 5)
+
+        # Asking for it again should re-evaluate the query.
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.count(), 5)
 
     def test_len(self):
-        qss = self.all._clone()
-
         # Calling len() evaluates the QuerySet.
-        self.assertEqual(len(qss), 5)
-        self.assertIsNotNone(qss._result_cache)
+        with self.assertNumQueries(2):
+            self.assertEqual(len(self.all), 5)
 
-        # Count should still work (and not hit the database) by using the cache.
-        qss.query = None
-        self.assertEqual(qss.count(), 5)
+        # Requesting this again should not cause any queries to occur.
+        with self.assertNumQueries(0):
+            self.assertEqual(len(self.all), 5)
 
 
 class TestIterator(TestBase):

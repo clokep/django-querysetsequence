@@ -282,6 +282,10 @@ class QuerySetSequence(object):
     def __iter__(self):
         return iter(chain(*self._querysets))
 
+    def __len__(self):
+        # Call len() on each QuerySet to properly cache results.
+        return sum(map(len, self._querysets))
+
     # Methods that return new QuerySets
     def filter(self, **kwargs):
         return QuerySetSequence(*[qs.filter(**kwargs) for qs in self._querysets])
@@ -313,7 +317,7 @@ class QuerySetSequence(object):
         pass
 
     def count(self):
-        pass
+        return sum(qs.count() for qs in self._querysets)
 
     def iterator(self):
         pass
