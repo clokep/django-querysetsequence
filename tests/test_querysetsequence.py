@@ -1180,11 +1180,20 @@ class TestExists(TestBase):
 class TestDelete(TestBase):
     def test_delete_all(self):
         """Ensure that delete() works properly."""
-        self.all.delete()
+        with self.assertNumQueries(2):
+            result = self.all.delete()
+        self.assertEqual(result[0], 5)
+        self.assertEqual(result[1], {'tests.Article': 3, 'tests.Book': 2})
 
-        self.assertEqual(self.all.count(), 0)
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.count(), 0)
 
     def test_delete_filter(self):
         """Ensure that delete() works properly when filtering."""
-        self.all.filter(author=self.alice).delete()
-        self.assertEqual(self.all.count(), 3)
+        with self.assertNumQueries(2):
+            result = self.all.filter(author=self.alice).delete()
+        self.assertEqual(result[0], 2)
+        self.assertEqual(result[1], {'tests.Article': 2, 'tests.Book': 0})
+
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.count(), 3)

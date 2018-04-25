@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+
+from collections import defaultdict
 import functools
 from itertools import chain, dropwhile, imap
 from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
@@ -358,7 +361,18 @@ class QuerySetSequence(object):
         return any(qs.exists() for qs in self._querysets)
 
     def delete(self):
-        pass
+        deleted_count = 0
+        deleted_objects = defaultdict(int)
+        for qs in self._querysets:
+            # Delete this QuerySet.
+            current_deleted_count, current_deleted_objects = qs.delete()
+
+            # Combine the results.
+            deleted_count += current_deleted_count
+            for obj, count in current_deleted_objects.items():
+                deleted_objects[obj] += count
+
+        return deleted_count, dict(deleted_objects)
 
     def as_manager(self):
         pass
