@@ -42,9 +42,13 @@ def cumsum(seq):
 
 
 class QuerySequenceIterable(object):
-    def __init__(self, querysets):
+    def __init__(self, querysets, order_by, standard_ordering, low_mark, high_mark):
         # Create a clone so that subsequent calls to iterate are kept separate.
         self._querysets = querysets
+        self._order_by = order_by
+        self._standard_ordering = standard_ordering
+        self._low_mark = low_mark
+        self._high_mark = high_mark
 
     @classmethod
     def _get_field_names(cls, model):
@@ -127,8 +131,9 @@ class QuerySequenceIterable(object):
 
         return comparator
 
-    def _ordered_iterator(self, query, querysets):
+    def _ordered_iterator(self):
         """An iterator that takes into account the requested ordering."""
+        querysets = self._querysets
 
         # A mapping of iterable to the current item in that iterable. (Remember
         # that each QuerySet is already sorted.)
@@ -139,7 +144,7 @@ class QuerySequenceIterable(object):
         index = 0
 
         # Create a comparison function based on the requested ordering.
-        _comparator = self._generate_comparator(query.order_by)
+        _comparator = self._generate_comparator(self._order_by)
         def comparator(i1, i2):
             # Actually compare the 2nd element in each tuple, the 1st element is
             # the generator.
@@ -148,7 +153,7 @@ class QuerySequenceIterable(object):
 
         # If in reverse mode, get the last value instead of the first value from
         # ordered_values below.
-        if query.standard_ordering:
+        if self._standard_ordering:
             next_value_ind = 0
         else:
             next_value_ind = -1
@@ -167,11 +172,11 @@ class QuerySequenceIterable(object):
                 qss, value = list(values.items())[0]
 
             # Return it if we're within the slice of interest.
-            if query.low_mark <= index:
+            if self._low_mark <= index:
                 yield value
             index += 1
             # We've left the slice of interest, we're done.
-            if index == query.high_mark:
+            if index == self._high_mark:
                 return
 
             # Iterate the iterable that just lost a value.
@@ -185,27 +190,26 @@ class QuerySequenceIterable(object):
         # Pull out the attributes we care about.
         querysets = self._querysets
 
-        # TODO
-        return chain(*querysets)
-
         # If there's no QuerySets, just return an empty iterator.
         if not len(querysets):
             return iter([])
 
-        # Since all QuerySets should have similar properties, use them to get
-        # some information.
-        # TODO What if something is unset, this will default weirdly?
-
         # If order is necessary, evaluate and start feeding data back.
-        if querysets[0].order_by:
+        if self._order_by:
             # If the first element of order_by is '#', this means first order by
             # QuerySet. If it isn't this, then returned the interleaved
             # iterator.
-            if query.order_by[0].lstrip('-') != '#':
-                return self._ordered_iterator(query, querysets)
+            if self._order_by[0].lstrip('-') != '#':
+                return self._ordered_iterator()
+
+            # Otherwise, order by QuerySet first. Handle reversing the
+            # QuerySets, if necessary.
+            elif self._order_by[0].startswith('-'):
+                querysets = querysets[::-1]
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
+        return chain(*querysets)
 
         # Some optimization, if there is no slicing, iterate through querysets.
         if query.low_mark == 0 and query.high_mark is None:
@@ -217,7 +221,7 @@ class QuerySequenceIterable(object):
 
         # Trim the beginning of the QuerySets, if necessary.
         start_index = 0
-        low_mark, high_mark = query.low_mark, query.high_mark
+        low_mark, high_mark = self._low_mark, self._high_mark
         if low_mark is not 0:
             # Convert a negative index into a positive.
             if low_mark < 0:
@@ -276,11 +280,22 @@ class QuerySetSequence(object):
 
     def __init__(self, *args):
         self._querysets = args
-        # Override the iterator that will be used.
-        self._iterable_class = QuerySequenceIterable
+        # Some information necessary for properly iterating through a QuerySet.
+        self._order_by = []
+        self._standard_ordering = True
+        self._low_mark, self._high_mark = 0, None
+
+    def _clone(self):
+        clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
+        clone._order_by = self._order_by
+        clone._standard_ordering = self._standard_ordering
+        clone._low_mark = self._low_mark
+        clone._high_mark = self._high_mark
+
+        return clone
 
     def __iter__(self):
-        return iter(chain(*self._querysets))
+        return iter(QuerySequenceIterable(self._querysets, self._order_by, self._standard_ordering, self._low_mark, self._high_mark))
 
     def __len__(self):
         # Call len() on each QuerySet to properly cache results.
@@ -288,23 +303,34 @@ class QuerySetSequence(object):
 
     # Methods that return new QuerySets
     def filter(self, **kwargs):
-        return QuerySetSequence(*[qs.filter(**kwargs) for qs in self._querysets])
+        clone = self._clone()
+        clone._querysets = [qs.filter(**kwargs) for qs in self._querysets]
+        return clone
 
     def exclude(self, **kwargs):
-        return QuerySetSequence(*[qs.exclude(**kwargs) for qs in self._querysets])
+        clone = self._clone()
+        clone._querysets = [qs.exclude(**kwargs) for qs in self._querysets]
+        return clone
 
     def order_by(self, *fields):
-        # TODO Also track the ordering in each QS.
-        return QuerySetSequence(*[qs.order_by(*fields) for qs in self._querysets])
+        clone = self._clone()
+        clone._querysets = [qs.order_by(*fields) for qs in self._querysets]
+        clone._order_by = list(fields)
+        return clone
 
     def reverse(self):
-        return QuerySetSequence(*[qs.reverse() for qs in reversed(self._querysets)])
+        clone = self._clone()
+        clone._querysets = [qs.reverse() for qs in reversed(self._querysets)]
+        clone._standard_ordering = not self._standard_ordering
+        return clone
 
     def none(self):
         pass
 
     def all(self):
-        return QuerySetSequence(*[qs.all() for qs in self._querysets])
+        clone = self._clone()
+        clone._querysets = [qs.all() for qs in self._querysets]
+        return clone
 
     def select_related(self):
         pass
@@ -330,3 +356,12 @@ class QuerySetSequence(object):
 
     def as_manager(self):
         pass
+
+    # Public attributes
+    @property
+    def ordered(self):
+        """
+        Returns True if the QuerySet is ordered -- i.e. has an order_by()
+        clause.
+        """
+        return bool(self._order_by)

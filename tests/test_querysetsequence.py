@@ -741,10 +741,10 @@ class TestOrderBy(TestBase):
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
             qss = self.all.order_by('title')
-        self.assertEqual(qss.query.order_by, ['title'])
 
         # Check the titles are properly ordered.
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             'Alice in Django-land',
             'Biography',
@@ -755,23 +755,24 @@ class TestOrderBy(TestBase):
         self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
+        """Ordering by a non-existent field raises an exception upon evaluation."""
         with self.assertNumQueries(0):
             qss = self.all.order_by('pages')
-        self.assertEqual(qss.query.order_by, ['pages'])
-        self.assertRaises(FieldError, list, qss)
+        with self.assertRaises(FieldError):
+            list(qss)
 
     def test_order_by_multi(self):
         """Test ordering by multiple fields."""
         # Add another object with the same title, but a later release date.
-        fiction2 = Book.objects.create(title="Fiction", author=self.alice,
-                                       publisher=self.big_books, pages=1)
+        Book.objects.create(title="Fiction", author=self.alice,
+                            publisher=self.big_books, pages=1)
 
         with self.assertNumQueries(0):
             qss = self.all.order_by('title', '-release')
-        self.assertEqual(qss.query.order_by, ['title', '-release'])
 
         # Check the titles are properly ordered.
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             'Alice in Django-land',
             'Biography',
@@ -782,14 +783,6 @@ class TestOrderBy(TestBase):
         ]
         self.assertEqual(data, expected)
 
-        # Ensure the ordering is correct.
-        self.assertLess(qss[4].release, qss[3].release)
-        self.assertEqual(qss[3].author, self.alice)
-        self.assertEqual(qss[4].author, self.bob)
-
-        # Clean-up this test.
-        fiction2.delete()
-
     def test_order_by_relation(self):
         """
         Apply order_by() with a field that is a relation to another model's id.
@@ -797,11 +790,11 @@ class TestOrderBy(TestBase):
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
             qss = self.all.order_by('author_id')
-        self.assertEqual(qss.query.order_by, ['author_id'])
 
         # The first two should be Alice, followed by three from Bob.
-        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
-            self.assertEqual(element.author, expected)
+        with self.assertNumQueries(2):
+            for expected, element in zip([self.alice.id] * 2 + [self.bob.id] * 3, qss):
+                self.assertEqual(element.author_id, expected)
 
     def test_order_by_relation_pk(self):
         """
@@ -811,15 +804,17 @@ class TestOrderBy(TestBase):
         # Order by publisher and ensure it takes.
         with self.assertNumQueries(0):
             qss = self.all.order_by('publisher')
-        self.assertEqual(qss.query.order_by, ['publisher'])
 
         # Ensure that the test has any hope of passing.
         self.assertLess(self.mad_magazine.pk, self.big_books.pk)
 
         # The first three should be from Mad Magazine, followed by three from
         # Big Books.
-        for expected, element in zip([self.mad_magazine] * 3 + [self.big_books] * 2, qss):
-            self.assertEqual(element.publisher, expected)
+        # Note that the QuerySetSequence itself needs the publisher objects to
+        # compare them, so they all get pulled in.
+        with self.assertNumQueries(2 + 5):
+            for expected, element in zip([self.mad_magazine.id] * 3 + [self.big_books.id] * 2, qss):
+                self.assertEqual(element.publisher.id, expected)
 
     def test_order_by_relation_with_ordering(self):
         """
@@ -829,11 +824,13 @@ class TestOrderBy(TestBase):
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
             qss = self.all.order_by('author')
-        self.assertEqual(qss.query.order_by, ['author'])
 
         # The first two should be Alice, followed by three from Bob.
-        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
-            self.assertEqual(element.author, expected)
+        # Note that the QuerySetSequence itself needs the author objects to
+        # compare them, so they all get pulled in.
+        with self.assertNumQueries(2 + 5):
+            for expected, element in zip([self.alice.id] * 2 + [self.bob.id] * 3, qss):
+                self.assertEqual(element.author.id, expected)
 
     def test_order_by_relation_with_different_ordering(self):
         """
@@ -847,27 +844,30 @@ class TestOrderBy(TestBase):
         # Order by publisher and ensure it takes.
         with self.assertNumQueries(0):
             qss = all.order_by('publisher')
-        self.assertEqual(qss.query.order_by, ['publisher'])
 
-        self.assertRaises(FieldError, list, qss)
+        with self.assertRaises(FieldError):
+            list(qss)
 
     def test_order_by_relation_field(self):
         """Apply order_by() with a field through a model relationship."""
         # Order by author name and ensure it takes.
         with self.assertNumQueries(0):
             qss = self.all.order_by('author__name')
-        self.assertEqual(qss.query.order_by, ['author__name'])
 
         # The first two should be Alice, followed by three from Bob.
-        for expected, element in zip([self.alice] * 2 + [self.bob] * 3, qss):
-            self.assertEqual(element.author, expected)
+        # Note that the QuerySetSequence itself needs the author objects to
+        # compare them, so they all get pulled in.
+        with self.assertNumQueries(2 + 5):
+            for expected, element in zip([self.alice.id] * 2 + [self.bob.id] * 3, qss):
+                self.assertEqual(element.author.id, expected)
 
     def test_order_by_relation_no_existent_field(self):
-        """Apply order_by() with a field through a model relationship."""
+        """Apply order_by() with a field through a model relationship that doesn't exist."""
         with self.assertNumQueries(0):
             qss = self.all.order_by('publisher__address')
-        self.assertEqual(qss.query.order_by, ['publisher__address'])
-        self.assertRaises(FieldError, list, qss)
+
+        with self.assertRaises(FieldError):
+            list(qss)
 
     def test_order_by_queryset(self):
         """Ensure we can order by QuerySet and then other fields."""
@@ -969,6 +969,7 @@ class TestReverse(TestBase):
         self.assertEqual(data, expected)
 
     def test_reverse_ordered(self):
+        """Reversing an ordered QuerySet should reverse the ordering too."""
         with self.assertNumQueries(0):
             qss = self.all.order_by('title').reverse()
 
