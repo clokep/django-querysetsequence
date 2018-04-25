@@ -289,79 +289,66 @@ class TestAll(TestBase):
 
 
 class TestSelectRelated(TestBase):
-    def test_select_related(self):
-        # Check behavior first.
-        qss = self.all._clone()
-        with self.assertNumQueries(2):
-            books = list(qss)
-        with self.assertNumQueries(5):
-            normal_authors = [b.author for b in books]
+    # Bob, Bob, Alice, Alice, Bob.
+    EXPECTED_ORDER = [2, 2, 1, 1, 2]
 
-        # Now ensure no database query to get the author.
-        qss = self.all._clone()
+    def test_no_select_related(self):
+        """Check the behavior to ensure that iterating causes additional queries."""
         with self.assertNumQueries(2):
-            qss = qss.select_related('author')
-            books = list(qss)
+            books = list(self.all)
+        with self.assertNumQueries(5):
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
+
+    def test_select_related(self):
+        """Select related removes subsequent queries to get ForeignKeys."""
+        with self.assertNumQueries(2):
+            books = list(self.all.select_related('author'))
         with self.assertNumQueries(0):
-            authors = [b.author for b in books]
-            self.assertEqual(authors, normal_authors)
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for select_related that follows multiple ForeignKeys.
 
     def test_clear_select_related(self):
-        # Ensure no database query.
-        qss = self.all._clone()
-        with self.assertNumQueries(2):
-            qss = qss.select_related('author')
-            books = list(qss)
-        with self.assertNumQueries(0):
-            authors = [b.author for b in books]
-
+        """Clearing select related causes all the database queries to occur again."""
         # Ensure there is a database query.
         with self.assertNumQueries(2):
-            qss = qss.select_related(None)
-            books = list(qss)
+            books = list(self.all.select_related('author').select_related(None))
         with self.assertNumQueries(5):
-            normal_authors = [b.author for b in books]
-            self.assertEqual(authors, normal_authors)
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
 
 
 class TestPrefetchRelated(TestBase):
-    def test_prefetch_related(self):
-        # Check behavior first, one database query per author access.
-        qss = self.all._clone()
-        with self.assertNumQueries(2):
-            books = list(qss)
-        with self.assertNumQueries(5):
-            normal_authors = [b.author for b in books]
+    # Bob, Bob, Alice, Alice, Bob.
+    EXPECTED_ORDER = [2, 2, 1, 1, 2]
 
-        # Now ensure one database query for all authors.
-        qss = self.all._clone()
+    def test_no_prefetch_related(self):
+        """Check behavior first, one database query per author access."""
+        with self.assertNumQueries(2):
+            books = list(self.all)
+        with self.assertNumQueries(5):
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
+
+    def test_prefetch_related(self):
+        """Now ensure one database query for all authors, per QuerySet."""
         with self.assertNumQueries(4):
-            qss = qss.prefetch_related('author')
-            books = list(qss)
+            books = list(self.all.prefetch_related('author'))
         with self.assertNumQueries(0):
-            authors = [b.author for b in books]
-            self.assertEqual(authors, normal_authors)
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for prefetch_related that follows multiple ForeignKeys.
 
     def test_clear_prefetch_related(self):
-        # Ensure no database query.
-        qss = self.all._clone()
-        with self.assertNumQueries(4):
-            qss = qss.prefetch_related('author')
-            books = list(qss)
-        with self.assertNumQueries(0):
-            authors = [b.author for b in books]
-
-        # Ensure there is a database query.
+        """Ensure the original behavior is restored if prefetch related is cleared."""
         with self.assertNumQueries(2):
-            qss = qss.prefetch_related(None)
-            books = list(qss)
+            books = list(self.all.prefetch_related('author').prefetch_related(None))
         with self.assertNumQueries(5):
-            normal_authors = [b.author for b in books]
-            self.assertEqual(authors, normal_authors)
+            authors = [b.author.id for b in books]
+        self.assertEqual(authors, self.EXPECTED_ORDER)
 
 
 class TestFilter(TestBase):

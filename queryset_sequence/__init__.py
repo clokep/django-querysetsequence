@@ -341,11 +341,15 @@ class QuerySetSequence(object):
         clone._querysets = [qs.all() for qs in self._querysets]
         return clone
 
-    def select_related(self):
-        pass
+    def select_related(self, *fields):
+        clone = self._clone()
+        clone._querysets = [qs.select_related(*fields) for qs in self._querysets]
+        return clone
 
-    def prefetch_related(self):
-        pass
+    def prefetch_related(self, *lookups):
+        clone = self._clone()
+        clone._querysets = [qs.prefetch_related(*lookups) for qs in self._querysets]
+        return clone
 
     # Methods that do not return QuerySets
     def get(self):
