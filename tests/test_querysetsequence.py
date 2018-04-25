@@ -18,8 +18,7 @@ from tests.models import (Article, Author, BlogPost, Book, OnlinePublisher,
 
 
 class TestBase(TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set-up some data to be tested against."""
         alice = Author.objects.create(name="Alice")
         bob = Author.objects.create(name="Bob")
@@ -50,25 +49,14 @@ class TestBase(TestCase):
                                 publisher=wacky_website)
 
         # Save the authors and publishers for later.
-        cls.alice = alice
-        cls.bob = bob
-        cls.big_books = big_books
-        cls.mad_magazine = mad_magazine
-        cls.wacky_website = wacky_website
+        self.alice = alice
+        self.bob = bob
+        self.big_books = big_books
+        self.mad_magazine = mad_magazine
+        self.wacky_website = wacky_website
 
         # Many tests start with the same QuerySetSequence.
-        cls.all = QuerySetSequence(Book.objects.all(), Article.objects.all())
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.alice
-        del cls.bob
-        del cls.all
-
-        # Clear the database.
-        Author.objects.all().delete()
-        Article.objects.all().delete()
-        Book.objects.all().delete()
+        self.all = QuerySetSequence(Book.objects.all(), Article.objects.all())
 
 
 class TestQuerySetSequence(TestBase):
@@ -275,11 +263,10 @@ class TestNone(TestBase):
 class TestAll(TestBase):
     def test_all(self):
         """Ensure a copy is made when calling all()."""
-        qss = self.all._clone()
-        copy = qss.all()
+        copy = self.all.all()
 
         # Different QuerySetSequences, but the same content.
-        self.assertNotEqual(qss, copy)
+        self.assertNotEqual(self.all, copy)
         # Ordered by sub-QuerySet than by pk.
         expected = [
             "Fiction",
@@ -288,12 +275,15 @@ class TestAll(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
+
+        # Each QuerySet should be evaluated separately.
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all]
+        self.assertEqual(data, expected)
+
         with self.assertNumQueries(2):
             data = [it.title for it in copy]
         self.assertEqual(data, expected)
-
-        # The copy was evaluated, not qss.
-        self.assertIsNone(qss._result_cache)
 
 
 class TestSelectRelated(TestBase):

@@ -42,9 +42,9 @@ def cumsum(seq):
 
 
 class QuerySequenceIterable(object):
-    def __init__(self, queryset, *args, **kwargs):
+    def __init__(self, querysets):
         # Create a clone so that subsequent calls to iterate are kept separate.
-        self.queryset = queryset._clone()
+        self._querysets = querysets
 
     @classmethod
     def _get_field_names(cls, model):
@@ -183,36 +183,26 @@ class QuerySequenceIterable(object):
 
     def __iter__(self):
         # Pull out the attributes we care about.
-        query = self.queryset.query
-        querysets = query._querysets
+        querysets = self._querysets
 
-        # If this is explicitly marked as empty or there's no QuerySets, just
-        # return an empty iterator.
-        if not len(querysets) or query.is_empty():
+        # TODO
+        return chain(*querysets)
+
+        # If there's no QuerySets, just return an empty iterator.
+        if not len(querysets):
             return iter([])
 
-        # Apply any select related calls.
-        if isinstance(query.select_related, (list, tuple)):
-            querysets = [it.select_related(*query.select_related) for it in querysets]
-
-        # Reverse the ordering, if necessary. Apply this to both the individual
-        # QuerySets and the ordering of the QuerySets themselves.
-        if not query.standard_ordering:
-            querysets = [it.reverse() for it in querysets]
-            querysets = querysets[::-1]
+        # Since all QuerySets should have similar properties, use them to get
+        # some information.
+        # TODO What if something is unset, this will default weirdly?
 
         # If order is necessary, evaluate and start feeding data back.
-        if query.order_by:
+        if querysets[0].order_by:
             # If the first element of order_by is '#', this means first order by
             # QuerySet. If it isn't this, then returned the interleaved
             # iterator.
             if query.order_by[0].lstrip('-') != '#':
                 return self._ordered_iterator(query, querysets)
-
-            # Otherwise, order by QuerySet first. Handle reversing the
-            # QuerySets, if necessary.
-            elif query.order_by[0].startswith('-'):
-                querysets = querysets[::-1]
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
@@ -277,354 +267,62 @@ class QuerySequenceIterable(object):
         return chain(*querysets)
 
 
-class QuerySequence(six.with_metaclass(PartialInheritanceMeta, Query)):
-    """
-    A Query that handles multiple QuerySets.
-
-    The API is expected to match django.db.models.sql.query.Query.
-
-    """
-    INHERITED_ATTRS = [
-        'set_empty',
-        'is_empty',
-        'set_limits',
-        'clear_limits',
-        'can_filter',
-        'add_select_related',
-    ]
-    NOT_IMPLEMENTED_ATTRS = [
-        'add_annotation',
-        'add_deferred_loading',
-        'add_distinct_fields',
-        'add_extra',
-        'add_immediate_loading',
-        'add_q',
-        'add_update_fields',
-        'clear_deferred_loading',
-        'combine',
-        'get_aggregation',
-        'get_compiler',
-        'get_meta',
-        'has_filters',
-    ]
-
-    def __init__(self, *args):
-        self._querysets = list(args)
-        # Mark each QuerySet's Model with the number of the QuerySet it is.
-        for i, qs in enumerate(self._querysets):
-            # Generate a Proxy model and then modify that to allow for the same
-            # Model to be used in multiple QuerySetSequences at once.
-            qs.model = self._get_model(qs.model)
-            # Also push this to the Query object since that holds it's own
-            # reference to QuerySet.model instead of asking the QuerySet for it.
-            qs.query.model = qs.model
-
-            # Actually set the attribute.
-            setattr(qs.model, '#', i)
-
-        # Call super to pick up a variety of properties.
-        super(QuerySequence, self).__init__(model=None)
-
-    def _get_model(self, model):
-        """Create (and return) a proxy model which subclasses the given model."""
-        model_meta = getattr(model, 'Meta', object)
-
-        class QuerySequenceModel(model):
-            class Meta(model_meta):
-                proxy = True
-                # Note that we must give an app_label or Django complains, it
-                # doesn't seem to get used, however.
-                app_label = ('queryset_sequence.%s' % uuid.uuid4()).replace('-', '')
-
-        return QuerySequenceModel
-
-    def __str__(self):
-        """Return the class-name and memory location; there's no SQL to show."""
-        return object.__str__(self)
-
-    def chain(self, *args, **kwargs):
-        obj = super(QuerySequence, self).chain(*args, **kwargs)
-
-        obj._querysets = [qs._chain() for qs in self._querysets]
-        return obj
-
-    def clone(self, *args, **kwargs):
-        obj = super(QuerySequence, self).clone(*args, **kwargs)
-
-        # Clone each QuerySet and copy it to the new object.
-        obj._querysets = [it._clone() for it in self._querysets]
-        return obj
-
-    def get_count(self, using):
-        """Request count on each sub-query."""
-        if self.is_empty():
-            return 0
-        return sum([it.count() for it in self._querysets])
-
-    def has_results(self, using):
-        """If any sub-query has a result, this is true."""
-        return any([it.exists() for it in self._querysets])
-
-    def add_ordering(self, *ordering):
-        """Propagate ordering to each QuerySet and save it for iteration."""
-        if ordering:
-            self.order_by.extend(ordering)
-
-            # Remove the ordering by QuerySet before trying to order the
-            # individual QuerySets.
-            if ordering[0].lstrip('-') == '#':
-                ordering = ordering[1:]
-
-        self._querysets = [it.order_by(*ordering) for it in self._querysets]
-
-    def clear_ordering(self, force_empty):
-        """
-        Removes any ordering settings.
-
-        Does not propagate to each QuerySet since their is no appropriate API.
-        """
-        self.order_by = []
-
-    def add_select_related(self, fields):
-        # Don't bother splitting this by field sep, etc.
-        self.select_related = fields
-
-
-# TODO Inherit from django.db.models.base.Model.
-class QuerySetSequenceModel(object):
-    """
-    A fake Model that is used to throw DoesNotExist exceptions for
-    QuerySetSequence.
-    """
-    class DoesNotExist(ObjectDoesNotExist):
-        pass
-
-    class MultipleObjectsReturned(MultipleObjectsReturned):
-        pass
-
-    class _meta:
-        app_label = 'queryset_sequence'
-        object_name = 'QuerySetSequenceModel'
-
-
-class QuerySetSequence(six.with_metaclass(PartialInheritanceMeta, QuerySet)):
+class QuerySetSequence(object):
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
     the base models.
 
     """
-    INHERITED_ATTRS = [
-        # Public methods that return QuerySets.
-        'filter',
-        'exclude',
-        'order_by',
-        'reverse',
-        'none',
-        'all',
-        'select_related',
 
-        # Public methods that don't return QuerySets.
-        'get',
-        'count',
-        'as_manager',
-        'exists',
-        'iterator',
-
-        # Public introspection attributes.
-        'ordered',
-        'db',
-
-        # Private methods.
-        '_chain',
-        '_clone',
-        '_fetch_all',
-        '_merge_sanity_check',
-        '_prepare',
-        '_iterator',
-    ]
-    NOT_IMPLEMENTED_ATTRS = [
-        # Public methods that return QuerySets.
-        'annotate',
-        'distinct',
-        'values',
-        'values_list',
-        'dates',
-        'datetimes',
-        'extra',
-        'defer',
-        'only',
-        'using',
-        'select_for_update',
-        'raw',
-        # Public methods that don't return QuerySets.
-        'latest',
-        'earliest',
-        'first',
-        'last',
-        'aggregate',
-
-        # Public methods that don't return QuerySets. These don't make sense in
-        # the context of a QuerySetSequence.
-        'create',
-        'get_or_create',
-        'update_or_create',
-        'bulk_create',
-        'in_bulk',
-        'update',
-    ]
-
-    def __init__(self, *args, **kwargs):
-        # Create the QuerySequence object where most of the magic happens.
-        if 'query' not in kwargs:
-            kwargs['query'] = QuerySequence(*args)
-        elif args:
-            raise ValueError(
-                "Cannot provide args and a 'query' keyword argument.")
-
-        # If a particular Model class is not provided, just use the generic
-        # model class.
-        # TODO Dynamically generate the fields available in this model via
-        # introspection of the input QuerySets.
-        if 'model' not in kwargs:
-            kwargs['model'] = QuerySetSequenceModel
-
-        super(QuerySetSequence, self).__init__(**kwargs)
-
+    def __init__(self, *args):
+        self._querysets = args
         # Override the iterator that will be used.
         self._iterable_class = QuerySequenceIterable
 
-    def _filter_or_exclude(self, negate, *args, **kwargs):
-        """
-        Maps _filter_or_exclude over QuerySet items and simplifies the result.
+    def __iter__(self):
+        return iter(chain(*self._querysets))
 
-        Returns QuerySetSequence, or QuerySet depending on the contents of
-        items, i.e. at least two non empty QuerySets, or exactly one non empty
-        QuerySet.
-        """
-        if args or kwargs:
-            assert self.query.can_filter(), \
-                "Cannot filter a query once a slice has been taken."
-        clone = self._clone()
+    # Methods that return new QuerySets
+    def filter(self, **kwargs):
+        return QuerySetSequence(*[qs.filter(**kwargs) for qs in self._querysets])
 
-        # Separate the kwargs into ones that deal with QuerySets (i.e. are
-        # handled by QuerySetSequence) and ones that will be passed onto each
-        # QuerySet.
-        sequence_kwargs = {}
-        queryset_kwargs = {}
-        for kwarg, value in kwargs.items():
-            if kwarg.startswith('#'):
-                sequence_kwargs[kwarg] = value
-            else:
-                queryset_kwargs[kwarg] = value
-        clone._filter_or_exclude_querysets(negate, **sequence_kwargs)
+    def exclude(self, **kwargs):
+        return QuerySetSequence(*[qs.exclude(**kwargs) for qs in self._querysets])
 
-        # Apply the _filter_or_exclude to each QuerySet in the QuerySequence.
-        querysets = \
-            [qs._filter_or_exclude(negate, *args, **queryset_kwargs) for qs in clone.query._querysets]
+    def order_by(self, *fields):
+        # TODO Also track the ordering in each QS.
+        return QuerySetSequence(*[qs.order_by(*fields) for qs in self._querysets])
 
-        clone.query._querysets = querysets
-        return clone
+    def reverse(self):
+        return QuerySetSequence(*[qs.reverse() for qs in reversed(self._querysets)])
 
-    def _filter_or_exclude_querysets(self, negate, **kwargs):
-        """
-        Similar to _filter_or_exclude, but run over the QuerySets in the
-        QuerySetSequence instead of over each QuerySet's fields.
+    def none(self):
+        pass
 
-        """
-        # Start with all QuerySets.
-        querysets = list(range(len(self.query._querysets)))
+    def all(self):
+        return QuerySetSequence(*[qs.all() for qs in self._querysets])
 
-        # Ensure negate is a boolean.
-        negate = bool(negate)
+    def select_related(self):
+        pass
 
-        for kwarg, value in kwargs.items():
-            parts = kwarg.split(LOOKUP_SEP)
+    def prefetch_related(self):
+        pass
 
-            # Ensure this is being used to filter QuerySets.
-            if parts[0] != '#':
-                raise ValueError("Keyword '%s' is not a valid keyword to filter over, "
-                                 "it must begin with '#'." % kwarg)
+    # Methods that do not return QuerySets
+    def get(self):
+        pass
 
-            # Don't allow __ multiple times.
-            if len(parts) > 2:
-                raise ValueError("Keyword '%s' must not contain multiple "
-                                 "lookup seperators." % kwarg)
+    def count(self):
+        pass
 
-            # The actual lookup is the second part.
-            try:
-                lookup = parts[1]
-            except IndexError:
-                lookup = 'exact'
+    def iterator(self):
+        pass
 
-            # Math operators that all have the same logic.
-            LOOKUP_TO_OPERATOR = {
-                'exact': eq,
-                'iexact': eq,
-                'gt': gt,
-                'gte': ge,
-                'lt': lt,
-                'lte': le,
-            }
-            try:
-                operator = LOOKUP_TO_OPERATOR[lookup]
-
-                # These expect integers, this matches the logic in
-                # IntegerField.get_prep_value(). (Essentially treat the '#'
-                # field as an IntegerField.)
-                if value is not None:
-                    value = int(value)
-
-                querysets = filter(lambda i: operator(i, value) != negate, querysets)
-                continue
-            except KeyError:
-                # It wasn't one of the above operators, keep trying.
-                pass
-
-            # Some of these seem to get handled as bytes.
-            if lookup in ('contains', 'icontains'):
-                value = six.text_type(value)
-                querysets = filter(lambda i: (value in six.text_type(i)) != negate, querysets)
-
-            elif lookup == 'in':
-                querysets = filter(lambda i: (i in value) != negate, querysets)
-
-            elif lookup in ('startswith', 'istartswith'):
-                value = six.text_type(value)
-                querysets = filter(lambda i: six.text_type(i).startswith(value) != negate, querysets)
-
-            elif lookup in ('endswith', 'iendswith'):
-                value = six.text_type(value)
-                querysets = filter(lambda i: six.text_type(i).endswith(value) != negate, querysets)
-
-            elif lookup == 'range':
-                # Inclusive include.
-                start, end = value
-                querysets = filter(lambda i: (start <= i <= end) != negate, querysets)
-
-            else:
-                # Any other field lookup is not supported, e.g. date, year, month,
-                # day, week_day, hour, minute, second, isnull, search, regex, and
-                # iregex.
-                raise ValueError("Unsupported lookup '%s'" % lookup)
-
-            # Keep querysets a list in Python 3.
-            querysets = list(querysets)
-
-        # Finally, trim down the actual QuerySets we care about!
-        self.query._querysets = [self.query._querysets[i] for i in querysets]
+    def exists(self):
+        pass
 
     def delete(self):
-        # Propagate delete to each sub-query.
-        for qs in self.query._querysets:
-            qs.delete()
+        pass
 
-        # Clear the result cache, in case this QuerySet gets reused.
-        self._result_cache = None
-
-    def prefetch_related(self, *lookups):
-        # Don't modify self._prefetch_related_lookups, as that will cause
-        # issues, but call prefetch_related on underlying QuerySets.
-        clone = self._clone()
-        clone.query._querysets = [
-            qs.prefetch_related(*lookups) for qs in clone.query._querysets]
-        return clone
+    def as_manager(self):
+        pass
