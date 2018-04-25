@@ -373,8 +373,8 @@ class TestFilter(TestBase):
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
             bob_qss = self.all.filter(author=self.bob)
-        self.assertEqual(bob_qss.count(), 3)
-        self.assertIsNone(bob_qss._result_cache)
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
 
     def test_filter_by_relation(self):
         """
@@ -385,8 +385,8 @@ class TestFilter(TestBase):
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
             bob_qss = self.all.filter(author__name=self.bob.name)
-        self.assertEqual(bob_qss.count(), 3)
-        self.assertIsNone(bob_qss._result_cache)
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
 
     def test_empty(self):
         """
@@ -395,8 +395,9 @@ class TestFilter(TestBase):
         # Filter to nothing.
         with self.assertNumQueries(0):
             qss = self.all.filter(title='')
-        self.assertEqual(qss.count(), 0)
         self.assertIsInstance(qss, QuerySetSequence)
+        with self.assertNumQueries(2):
+            self.assertEqual(qss.count(), 0)
 
         # This should not throw an exception.
         data = list(qss)
@@ -577,8 +578,8 @@ class TestExclude(TestBase):
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
             bob_qss = self.all.exclude(author=self.alice)
-        self.assertEqual(bob_qss.count(), 3)
-        self.assertIsNone(bob_qss._result_cache)
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
 
     def test_exclude_by_relation(self):
         """
@@ -589,24 +590,8 @@ class TestExclude(TestBase):
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
             bob_qss = self.all.exclude(author__name=self.alice.name)
-        self.assertEqual(bob_qss.count(), 3)
-        self.assertIsNone(bob_qss._result_cache)
-
-    def test_simplify(self):
-        """
-        Ensure that filter() properly filters the children QuerySets and
-        simplifies to a single child QuerySet when all others become empty.
-        """
-        # Filter to just Alice's work.
-        with self.assertNumQueries(0):
-            alice_qss = self.all.exclude(author=self.bob)
-        self.assertEqual(alice_qss.count(), 2)
-        # TODO
-        # self.assertIsNone(alice_qss._result_cache)
-
-        # Since we've now filtered down to a single QuerySet, we shouldn't be a
-        # QuerySetSequence any longer.
-        self.assertIsInstance(alice_qss, QuerySet)
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
 
     def test_empty(self):
         """
@@ -615,8 +600,9 @@ class TestExclude(TestBase):
         # Filter to nothing.
         with self.assertNumQueries(0):
             qss = self.all.exclude(author__in=[self.alice, self.bob])
-        self.assertEqual(qss.count(), 0)
         self.assertIsInstance(qss, QuerySetSequence)
+        with self.assertNumQueries(2):
+            self.assertEqual(qss.count(), 0)
 
         # This should not throw an exception.
         data = list(qss)
@@ -962,7 +948,8 @@ class TestReverse(TestBase):
             "Biography",
         ]
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_twice(self):
@@ -977,7 +964,8 @@ class TestReverse(TestBase):
             "Alice in Django-land",
             "Some Article",
         ]
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_ordered(self):
@@ -992,7 +980,8 @@ class TestReverse(TestBase):
             "Alice in Django-land",
         ]
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_reverse_twice_ordered(self):
@@ -1007,7 +996,8 @@ class TestReverse(TestBase):
             "Some Article",
         ]
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
 
