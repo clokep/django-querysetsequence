@@ -191,7 +191,7 @@ class QuerySequenceIterable(object):
 
     def __iter__(self):
         # Pull out the attributes we care about.
-        querysets = self._querysets
+        querysets = list(self._querysets)
 
         # If there's no QuerySets, just return an empty iterator.
         if not len(querysets):
@@ -212,10 +212,9 @@ class QuerySequenceIterable(object):
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
-        return chain(*querysets)
 
         # Some optimization, if there is no slicing, iterate through querysets.
-        if query.low_mark == 0 and query.high_mark is None:
+        if self._low_mark == 0 and self._high_mark is None:
             return chain(*querysets)
 
         # First trim any QuerySets based on the currently set limits!
@@ -309,6 +308,43 @@ class QuerySetSequence(object):
 
     def __nonzero__(self):      # Python 2 compatibility
         return type(self).__bool__(self)
+
+    def __getitem__(self, k):
+        """
+        Retrieves an item or slice from the set of results.
+        """
+        if not isinstance(k, (slice,) + six.integer_types):
+            raise TypeError
+        assert ((not isinstance(k, slice) and (k >= 0)) or
+                (isinstance(k, slice) and (k.start is None or k.start >= 0) and
+                 (k.stop is None or k.stop >= 0))), \
+            "Negative indexing is not supported."
+
+        if isinstance(k, slice):
+            qs = self._clone()
+            # If start is not given, it is 0.
+            if k.start is not None:
+                start = int(k.start)
+            else:
+                start = 0
+            # Apply the new start to any previous slices.
+            qs._low_mark += start
+
+            # If stop is not given, don't modify the stop.
+            if k.stop is not None:
+                stop = int(k.stop)
+
+                # The high mark needs to take into an account any previous
+                # offsets of the low mark.
+                offset = stop - start
+                qs._high_mark = qs._low_mark + offset
+            return list(QuerySequenceIterable(
+                qs._querysets, qs._order_by, qs._standard_ordering, qs._low_mark, qs._high_mark))[::k.step] if k.step else qs
+
+        qs = self._clone()
+        qs._low_mark += k
+        qs._high_mark = qs._low_mark + 1
+        return list(QuerySequenceIterable(qs._querysets, qs._order_by, qs._standard_ordering, qs._low_mark, qs._high_mark))[0]
 
     # Methods that return new QuerySets
     def filter(self, **kwargs):

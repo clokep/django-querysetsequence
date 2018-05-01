@@ -992,100 +992,120 @@ class TestReverse(TestBase):
 class TestSlicing(TestBase):
     """Test indexing and slicing."""
 
+    # TODO Caching throughout these test-cases.
+
     def test_single_element(self):
         """Single element."""
-        qss = self.all._clone()
-        result = qss[0]
+        # 2 counts + evaluating one QuerySet.
+        with self.assertNumQueries(3):
+            result = self.all[0]
         self.assertEqual(result.title, 'Fiction')
         self.assertIsInstance(result, Book)
-        # qss never gets evaluated since the underlying QuerySet is used.
-        self.assertIsNone(qss._result_cache)
 
     def test_one_QuerySet(self):
         """Test slicing only from one QuerySet."""
-        qss = self.all._clone()
-        result = qss[0:2]
-        self.assertIsInstance(result, QuerySet)
-        # qss never gets evaluated since the underlying QuerySet is used.
-        self.assertIsNone(qss._result_cache)
-        # Check the data.
-        for element in result:
-            self.assertIsInstance(element, Book)
+        with self.assertNumQueries(0):
+            qss = self.all[0:2]
+
+        # 2 counts + evaluating one QuerySet.
+        with self.assertNumQueries(3):
+            data = [it.title for it in qss]
+        self.assertEqual(['Fiction', 'Biography'], data)
+
+    def test_cast_list(self):
+        """Test slicing and casting to a list."""
+        with self.assertNumQueries(0):
+            qss = self.all[0:2]
+
+        # 2 counts + evaluating one QuerySet.
+        with self.assertNumQueries(3):
+            result = list(qss)
+            data = [it.title for it in result]
+        self.assertEqual(['Fiction', 'Biography'], data)
 
     def test_multiple_QuerySets(self):
         """Test slicing across elements from multiple QuerySets."""
-        qss = self.all._clone()
-        result = qss[1:3]
-        self.assertIsInstance(result, QuerySetSequence)
-        data = list(result)
-        # Requesting the data above causes it to be cached.
-        self.assertIsNotNone(result._result_cache)
-        self.assertIsInstance(data[0], Book)
-        self.assertIsInstance(data[1], Article)
-        self.assertEqual(len(data), 2)
+        # 2 counts + 2 evaluations.
+        with self.assertNumQueries(0):
+            qss = self.all[1:3]
+
+        # 2 counts + evaluating two QuerySets.
+        with self.assertNumQueries(4):
+            data = [it.title for it in qss]
+        self.assertEqual(['Biography', 'Django Rocks'], data)
 
     def test_multiple_slices(self):
         """Test multiple slices taken."""
-        qss = self.all._clone()
-        result = qss[1:3]
+        with self.assertNumQueries(0):
+            result = self.all[1:3]
         self.assertIsInstance(result, QuerySetSequence)
-        article = result[1]
-        # Still haven't evaluated the QuerySetSequence!
-        self.assertIsNone(result._result_cache)
+        # Evaluate the QuerySet.
+        with self.assertNumQueries(3):
+            article = result[1]
         self.assertEqual(article.title, 'Django Rocks')
+
+    def test_multiple_slices_complex(self):
+        """Test taking slices multiple times."""
+        with self.assertNumQueries(0):
+            qss = self.all[1:4]
+        self.assertIsInstance(qss, QuerySetSequence)
+
+        with self.assertNumQueries(0):
+            qss = qss[1:2]
+
+        # Evaluate the QuerySet.
+        with self.assertNumQueries(3):
+            data = [it.title for it in qss]
+        self.assertEqual(data, ['Django Rocks'])
 
     def test_step(self):
         """Test behavior when a step is provided to the slice."""
-        qss = self.all._clone()
-        result = qss[0:4:2]
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 2)
+        with self.assertNumQueries(4):
+            qss = self.all[0:4:2]
+            data = [it.title for it in qss]
+        self.assertIsInstance(qss, list)
+
+        self.assertEqual(['Fiction', 'Django Rocks'], data)
 
     def test_all(self):
         """Test slicing to all elements."""
-        qss = self.all._clone()
-        qss = qss[:]
+        qss = self.all[:]
         self.assertIsInstance(qss, QuerySetSequence)
 
         # No data evaluated.
-        self.assertIsNone(qss._result_cache)
-        self.assertEqual(qss.count(), 5)
+        with self.assertNumQueries(2):
+            self.assertEqual(len(qss), 5)
 
     def test_slicing_order_by(self):
         """Test slicing when order_by has already been called."""
-        # Order by author and ensure it takes.
-        qss = self.all.order_by('title')
-        self.assertEqual(qss.query.order_by, ['title'])
-
-        # Take a slice.
-        qss = qss[1:3]
+        # Order by author and take a slice.
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('title')[1:3]
         self.assertIsInstance(qss, QuerySetSequence)
-        # No data yet.
-        self.assertIsNone(qss._result_cache)
-        data = [it.title for it in qss]
+
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data[0], 'Biography')
         self.assertEqual(data[1], 'Django Rocks')
 
     def test_open_slice(self):
         """Test slicing without an end."""
-        articles = Article.objects.all()
-        qs = articles[1:]
-        qss = QuerySetSequence(articles)[1:]
+        qss = QuerySetSequence(Article.objects.all())[1:]
 
-        self.assertEqual(len(qs), len(qss))
-        self.assertEqual(list(qs), list(qss))
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
+        self.assertEqual(['Alice in Django-land', 'Some Article'], data)
 
     def test_closed_slice_single_qs(self):
         """Test slicing if the start and end are within the same QuerySet."""
         Article.objects.create(title='Another Article', author=self.bob,
                                publisher=self.mad_magazine)
 
-        articles = Article.objects.all()
-        qs = articles[1:3]
-        qss = QuerySetSequence(articles)[1:3]
+        qss = QuerySetSequence(Article.objects.all())[1:3]
 
-        # The length should be the same.
-        self.assertEqual(len(qs), len(qss))
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
+        self.assertEqual(['Alice in Django-land', 'Some Article'], data)
 
 
 class TestGet(TestBase):
