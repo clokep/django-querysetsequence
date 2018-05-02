@@ -98,43 +98,44 @@ class TestIterator(TestBase):
 
     def test_iterator(self):
         """Ensure that an iterator queries for the results."""
-        qss = self.all._clone()
-
         # Ensure that calling iterator twice re-evaluates the query.
         with self.assertNumQueries(2):
-            data = [it.title for it in qss.iterator()]
-            self.assertEqual(data, TestIterator.EXPECTED)
+            data = [it.title for it in self.all.iterator()]
+        self.assertEqual(data, TestIterator.EXPECTED)
 
         with self.assertNumQueries(2):
-            data = [it.title for it in qss.iterator()]
-            self.assertEqual(data, TestIterator.EXPECTED)
+            data = [it.title for it in self.all.iterator()]
+        self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter(self):
-        qss = self.all._clone()
-        data = [it.title for it in qss]
+        """Directly iteratoring the query should return the same results."""
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all]
         self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_iter_cache(self):
         """Ensure that iterating the QuerySet caches."""
-        qss = self.all._clone()
-
         with self.assertNumQueries(2):
-            data = [it.title for it in qss]
+            data = [it.title for it in self.all]
             self.assertEqual(data, TestIterator.EXPECTED)
 
         # So the second call does nothing.
         with self.assertNumQueries(0):
-            data = [it.title for it in qss]
+            data = [it.title for it in self.all]
             self.assertEqual(data, TestIterator.EXPECTED)
 
     def test_empty(self):
+        """Test an empty iteration."""
         qss = QuerySetSequence()
-        self.assertEqual(list(qss), [])
+        with self.assertNumQueries(0):
+            self.assertEqual(list(qss), [])
 
     def test_empty_subqueryset(self):
+        """Iterating an empty set should work."""
         qss = QuerySetSequence(Book.objects.all(), Article.objects.none()).order_by('title')
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         self.assertEqual(data, ['Biography', 'Fiction'])
 
 

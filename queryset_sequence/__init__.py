@@ -388,14 +388,34 @@ class QuerySetSequence(object):
         return clone
 
     # Methods that do not return QuerySets
-    def get(self):
-        pass
+    def get(self, **kwargs):
+        result = None
+        for qs in self._querysets:
+            try:
+                obj = qs.get(**kwargs)
+            except ObjectDoesNotExist:
+                pass
+            # Don't catch the MultipleObjectsReturned(), allow it to raise.
+            else:
+                # If a second object is found, raise an exception.
+                if result:
+                    raise MultipleObjectsReturned()
+                result = obj
+
+        # Checked all QuerySets and no object was found.
+        if result is None:
+            raise ObjectDoesNotExist()
+
+        # Return the only result found.
+        return result
 
     def count(self):
         return sum(qs.count() for qs in self._querysets)
 
     def iterator(self):
-        pass
+        clone = self._clone()
+        clone._querysets = [qs.iterator() for qs in self._querysets]
+        return clone
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
