@@ -147,14 +147,16 @@ class TestNone(TestBase):
         """
         with self.assertNumQueries(0):
             qss = self.all.none()
+            data = list(qss)
 
-            # This returns a special EmptyQuerySet.
-            self.assertIsInstance(qss, EmptyQuerySet)
+        # This returns a special EmptyQuerySet.
+        self.assertIsInstance(qss, EmptyQuerySet)
 
-            # Should have no data.
-            self.assertEqual(list(qss), [])
+        # Should have no data.
+        self.assertEqual(data, [])
 
     def test_count(self):
+        """An empty QuerySet should have no data."""
         with self.assertNumQueries(0):
             qss = self.all.none()
 

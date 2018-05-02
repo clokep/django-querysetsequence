@@ -8,6 +8,7 @@ import uuid
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
+from django.db.models.query import EmptyQuerySet
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import QuerySet
@@ -370,7 +371,9 @@ class QuerySetSequence(object):
         return clone
 
     def none(self):
-        pass
+        clone = self._clone()
+        clone._querysets = [qs.none() for qs in self._querysets]
+        return clone
 
     def all(self):
         clone = self._clone()
