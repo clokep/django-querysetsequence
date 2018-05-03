@@ -85,6 +85,14 @@ class TestLength(TestBase):
         with self.assertNumQueries(0):
             self.assertEqual(len(self.all), 5)
 
+    def test_slice(self):
+        """Ensure the proper length is calculated when a slice is taken."""
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all[1:].count(), 4)
+
+        with self.assertNumQueries(2):
+            self.assertEqual(len(self.all[1:]), 4)
+
 
 class TestIterator(TestBase):
     """Test the iterator when no ordering is set."""
@@ -698,6 +706,28 @@ class TestOrderBy(TestBase):
             'Fiction',
             'Fiction',
             'Some Article',
+        ]
+        self.assertEqual(data, expected)
+
+    def test_order_by_multi_2(self):
+        """Test ordering by multiple fields, where # is not first."""
+        # Add another object with the same title, but in a different QuerySet.
+        Article.objects.create(title="Fiction", author=self.alice,
+                               publisher=self.mad_magazine)
+
+        with self.assertNumQueries(0):
+            qss = self.all.order_by('title', '-#')
+
+        # Check the titles are properly ordered.
+        with self.assertNumQueries(2):
+            data = [(it.title, it.__name__) for it in qss]
+        expected = [
+            ('Alice in Django-land', 'Article')
+            ('Biography', 'Book'),
+            ('Django Rocks', 'Article'),
+            ('Fiction', 'Article'),
+            ('Fiction', 'Book'),
+            ('Some Article', 'Article'),
         ]
         self.assertEqual(data, expected)
 
