@@ -347,20 +347,139 @@ class QuerySetSequence(object):
         qs._high_mark = qs._low_mark + 1
         return list(QuerySequenceIterable(qs._querysets, qs._order_by, qs._standard_ordering, qs._low_mark, qs._high_mark))[0]
 
+    def _separate_filter_fields(self, **kwargs):
+        qss_fields, std_fields = self._separate_fields(*kwargs.keys())
+
+        # Remove any fields that start with '#' from kwargs.
+        qss_kwargs = {field: value for field, value in kwargs.items() if field in qss_fields}
+        std_kwargs = {field: value for field, value in kwargs.items() if field in std_fields}
+
+        return qss_kwargs, std_kwargs
+
+    def _separate_fields(self, *fields):
+        # Remove any fields that start with '#' from kwargs.
+        qss_fields = []
+        std_fields = []
+        for field in fields:
+            if field.startswith('#') or field.startswith('-#'):
+                qss_fields.append(field)
+            else:
+                std_fields.append(field)
+
+        return qss_fields, std_fields
+
+    def _filter_or_exclude_querysets(self, negate, **kwargs):
+        """
+        Similar to QuerySet._filter_or_exclude, but run over the QuerySets in
+        the QuerySetSequence instead of over each QuerySet's fields.
+        """
+        # Start with all QuerySets.
+        queryset_idxs = list(range(len(self._querysets)))
+
+        # Ensure negate is a boolean.
+        negate = bool(negate)
+
+        for kwarg, value in kwargs.items():
+            parts = kwarg.split(LOOKUP_SEP)
+
+            # Ensure this is being used to filter QuerySets.
+            if parts[0] != '#':
+                raise ValueError("Keyword '%s' is not a valid keyword to filter over, "
+                                 "it must begin with '#'." % kwarg)
+
+            # Don't allow __ multiple times.
+            if len(parts) > 2:
+                raise ValueError("Keyword '%s' must not contain multiple "
+                                 "lookup seperators." % kwarg)
+
+            # The actual lookup is the second part.
+            try:
+                lookup = parts[1]
+            except IndexError:
+                lookup = 'exact'
+
+            # Math operators that all have the same logic.
+            LOOKUP_TO_OPERATOR = {
+                'exact': eq,
+                'iexact': eq,
+                'gt': gt,
+                'gte': ge,
+                'lt': lt,
+                'lte': le,
+            }
+            try:
+                operator = LOOKUP_TO_OPERATOR[lookup]
+
+                # These expect integers, this matches the logic in
+                # IntegerField.get_prep_value(). (Essentially treat the '#'
+                # field as an IntegerField.)
+                if value is not None:
+                    value = int(value)
+
+                queryset_idxs = filter(lambda i: operator(i, value) != negate, queryset_idxs)
+                continue
+            except KeyError:
+                # It wasn't one of the above operators, keep trying.
+                pass
+
+            # Some of these seem to get handled as bytes.
+            if lookup in ('contains', 'icontains'):
+                value = six.text_type(value)
+                queryset_idxs = filter(lambda i: (value in six.text_type(i)) != negate, queryset_idxs)
+
+            elif lookup == 'in':
+                queryset_idxs = filter(lambda i: (i in value) != negate, queryset_idxs)
+
+            elif lookup in ('startswith', 'istartswith'):
+                value = six.text_type(value)
+                queryset_idxs = filter(lambda i: six.text_type(i).startswith(value) != negate, queryset_idxs)
+
+            elif lookup in ('endswith', 'iendswith'):
+                value = six.text_type(value)
+                queryset_idxs = filter(lambda i: six.text_type(i).endswith(value) != negate, queryset_idxs)
+
+            elif lookup == 'range':
+                # Inclusive include.
+                start, end = value
+                queryset_idxs = filter(lambda i: (start <= i <= end) != negate, queryset_idxs)
+
+            else:
+                # Any other field lookup is not supported, e.g. date, year, month,
+                # day, week_day, hour, minute, second, isnull, search, regex, and
+                # iregex.
+                raise ValueError("Unsupported lookup '%s'" % lookup)
+
+            # Keep querysets a list in Python 3.
+            queryset_idxs = list(queryset_idxs)
+
+        # Finally, keep only the QuerySets we care about!
+        self._querysets = [self._querysets[i] for i in queryset_idxs]
+
     # Methods that return new QuerySets
     def filter(self, **kwargs):
+        qss_fields, fields = self._separate_filter_fields(**kwargs)
+
         clone = self._clone()
-        clone._querysets = [qs.filter(**kwargs) for qs in self._querysets]
+        clone._filter_or_exclude_querysets(False, **qss_fields)
+        clone._querysets = [qs.filter(**fields) for qs in clone._querysets]
         return clone
 
     def exclude(self, **kwargs):
+        qss_fields, fields = self._separate_filter_fields(**kwargs)
+
         clone = self._clone()
-        clone._querysets = [qs.exclude(**kwargs) for qs in self._querysets]
+        clone._filter_or_exclude_querysets(True, **qss_fields)
+        clone._querysets = [qs.exclude(**fields) for qs in clone._querysets]
         return clone
 
     def order_by(self, *fields):
+        _, filtered_fields = self._separate_fields(*fields)
+
+        # Apply the filtered fields to each underlying QuerySet.
         clone = self._clone()
-        clone._querysets = [qs.order_by(*fields) for qs in self._querysets]
+        clone._querysets = [qs.order_by(*filtered_fields) for qs in self._querysets]
+
+        # But keep the original fields for the clone.
         clone._order_by = list(fields)
         return clone
 
@@ -392,10 +511,12 @@ class QuerySetSequence(object):
 
     # Methods that do not return QuerySets
     def get(self, **kwargs):
+        clone = self.filter(**kwargs)
+
         result = None
-        for qs in self._querysets:
+        for qs in clone._querysets:
             try:
-                obj = qs.get(**kwargs)
+                obj = qs.get()
             except ObjectDoesNotExist:
                 pass
             # Don't catch the MultipleObjectsReturned(), allow it to raise.

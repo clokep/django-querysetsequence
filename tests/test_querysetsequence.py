@@ -763,11 +763,6 @@ class TestOrderBy(TestBase):
         # Order by title, but don't interleave each QuerySet.
         with self.assertNumQueries(0):
             qss = self.all.order_by('#', 'title')
-        self.assertEqual(qss.query.order_by, ['#', 'title'])
-        self.assertEqual(
-            qss.query._querysets[0].query.order_by,
-            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
-        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequenceIterable._ordered_iterator',
@@ -789,18 +784,13 @@ class TestOrderBy(TestBase):
         """
         It is possible to reverse the order of the internal QuerySets.
 
-        Note that this is *NOT* the same as calling reverse(), as that results
+        Note that this is *NOT* the same as calling reverse(), as that reverses
         the contents of each QuerySet as well.
         """
         # Order by title, but don't interleave each QuerySet. And reverse
         # QuerySets.
         with self.assertNumQueries(0):
             qss = self.all.order_by('-#', 'title')
-        self.assertEqual(qss.query.order_by, ['-#', 'title'])
-        self.assertEqual(
-            qss.query._querysets[0].query.order_by,
-            ('title',) if DJANGO_VERSION >= (2,) else ['title'],
-        )
 
         # Ensure that _ordered_iterator isn't called.
         with patch('queryset_sequence.QuerySequenceIterable._ordered_iterator',
