@@ -301,9 +301,11 @@ class TestFilter(TestBase):
     def test_queryset(self):
         """Test filtering the QuerySets by exact lookups."""
         for key in ['#', '#__exact', '#__iexact']:
-            qss = self._get_qss().filter(**{key: 1})
+            with self.assertNumQueries(0):
+                qss = self._get_qss().filter(**{key: 1})
 
-            data = [it.title for it in qss]
+            with self.assertNumQueries(1):
+                data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
                 'Django Rocks',
@@ -314,9 +316,11 @@ class TestFilter(TestBase):
 
     def test_queryset_gt(self):
         """Test filtering the QuerySets by > lookup."""
-        qss = self._get_qss().filter(**{'#__gt': 0})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__gt': 0})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
             'Django Rocks',
@@ -327,23 +331,20 @@ class TestFilter(TestBase):
         self.assertEqual(data, expected)
 
         # Additionally this should cast a string input to an int.
-        qss = self._get_qss().filter(**{'#__gt': '0'})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__gt': '0'})
 
-        data = [it.title for it in qss]
-        expected = [
-            # The Articles and BlogPosts.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
-            'Post',
-        ]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         self.assertEqual(data, expected)
 
     def test_queryset_gte(self):
         """Test filtering the QuerySets by >= lookup."""
-        qss = self._get_qss().filter(**{'#__gte': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__gte': 1})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
             'Django Rocks',
@@ -355,9 +356,11 @@ class TestFilter(TestBase):
 
     def test_queryset_lt(self):
         """Test filtering the QuerySets by < lookup."""
-        qss = self._get_qss().filter(**{'#__lt': 2})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__lt': 2})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Books and Articles.
             'Fiction',
@@ -370,9 +373,11 @@ class TestFilter(TestBase):
 
     def test_queryset_lte(self):
         """Test filtering the QuerySets by <= lookup."""
-        qss = self._get_qss().filter(**{'#__lte': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__lte': 1})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Books and Articles.
             'Fiction',
@@ -385,9 +390,11 @@ class TestFilter(TestBase):
 
     def test_queryset_in(self):
         """Filter the QuerySets with the in lookup."""
-        qss = self._get_qss().filter(**{'#__in': [1]})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__in': [1]})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         expected = [
             # The Articles.
             'Django Rocks',
@@ -399,9 +406,11 @@ class TestFilter(TestBase):
     def test_queryset_str(self):
         """Try filtering the QuerySets by various string lookups."""
         for key in ['#__contains', '#__icontains', '#__startswith', '#__istartswith', '#__endswith', '#__iendswith']:
-            qss = self._get_qss().filter(**{key: 1})
+            with self.assertNumQueries(0):
+                qss = self._get_qss().filter(**{key: 1})
 
-            data = [it.title for it in qss]
+            with self.assertNumQueries(1):
+                data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
                 'Django Rocks',
@@ -412,9 +421,11 @@ class TestFilter(TestBase):
 
     def test_queryset_range(self):
         """Try filtering the QuerySets by the range lookup."""
-        qss = self._get_qss().filter(**{'#__range': [1, 2]})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__range': [1, 2]})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # Just the Articles.
             'Django Rocks',
@@ -434,9 +445,11 @@ class TestFilter(TestBase):
         When using multiple paramters to filter they get ANDed together. Ensure
         this works when filtering by QuerySet.
         """
-        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Django Rocks'})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Django Rocks'})
 
-        data = [it.title for it in qss]
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # Some of the Articles and the BlogPosts.
             'Some Article',
@@ -506,10 +519,13 @@ class TestExclude(TestBase):
     def test_queryset(self):
         """Test excluding the QuerySets by exact lookups."""
         for key in ['#', '#__exact', '#__iexact']:
-            qss = self._get_qss().exclude(**{key: 0})
+            with self.assertNumQueries(0):
+                qss = self._get_qss().exclude(**{key: 0})
 
-            # Only the articles are here because it's the second queryset.
-            data = [it.title for it in qss]
+            # The articles and blogposts are here because the first QuerySet is
+            # removed.
+            with self.assertNumQueries(2):
+                data = [it.title for it in qss]
             expected = [
                 # The Articles and BlogPosts.
                 'Django Rocks',
@@ -521,10 +537,12 @@ class TestExclude(TestBase):
 
     def test_queryset_gt(self):
         """Test excluding the QuerySets by > lookup."""
-        qss = self._get_qss().exclude(**{'#__gt': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__gt': 1})
 
-        # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        # The books and articles are here.
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Books and Articles.
             'Fiction',
@@ -537,10 +555,12 @@ class TestExclude(TestBase):
 
     def test_queryset_gte(self):
         """Test excluding the QuerySets by >= lookup."""
-        qss = self._get_qss().exclude(**{'#__gte': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__gte': 1})
 
-        # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        # Only the blogposts are here because it's the last queryset.
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         expected = [
             # Just the Books.
             'Fiction',
@@ -550,10 +570,12 @@ class TestExclude(TestBase):
 
     def test_queryset_lt(self):
         """Test excluding the QuerySets by < lookup."""
-        qss = self._get_qss().exclude(**{'#__lt': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__lt': 1})
 
-        # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        # The articles and blogposts are here.
+        with self.assertNumQueries(2):
+            data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
             'Django Rocks',
@@ -565,10 +587,12 @@ class TestExclude(TestBase):
 
     def test_queryset_lte(self):
         """Test excluding the QuerySets by <= lookup."""
-        qss = self._get_qss().exclude(**{'#__lte': 1})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__lte': 1})
 
-        # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        # Only the blogposts are here because it's the last queryset.
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         expected = [
             # The BlogPosts.
             'Post',
@@ -577,10 +601,12 @@ class TestExclude(TestBase):
 
     def test_queryset_in(self):
         """exclude the QuerySets with the in lookup."""
-        qss = self._get_qss().exclude(**{'#__in': [0, 2]})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__in': [0, 2]})
 
         # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         expected = [
             # The Articles.
             'Django Rocks',
@@ -592,10 +618,12 @@ class TestExclude(TestBase):
     def test_queryset_str(self):
         """Try excluding the QuerySets by various string lookups."""
         for key in ['#__contains', '#__icontains', '#__startswith', '#__istartswith', '#__endswith', '#__iendswith']:
-            qss = self._get_qss().exclude(**{key: 1})
+            with self.assertNumQueries(0):
+                qss = self._get_qss().exclude(**{key: 1})
 
-            # Only the articles are here because it's the second queryset.
-            data = [it.title for it in qss]
+            # The books and blogposts are here.
+            with self.assertNumQueries(2):
+                data = [it.title for it in qss]
             expected = [
                 # The Books and BlogPosts.
                 'Fiction',
@@ -604,13 +632,14 @@ class TestExclude(TestBase):
             ]
             self.assertEqual(data, expected)
 
-
     def test_queryset_range(self):
         """Try excluding the QuerySets by the range lookup."""
-        qss = self._get_qss().exclude(**{'#__range': [1, 2]})
+        with self.assertNumQueries(0):
+            qss = self._get_qss().exclude(**{'#__range': [1, 2]})
 
-        # Only the articles are here because it's the second queryset.
-        data = [it.title for it in qss]
+        # Only the books are here as it is the first queryset.
+        with self.assertNumQueries(1):
+            data = [it.title for it in qss]
         expected = [
             # Just the Articles.
             'Fiction',
@@ -1006,27 +1035,42 @@ class TestGet(TestBase):
         Ensure that get() returns the expected element or raises DoesNotExist.
         """
         # Get a particular item.
-        book = self.all.get(title='Biography')
+        with self.assertNumQueries(2):
+            book = self.all.get(title='Biography')
         self.assertEqual(book.title, 'Biography')
         self.assertIsInstance(book, Book)
 
     def test_not_found(self):
         # An exception is rasied if get() is called and nothing is found.
-        self.assertRaises(ObjectDoesNotExist, self.all.get, title='')
+        with self.assertNumQueries(2):
+            with self.assertRaises(ObjectDoesNotExist):
+                self.all.get(title='')
 
     def test_multi_found(self):
+        """Test multiple found in the same QuerySet."""
         # ...or if get() is called and multiple objects are found.
-        self.assertRaises(MultipleObjectsReturned, self.all.get, author=self.bob)
+        with self.assertNumQueries(1):
+            with self.assertRaises(MultipleObjectsReturned):
+                self.all.get(author=self.bob)
+
+    def test_multi_found_separate_querysets(self):
+        """Test one found in each QuerySet."""
+        # ...or if get() is called and multiple objects are found.
+        with self.assertNumQueries(2):
+            with self.assertRaises(MultipleObjectsReturned):
+                self.all.get(title__contains='A')
 
     def test_related_model(self):
         qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
-        post = qss.get(publisher__name="Wacky Website")
+        with self.assertNumQueries(2):
+            post = qss.get(publisher__name="Wacky Website")
         self.assertEqual(post.title, 'Post')
         self.assertIsInstance(post, BlogPost)
 
     def test_queryset_lookup(self):
         """Test using the special QuerySet lookup."""
-        article = self.all.get(**{'#': 1, 'author': self.bob})
+        with self.assertNumQueries(1):
+            article = self.all.get(**{'#': 1, 'author': self.bob})
         self.assertEqual(article.title, 'Some Article')
         self.assertIsInstance(article, Article)
 
