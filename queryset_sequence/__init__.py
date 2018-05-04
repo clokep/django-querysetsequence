@@ -297,6 +297,8 @@ class QuerySetSequence(object):
 
         return clone
 
+    # Python magic methods.
+
     def __len__(self):
         # Call len() on each QuerySet to properly cache results.
         return sum(map(len, self._querysets))
