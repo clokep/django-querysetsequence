@@ -561,7 +561,7 @@ class QuerySetSequence(object):
         return result
 
     def count(self):
-        return sum(qs.count() for qs in self._querysets)
+        return sum(qs.count() for qs in self._querysets) - self._low_mark
 
     def iterator(self):
         clone = self._clone()

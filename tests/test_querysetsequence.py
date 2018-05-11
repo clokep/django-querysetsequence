@@ -90,7 +90,9 @@ class TestLength(TestBase):
         with self.assertNumQueries(2):
             self.assertEqual(self.all[1:].count(), 4)
 
-        with self.assertNumQueries(2):
+        # This evaluates the QuerySets, which also causes count() on each to be
+        # called.
+        with self.assertNumQueries(4):
             self.assertEqual(len(self.all[1:]), 4)
 
 
