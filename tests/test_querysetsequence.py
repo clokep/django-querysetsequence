@@ -720,9 +720,9 @@ class TestOrderBy(TestBase):
 
         # Check the titles are properly ordered.
         with self.assertNumQueries(2):
-            data = [(it.title, it.__name__) for it in qss]
+            data = [(it.title, it.__class__.__name__) for it in qss]
         expected = [
-            ('Alice in Django-land', 'Article')
+            ('Alice in Django-land', 'Article'),
             ('Biography', 'Book'),
             ('Django Rocks', 'Article'),
             ('Fiction', 'Article'),
@@ -1109,7 +1109,7 @@ class TestBoolean(TestBase):
     """Tests related to casting the QuerySetSequence to a boolean."""
     def test_exists(self):
         """Ensure that it casts to True if the item is found."""
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(title='Biography'))
 
     def test_exists_second(self):
@@ -1124,7 +1124,7 @@ class TestBoolean(TestBase):
 
     def test_multi_found(self):
         """Ensure that it casts to True if multiple items are found."""
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(author=self.bob))
 
 

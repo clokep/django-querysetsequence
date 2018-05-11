@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 import functools
-from itertools import chain, dropwhile, imap
+from itertools import chain, dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
 import uuid
 
@@ -46,13 +46,13 @@ def cumsum(seq):
 
 
 class QuerySequenceIterable(object):
-    def __init__(self, querysets, order_by, standard_ordering, low_mark, high_mark):
+    def __init__(self, querysetsequence):
         # Create a clone so that subsequent calls to iterate are kept separate.
-        self._querysets = querysets
-        self._order_by = order_by
-        self._standard_ordering = standard_ordering
-        self._low_mark = low_mark
-        self._high_mark = high_mark
+        self._querysets = querysetsequence._querysets
+        self._order_by = querysetsequence._order_by
+        self._standard_ordering = querysetsequence._standard_ordering
+        self._low_mark = querysetsequence._low_mark
+        self._high_mark = querysetsequence._high_mark
 
     @classmethod
     def _get_field_names(cls, model):
@@ -137,22 +137,39 @@ class QuerySequenceIterable(object):
 
     def _ordered_iterator(self):
         """An iterator that takes into account the requested ordering."""
-        querysets = self._querysets
-
-        # A mapping of iterable to the current item in that iterable. (Remember
-        # that each QuerySet is already sorted.)
-        not_empty_qss = [iter(it) for it in querysets if it]
-        values = {it: next(it) for it in not_empty_qss}
+        # A list of tuples, each with:
+        #   * The iterable
+        #   * The QuerySet number
+        #   * The next value
+        #
+        # (Remember that each QuerySet is already sorted.)
+        iterables = []
+        for i, qs in enumerate(self._querysets):
+            it = iter(qs)
+            try:
+                value = next(it)
+            except StopIteration:
+                # If this is already empty, just skip it.
+                continue
+            iterables.append((it, i, value))
 
         # The offset of items returned.
         index = 0
 
         # Create a comparison function based on the requested ordering.
         _comparator = self._generate_comparator(self._order_by)
-        def comparator(i1, i2):
-            # Actually compare the 2nd element in each tuple, the 1st element is
-            # the generator.
-            return _comparator(i1[1], i2[1])
+        def comparator(tuple_1, tuple_2):
+            # The last element in each tuple is the actual item to compare.
+            i1 = tuple_1[2]
+            i2 = tuple_2[2]
+
+            # The second element in each tuple is QuerySet number. Set this on
+            # the item so that the comparison works properly.
+            setattr(i1, '#', tuple_1[1])
+            setattr(i2, '#', tuple_2[1])
+
+            # Perform the actual comparison now.
+            return _comparator(i1, i2)
         comparator = functools.cmp_to_key(comparator)
 
         # If in reverse mode, get the last value instead of the first value from
@@ -162,20 +179,20 @@ class QuerySequenceIterable(object):
         else:
             next_value_ind = -1
 
-        # Iterate until all the values are gone.
-        while values:
+        # Continue until all iterables are empty.
+        while iterables:
             # If there's only one iterator left, don't bother sorting.
-            if len(values) > 1:
+            if len(iterables) > 1:
                 # Sort the current values for each iterable.
-                ordered_values = sorted(values.items(), key=comparator)
+                iterables = sorted(iterables, key=comparator)
 
                 # The next ordering item is in the first position, unless we're
                 # in reverse mode.
-                qss, value = ordered_values.pop(next_value_ind)
+                it, i, value = iterables[next_value_ind]
             else:
-                qss, value = list(values.items())[0]
+                it, i, value = iterables[0]
 
-            # Return it if we're within the slice of interest.
+            # Return the next value if we're within the slice of interest.
             if self._low_mark <= index:
                 yield value
             index += 1
@@ -185,10 +202,10 @@ class QuerySequenceIterable(object):
 
             # Iterate the iterable that just lost a value.
             try:
-                values[qss] = next(qss)
+                iterables[next_value_ind] = it, i, next(it)
             except StopIteration:
                 # This iterator is done, remove it.
-                del values[qss]
+                del iterables[next_value_ind]
 
     def __iter__(self):
         # Pull out the attributes we care about.
@@ -288,6 +305,9 @@ class QuerySetSequence(object):
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
 
+        self._iterable_class = QuerySequenceIterable
+        self._result_cache = None
+
     def _clone(self):
         clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
         clone._order_by = self._order_by
@@ -297,17 +317,23 @@ class QuerySetSequence(object):
 
         return clone
 
+    def _fetch_all(self):
+        if self._result_cache is None:
+            self._result_cache = list(self._iterable_class(self))
+
     # Python magic methods.
 
     def __len__(self):
-        # Call len() on each QuerySet to properly cache results.
-        return sum(map(len, self._querysets))
+        self._fetch_all()
+        return len(self._result_cache)
 
     def __iter__(self):
-        return iter(QuerySequenceIterable(self._querysets, self._order_by, self._standard_ordering, self._low_mark, self._high_mark))
+        self._fetch_all()
+        return iter(self._result_cache)
 
     def __bool__(self):
-        return any(imap(bool, self._querysets))
+        self._fetch_all()
+        return bool(self._result_cache)
 
     def __nonzero__(self):      # Python 2 compatibility
         return type(self).__bool__(self)
@@ -341,13 +367,12 @@ class QuerySetSequence(object):
                 # offsets of the low mark.
                 offset = stop - start
                 qs._high_mark = qs._low_mark + offset
-            return list(QuerySequenceIterable(
-                qs._querysets, qs._order_by, qs._standard_ordering, qs._low_mark, qs._high_mark))[::k.step] if k.step else qs
+            return list(qs)[::k.step] if k.step else qs
 
         qs = self._clone()
         qs._low_mark += k
         qs._high_mark = qs._low_mark + 1
-        return list(QuerySequenceIterable(qs._querysets, qs._order_by, qs._standard_ordering, qs._low_mark, qs._high_mark))[0]
+        return list(qs)[0]
 
     def _separate_filter_fields(self, **kwargs):
         qss_fields, std_fields = self._separate_fields(*kwargs.keys())
