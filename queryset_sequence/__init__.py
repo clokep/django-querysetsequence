@@ -517,9 +517,9 @@ class QuerySetSequence(object):
         return clone
 
     def none(self):
-        clone = self._clone()
-        clone._querysets = [qs.none() for qs in self._querysets]
-        return clone
+        # This is a bit odd, but use the first QuerySet to properly return an
+        # that is an instance of EmptyQuerySet.
+        return self._querysets[0].none()
 
     def all(self):
         clone = self._clone()
