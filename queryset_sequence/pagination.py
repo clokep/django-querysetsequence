@@ -93,19 +93,19 @@ class SequenceCursorPagination(CursorPagination):
                 # If there *are* QuerySets, filter just the edge QuerySet. This
                 # avoids trimming items in subsequent QuerySets that are still
                 # valid.
-                elif queryset.query._querysets:
+                elif queryset._querysets:
                     queryset = queryset._clone()
 
                     # Make a copy of the current QuerySets.
-                    querysets = queryset.query._querysets
+                    querysets = queryset._querysets
                     # Handle whether to look at the front edge or back edge of
                     # the QuerySets based on the order of iteration.
                     if self.cursor.reverse != is_reversed:
-                        queryset.query._querysets = (
+                        queryset._querysets = (
                             querysets[:-1] +
                             [querysets[-1].filter(**kwargs)])
                     else:
-                        queryset.query._querysets = (
+                        queryset._querysets = (
                             [querysets[0].filter(**kwargs)] +
                             querysets[1:])
 

@@ -115,18 +115,22 @@ class TestSequenceCursorPagination(TestCase):
         self.assertEqual(ordering, ('#', 'title',))
 
     def test_cursor_pagination(self):
+        """Ensure that the cursor properly flips through pages."""
+        # Check the first page.
         (previous, current, next, previous_url, next_url) = self.get_pages('/')
 
         self.assertIsNone(previous)
         self.assertEqual(current, self.PAGE_1)
         self.assertEqual(next, self.PAGE_2)
 
+        # Check the second page.
         (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
 
         self.assertEqual(previous, self.PAGE_1)
         self.assertEqual(current, self.PAGE_2)
         self.assertEqual(next, self.PAGE_3)
 
+        # Check the third page.
         (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
 
         self.assertEqual(previous, self.PAGE_2)

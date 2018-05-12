@@ -47,6 +47,7 @@ class QuerySequenceIterable(object):
     def __init__(self, querysetsequence):
         # Create a clone so that subsequent calls to iterate are kept separate.
         self._querysets = querysetsequence._querysets
+        self._queryset_idxs = querysetsequence._queryset_idxs
         self._order_by = querysetsequence._order_by
         self._standard_ordering = querysetsequence._standard_ordering
         self._low_mark = querysetsequence._low_mark
@@ -134,7 +135,10 @@ class QuerySequenceIterable(object):
         return comparator
 
     def _ordered_iterator(self):
-        """An iterator that takes into account the requested ordering."""
+        """
+        Interleave the values of each QuerySet in order to handle the requested
+        ordering. Also adds the '#' property to each returned item.
+        """
         # A list of tuples, each with:
         #   * The iterable
         #   * The QuerySet number
@@ -142,13 +146,15 @@ class QuerySequenceIterable(object):
         #
         # (Remember that each QuerySet is already sorted.)
         iterables = []
-        for i, qs in enumerate(self._querysets):
+        for i, qs in zip(self._queryset_idxs, self._querysets):
             it = iter(qs)
             try:
                 value = next(it)
             except StopIteration:
                 # If this is already empty, just skip it.
                 continue
+            # Set the QuerySet number so that the comparison works properly.
+            setattr(value, '#', i)
             iterables.append((it, i, value))
 
         # The offset of items returned.
@@ -158,16 +164,7 @@ class QuerySequenceIterable(object):
         _comparator = self._generate_comparator(self._order_by)
         def comparator(tuple_1, tuple_2):
             # The last element in each tuple is the actual item to compare.
-            i1 = tuple_1[2]
-            i2 = tuple_2[2]
-
-            # The second element in each tuple is QuerySet number. Set this on
-            # the item so that the comparison works properly.
-            setattr(i1, '#', tuple_1[1])
-            setattr(i2, '#', tuple_2[1])
-
-            # Perform the actual comparison now.
-            return _comparator(i1, i2)
+            return _comparator(tuple_1[2], tuple_2[2])
         comparator = functools.cmp_to_key(comparator)
 
         # If in reverse mode, get the last value instead of the first value from
@@ -200,14 +197,27 @@ class QuerySequenceIterable(object):
 
             # Iterate the iterable that just lost a value.
             try:
-                iterables[next_value_ind] = it, i, next(it)
+                value = next(it)
+                # Set the QuerySet number so that the comparison works properly.
+                setattr(value, '#', i)
+                iterables[next_value_ind] = it, i, value
             except StopIteration:
                 # This iterator is done, remove it.
                 del iterables[next_value_ind]
 
+    def _unordered_iterator(self, querysets):
+        """
+        Return the value of each QuerySet, but also add the '#' property to each
+        return item.
+        """
+        for i, qs in querysets:
+            for item in qs:
+                setattr(item, '#', i)
+                yield item
+
     def __iter__(self):
         # Pull out the attributes we care about.
-        querysets = list(self._querysets)
+        querysets = zip(self._queryset_idxs, self._querysets)
 
         # If there's no QuerySets, just return an empty iterator.
         if not len(querysets):
@@ -229,13 +239,14 @@ class QuerySequenceIterable(object):
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
 
-        # Some optimization, if there is no slicing, iterate through querysets.
+        # If there is no slicing, iterate through each QuerySet. This avoids
+        # calling count() on each QuerySet.
         if self._low_mark == 0 and self._high_mark is None:
-            return chain(*querysets)
+            return self._unordered_iterator(querysets)
 
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
-        counts.extend(cumsum([it.count() for it in querysets]))
+        counts.extend(cumsum([it.count() for i, it in querysets]))
 
         # Trim the beginning of the QuerySets, if necessary.
         start_index = 0
@@ -277,16 +288,12 @@ class QuerySequenceIterable(object):
         # from it.
         high_mark -= counts[end_index - 1]
 
-        # Some optimization, if there is only one QuerySet, iterate through it.
-        if len(querysets) == 1:
-            return iter(querysets[0][low_mark:high_mark])
-
         # Apply the offsets to the edge QuerySets.
-        querysets[0] = querysets[0][low_mark:]
-        querysets[-1] = querysets[-1][:high_mark]
+        querysets[0] = querysets[0][0], querysets[0][1][low_mark:]
+        querysets[-1] = querysets[-1][0], querysets[-1][1][:high_mark]
 
-        # For anything left, just chain the QuerySets together.
-        return chain(*querysets)
+        # For anything left, just iterate through each QuerySet.
+        return self._unordered_iterator(querysets)
 
 
 class QuerySetSequence(object):
@@ -297,7 +304,9 @@ class QuerySetSequence(object):
     """
 
     def __init__(self, *args):
-        self._querysets = args
+        self._querysets = list(args)
+        # The original ordering of the QuerySets.
+        self._queryset_idxs = list(range(len(self._querysets)))
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
         self._standard_ordering = True
@@ -308,6 +317,7 @@ class QuerySetSequence(object):
 
     def _clone(self):
         clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
+        clone._queryset_idxs = self._queryset_idxs
         clone._order_by = self._order_by
         clone._standard_ordering = self._standard_ordering
         clone._low_mark = self._low_mark
@@ -398,9 +408,6 @@ class QuerySetSequence(object):
         Similar to QuerySet._filter_or_exclude, but run over the QuerySets in
         the QuerySetSequence instead of over each QuerySet's fields.
         """
-        # Start with all QuerySets.
-        queryset_idxs = list(range(len(self._querysets)))
-
         # Ensure negate is a boolean.
         negate = bool(negate)
 
@@ -441,7 +448,7 @@ class QuerySetSequence(object):
                 if value is not None:
                     value = int(value)
 
-                queryset_idxs = filter(lambda i: operator(i, value) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: operator(i, value) != negate, self._queryset_idxs)
                 continue
             except KeyError:
                 # It wasn't one of the above operators, keep trying.
@@ -450,23 +457,23 @@ class QuerySetSequence(object):
             # Some of these seem to get handled as bytes.
             if lookup in ('contains', 'icontains'):
                 value = six.text_type(value)
-                queryset_idxs = filter(lambda i: (value in six.text_type(i)) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: (value in six.text_type(i)) != negate, self._queryset_idxs)
 
             elif lookup == 'in':
-                queryset_idxs = filter(lambda i: (i in value) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: (i in value) != negate, self._queryset_idxs)
 
             elif lookup in ('startswith', 'istartswith'):
                 value = six.text_type(value)
-                queryset_idxs = filter(lambda i: six.text_type(i).startswith(value) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: six.text_type(i).startswith(value) != negate, self._queryset_idxs)
 
             elif lookup in ('endswith', 'iendswith'):
                 value = six.text_type(value)
-                queryset_idxs = filter(lambda i: six.text_type(i).endswith(value) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: six.text_type(i).endswith(value) != negate, self._queryset_idxs)
 
             elif lookup == 'range':
                 # Inclusive include.
                 start, end = value
-                queryset_idxs = filter(lambda i: (start <= i <= end) != negate, queryset_idxs)
+                self._queryset_idxs = filter(lambda i: (start <= i <= end) != negate, self._queryset_idxs)
 
             else:
                 # Any other field lookup is not supported, e.g. date, year, month,
@@ -475,10 +482,10 @@ class QuerySetSequence(object):
                 raise ValueError("Unsupported lookup '%s'" % lookup)
 
             # Keep querysets a list in Python 3.
-            queryset_idxs = list(queryset_idxs)
+            self._queryset_idxs = list(self._queryset_idxs)
 
         # Finally, keep only the QuerySets we care about!
-        self._querysets = [self._querysets[i] for i in queryset_idxs]
+        self._querysets = [self._querysets[i] for i in self._queryset_idxs]
 
     # Methods that return new QuerySets
     def filter(self, **kwargs):
