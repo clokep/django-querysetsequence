@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 
-from operator import attrgetter
-
-from django import VERSION as DJANGO_VERSION
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
-from django.db.models.query import EmptyQuerySet, QuerySet
+from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 
 try:

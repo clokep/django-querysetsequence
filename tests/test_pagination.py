@@ -45,10 +45,10 @@ class TestSequenceCursorPagination(TestCase):
                                                   address="123 Publishing Street")
 
         for d in range(1, 15):
-            book = Book.objects.create(title='Book %s' % (d % 2),
-                                       author=self.author,
-                                       publisher=self.publisher,
-                                       pages=d)
+            Book.objects.create(title='Book %s' % (d % 2),
+                                author=self.author,
+                                publisher=self.publisher,
+                                pages=d)
 
         self.pagination = _TestPagination()
         self.queryset = QuerySetSequence(Book.objects.filter(pages__lte=7),
@@ -223,10 +223,10 @@ class TestSequenceCursorPagination(TestCase):
 
         # Create a bunch of books that are the same.
         for i in range(15):
-            book = Book.objects.create(title=str(i),
-                                       author=self.author,
-                                       publisher=self.publisher,
-                                       pages=PAGES)
+            Book.objects.create(title=str(i),
+                                author=self.author,
+                                publisher=self.publisher,
+                                pages=PAGES)
 
         # And use only those duplicate books.
         self.queryset = QuerySetSequence(Book.objects.filter(pages=PAGES))

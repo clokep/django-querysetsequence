@@ -2,17 +2,13 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 import functools
-from itertools import chain, dropwhile
+from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
-import uuid
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
-from django.db.models.query import EmptyQuerySet
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
-from django.db.models.query import QuerySet
-from django.db.models.sql.query import Query
 from django.utils import six
 
 # Only export the public API for QuerySetSequence. (Note that QuerySequence and
