@@ -205,22 +205,19 @@ class QuerySequenceIterable(object):
                 # This iterator is done, remove it.
                 del iterables[next_value_ind]
 
-    def _unordered_iterator(self, querysets):
+    def _unordered_iterator(self):
         """
         Return the value of each QuerySet, but also add the '#' property to each
         return item.
         """
-        for i, qs in querysets:
+        for i, qs in zip(self._queryset_idxs, self._querysets):
             for item in qs:
                 setattr(item, '#', i)
                 yield item
 
     def __iter__(self):
-        # Pull out the attributes we care about.
-        querysets = zip(self._queryset_idxs, self._querysets)
-
         # If there's no QuerySets, just return an empty iterator.
-        if not len(querysets):
+        if not len(self._querysets):
             return iter([])
 
         # If order is necessary, evaluate and start feeding data back.
@@ -234,7 +231,7 @@ class QuerySequenceIterable(object):
             # Otherwise, order by QuerySet first. Handle reversing the
             # QuerySets, if necessary.
             elif self._order_by[0].startswith('-'):
-                querysets = querysets[::-1]
+                self._querysets = self._querysets[::-1]
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
         # evaluation can be pushed off further.
@@ -242,11 +239,11 @@ class QuerySequenceIterable(object):
         # If there is no slicing, iterate through each QuerySet. This avoids
         # calling count() on each QuerySet.
         if self._low_mark == 0 and self._high_mark is None:
-            return self._unordered_iterator(querysets)
+            return self._unordered_iterator()
 
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
-        counts.extend(cumsum([it.count() for i, it in querysets]))
+        counts.extend(cumsum([it.count() for it in self._querysets]))
 
         # Trim the beginning of the QuerySets, if necessary.
         start_index = 0
@@ -264,7 +261,7 @@ class QuerySequenceIterable(object):
                     break
 
         # Trim the end of the QuerySets, if necessary.
-        end_index = len(querysets)
+        end_index = len(self._querysets)
         if high_mark is None:
             # If it was unset (meaning all), set it to the maximum.
             high_mark = counts[-1]
@@ -280,7 +277,8 @@ class QuerySequenceIterable(object):
                     break
 
         # Remove QuerySets we don't care about.
-        querysets = querysets[start_index:end_index]
+        self._querysets = self._querysets[start_index:end_index]
+        self._queryset_idxs = self._queryset_idxs[start_index:end_index]
 
         # The low_mark needs the removed QuerySets subtracted from it.
         low_mark -= counts[start_index]
@@ -289,11 +287,11 @@ class QuerySequenceIterable(object):
         high_mark -= counts[end_index - 1]
 
         # Apply the offsets to the edge QuerySets.
-        querysets[0] = querysets[0][0], querysets[0][1][low_mark:]
-        querysets[-1] = querysets[-1][0], querysets[-1][1][:high_mark]
+        self._querysets[0] = self._querysets[0][low_mark:]
+        self._querysets[-1] = self._querysets[-1][:high_mark]
 
         # For anything left, just iterate through each QuerySet.
-        return self._unordered_iterator(querysets)
+        return self._unordered_iterator()
 
 
 class QuerySetSequence(object):
