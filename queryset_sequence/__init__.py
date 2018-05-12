@@ -476,8 +476,8 @@ class QuerySetSequence(object):
                 # iregex.
                 raise ValueError("Unsupported lookup '%s'" % lookup)
 
-            # Keep querysets a list in Python 3.
-            self._queryset_idxs = list(self._queryset_idxs)
+        # Convert back to a list on Python 3.
+        self._queryset_idxs = list(self._queryset_idxs)
 
         # Finally, keep only the QuerySets we care about!
         self._querysets = [self._querysets[i] for i in self._queryset_idxs]
