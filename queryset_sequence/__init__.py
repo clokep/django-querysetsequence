@@ -286,9 +286,10 @@ class QuerySequenceIterable(object):
         # from it.
         high_mark -= counts[end_index - 1]
 
-        # Apply the offsets to the edge QuerySets.
-        self._querysets[0] = self._querysets[0][low_mark:]
+        # Apply the offsets to the edge QuerySets (apply the high mark first
+        # in-case there's only a single QuerySet left).
         self._querysets[-1] = self._querysets[-1][:high_mark]
+        self._querysets[0] = self._querysets[0][low_mark:]
 
         # For anything left, just iterate through each QuerySet.
         return self._unordered_iterator()
