@@ -11,6 +11,9 @@ Changelog
 * [Incompatible change] Drop support for Django < 1.11. Django 1.11 and above
   are supported. This also drops support for Django REST Framework < 3.4, which
   since they do not support Django 1.11.
+* [Bugfix] Stop using the internals of QuerySet for better forward
+  compatibility. This change means that ``QuerySetSequence`` is no longer a
+  sub-class of ``QuerySet``. See
 
 0.8 (2017-09-05)
 ================
