@@ -6,14 +6,15 @@ Changelog
 0.9 (2018-xx-xx)
 ================
 
-* [Enhancement] Officially support Django REST Framework 3.7.
-* [Enhancement] Officially support Django 2.0.
+* [Enhancement] Officially support Django REST Framework 3.7 and 3.8
+* [Enhancement] Officially support Django 2.0 and 2.1.
 * [Incompatible change] Drop support for Django < 1.11. Django 1.11 and above
-  are supported. This also drops support for Django REST Framework < 3.4, which
-  since they do not support Django 1.11.
+  are supported. This also drops support for Django REST Framework < 3.4, since
+  they do not support Django 1.11.
 * [Bugfix] Stop using the internals of QuerySet for better forward
   compatibility. This change means that ``QuerySetSequence`` is no longer a
-  sub-class of ``QuerySet``. See
+  sub-class of ``QuerySet`` and should improve interactions with other packages
+  which modify ``QuerySet``.
 
 0.8 (2017-09-05)
 ================
