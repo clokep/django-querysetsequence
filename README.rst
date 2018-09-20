@@ -37,13 +37,17 @@ multiple ``QuerySets``:
 .. |check| unicode:: U+2713
 .. |xmark| unicode:: U+2717
 
-.. list-table:: ``QuerySet`` API implemented by ``QuerySetSequence``
+``QuerySet`` API implemented by ``QuerySetSequence``
+----------------------------------------------------
+
+.. list-table:: Methods that return new ``QuerySets``
     :widths: 15 10 30
     :header-rows: 1
 
     * - Method
       - Implemented?
       - Notes
+
     * - |filter|_
       - |check|
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
@@ -52,14 +56,14 @@ multiple ``QuerySets``:
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |annotate|_
       - |xmark|
-      - 
+      -
     * - |order_by|_
       - |check|
       - Does not support random ordering (e.g. ``order_by('?')``). See [1]_ for
         information on the ``QuerySet`` lookup: ``'#'``.
     * - |reverse|_
       - |check|
-      - 
+      -
     * - |distinct|_
       - |xmark|
       -
@@ -92,28 +96,52 @@ multiple ``QuerySets``:
       -
     * - |select_related|_
       - |check|
-      - 
+      -
     * - |prefetch_related|_
       - |check|
-      - 
+      -
     * - |extra|_
       - |xmark|
-      - 
+      -
     * - |defer|_
       - |xmark|
-      - 
+      -
     * - |only|_
       - |xmark|
-      - 
+      -
     * - |using|_
       - |xmark|
-      - 
+      -
     * - |select_for_update|_
       - |xmark|
-      - 
+      -
     * - |raw|_
       - |xmark|
-      - 
+      -
+
+.. list-table:: Operators that return new ``QuerySets``
+    :widths: 15 10 30
+    :header-rows: 1
+
+    * - Operator
+      - Implemented?
+      - Notes
+
+    * - |AND (&)|_
+      - |xmark|
+      -
+    * - |OR (\|)|_
+      - |xmark|
+      -
+
+.. list-table:: Methods that do not return ``QuerySets``
+    :widths: 15 10 30
+    :header-rows: 1
+
+    * - Method
+      - Implemented?
+      - Notes
+
     * - |get|_
       - |check|
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
@@ -131,19 +159,19 @@ multiple ``QuerySets``:
       - Cannot be implemented in ``QuerySetSequence``.
     * - |count|_
       - |check|
-      - 
+      -
     * - |in_bulk|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |iterator|_
       - |check|
-      - 
+      -
     * - |latest|_
       - |xmark|
-      - 
+      -
     * - |earliest|_
       - |xmark|
-      - 
+      -
     * - |first|_
       - |check|
       - If no ordering is set this is essentially the same as calling
@@ -155,18 +183,21 @@ multiple ``QuerySets``:
       - See the documentation for ``first()``.
     * - |aggregate|_
       - |xmark|
-      - 
+      -
     * - |exists|_
       - |check|
-      - 
+      -
     * - |update|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |delete|_
       - |check|
-      - 
+      -
     * - |as_manager|_
       - |check|
+      -
+    * - |explain|_
+      - |xmark|
       -
 
 .. |filter| replace:: ``filter()``
@@ -215,6 +246,12 @@ multiple ``QuerySets``:
 .. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-for-update
 .. |raw| replace:: ``raw()``
 .. _raw: https://docs.djangoproject.com/en/dev/ref/models/querysets/#raw
+
+.. |AND (&)| replace:: AND (``&``)
+.. _AND (&): https://docs.djangoproject.com/en/dev/ref/models/querysets/#and
+.. |OR (|)| replace:: OR (``|``)
+.. _OR (\|): https://docs.djangoproject.com/en/dev/ref/models/querysets/#or
+
 .. |get| replace:: ``get()``
 .. _get: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get
 .. |create| replace:: ``create()``
@@ -249,7 +286,8 @@ multiple ``QuerySets``:
 .. _delete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
 .. |as_manager| replace:: ``as_manager()``
 .. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as-manager
-
+.. |explain| replace:: ``explain()``
+.. _explain: https://docs.djangoproject.com/en/dev/ref/models/querysets/#explain
 
 .. [1]  ``QuerySetSequence`` supports a special field lookup that looks up the
         index of the ``QuerySet``, this is represented by ``'#'``. This can be
