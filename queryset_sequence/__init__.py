@@ -383,6 +383,25 @@ class QuerySetSequence(ComparatorMixin):
         qs._high_mark = qs._low_mark + 1
         return list(qs)[0]
 
+    def __and__(self, other):
+        # If the other QuerySet is an EmptyQuerySet, this is a no-op.
+        if isinstance(other, EmptyQuerySet):
+            return other
+        combined = self._clone()
+
+        querysets = []
+        for qs in combined._querysets:
+            # Only QuerySets of the same type can have any overlap.
+            if issubclass(qs.model, other.model):
+                querysets.append(qs & other)
+
+        # If none are left, we're left with an EmptyQuerySet.
+        if not querysets:
+            return other.none()
+
+        combined._set_querysets(querysets)
+        return combined
+
     def __or__(self, other):
         # If the other QuerySet is an EmptyQuerySet, this is a no-op.
         if isinstance(other, EmptyQuerySet):

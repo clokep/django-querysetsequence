@@ -147,6 +147,29 @@ class TestIterator(TestBase):
 
 
 class TestOperators(TestBase):
+    def test_and_identity(self):
+        """ANDing with an EmptyQuerySet returns an EmptyQuerySet."""
+        with self.assertNumQueries(0):
+            combined = self.all & BlogPost.objects.none()
+        self.assertIsInstance(combined, EmptyQuerySet)
+
+    def test_and(self):
+        """ANDing with a QuerySet applies the and to each QuerySet and removes ones of differing types."""
+        # ANDing with a different type of QuerySet ends up with an EmptyQuerySet.
+        with self.assertNumQueries(0):
+            combined = self.all & BlogPost.objects.all()
+        self.assertIsInstance(combined, EmptyQuerySet)
+
+        # ANDing with a QuerySet of a type in the QuerySetSequence applies the
+        # AND to that QuerySet.
+        with self.assertNumQueries(0):
+            combined = self.all & Book.objects.filter(pages__lt=15)
+        self.assertIsInstance(combined, QuerySetSequence)
+        self.assertEqual(len(combined._querysets), 1)
+        with self.assertNumQueries(1):
+            data = [it.title for it in combined.iterator()]
+        self.assertEqual(data, ["Fiction"])
+
     def test_or_identity(self):
         """ORing with an empty QuerySet should just return the same QuerySetSequence."""
         with self.assertNumQueries(0):
