@@ -3,7 +3,7 @@
 Changelog
 #########
 
-0.9 (2018-xx-xx)
+0.9 (2018-09-20)
 ================
 
 * [Enhancement] Officially support Django REST Framework 3.7 and 3.8
