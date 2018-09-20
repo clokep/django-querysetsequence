@@ -39,16 +39,7 @@ def cumsum(seq):
         yield s
 
 
-class QuerySequenceIterable(object):
-    def __init__(self, querysetsequence):
-        # Create a clone so that subsequent calls to iterate are kept separate.
-        self._querysets = querysetsequence._querysets
-        self._queryset_idxs = querysetsequence._queryset_idxs
-        self._order_by = querysetsequence._order_by
-        self._standard_ordering = querysetsequence._standard_ordering
-        self._low_mark = querysetsequence._low_mark
-        self._high_mark = querysetsequence._high_mark
-
+class ComparatorMixin(object):
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
@@ -129,6 +120,17 @@ class QuerySequenceIterable(object):
                 return 0
 
         return comparator
+
+
+class QuerySequenceIterable(ComparatorMixin):
+    def __init__(self, querysetsequence):
+        # Create a clone so that subsequent calls to iterate are kept separate.
+        self._querysets = querysetsequence._querysets
+        self._queryset_idxs = querysetsequence._queryset_idxs
+        self._order_by = querysetsequence._order_by
+        self._standard_ordering = querysetsequence._standard_ordering
+        self._low_mark = querysetsequence._low_mark
+        self._high_mark = querysetsequence._high_mark
 
     def _ordered_iterator(self):
         """
@@ -291,7 +293,7 @@ class QuerySequenceIterable(object):
         return self._unordered_iterator()
 
 
-class QuerySetSequence(object):
+class QuerySetSequence(ComparatorMixin):
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
     the base models.
@@ -569,14 +571,44 @@ class QuerySetSequence(object):
         return clone
 
     def first(self):
+        # If there's no QuerySets, return None. If the QuerySets are unordered,
+        # use the first item of first QuerySet. If ordered, compare the first
+        # item of each QuerySet to find the overall first.
         if not self._querysets:
             return None
-        return self._querysets[0].first()
+
+        elif not self.ordered:
+            return self._querysets[0].first()
+
+        else:
+            # Get each first item.
+            items = [qs.first() for qs in self._querysets]
+
+            # Generate a comparator and sort the items.
+            comparator = self._generate_comparator(self._order_by)
+            items = sorted(items, key=functools.cmp_to_key(comparator))
+
+            # Return the first one.
+            return items[0]
 
     def last(self):
+        # See the comments for first().
         if not self._querysets:
             return None
-        return self._querysets[-1].last()
+
+        elif not self.ordered:
+            return self._querysets[-1].last()
+
+        else:
+            # Get each last item.
+            items = [qs.last() for qs in self._querysets]
+
+            # Generate a comparator and sort the items.
+            comparator = self._generate_comparator(self._order_by)
+            items = sorted(items, key=functools.cmp_to_key(comparator))
+
+            # Return the first one.
+            return items[-1]
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
