@@ -145,11 +145,14 @@ multiple ``QuerySets``:
       - |xmark|
       - 
     * - |first|_
-      - |xmark|
-      - 
+      - |check|
+      - If no ordering is set this is essentially the same as calling
+        ``first()`` on the first ``QuerySet``, if there is an ordering, the
+        result of ``first()`` for each ``QuerySet`` is compared and the "first"
+        returned.
     * - |last|_
-      - |xmark|
-      - 
+      - |check|
+      - See the documentation for ``first()``.
     * - |aggregate|_
       - |xmark|
       - 

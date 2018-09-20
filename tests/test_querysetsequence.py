@@ -1127,6 +1127,41 @@ class TestBoolean(TestBase):
             self.assertTrue(self.all.filter(author=self.bob))
 
 
+class TestFirstLast(TestBase):
+    def test_first_unordered(self):
+        """Should return the first element of the first QuerySet."""
+        with self.assertNumQueries(1):
+            self.assertEqual(self.all.first().title, 'Fiction')
+
+    def test_last_unordered(self):
+        """Should return the last element of the last QuerySet."""
+        with self.assertNumQueries(1):
+            self.assertEqual(self.all.last().title, 'Some Article')
+
+    def test_empty(self):
+        """Empty QuerySetSequence should work."""
+        qs = QuerySetSequence()
+        self.assertIsNone(qs.first())
+
+    def test_first_ordered(self):
+        """When ordering, the items of each QuerySet must be compared."""
+        # Order by author and ensure it takes.
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.order_by('title').first().title, 'Alice in Django-land')
+
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.order_by('-title').first().title, 'Some Article')
+
+    def test_last_ordered(self):
+        """When ordering, the items of each QuerySet must be compared."""
+        # Order by author and ensure it takes.
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.order_by('-title').last().title, 'Alice in Django-land')
+
+        with self.assertNumQueries(2):
+            self.assertEqual(self.all.order_by('title').last().title, 'Some Article')
+
+
 class TestExists(TestBase):
     def test_exists(self):
         """Ensure that exists() returns True if the item is found in the first QuerySet."""
