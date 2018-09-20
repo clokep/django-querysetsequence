@@ -570,6 +570,15 @@ class QuerySetSequence(ComparatorMixin):
         clone._querysets = [qs.iterator() for qs in self._querysets]
         return clone
 
+    def _get_first_or_last(self, items, reverse):
+        # Generate a comparator and sort the items.
+        comparator = self._generate_comparator(self._order_by)
+        items = sorted(items, key=functools.cmp_to_key(comparator), reverse=reverse)
+
+        # Return the first one (whether this is first or last is controlled by
+        # reverse).
+        return items[0]
+
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
         # use the first item of first QuerySet. If ordered, compare the first
@@ -581,15 +590,9 @@ class QuerySetSequence(ComparatorMixin):
             return self._querysets[0].first()
 
         else:
-            # Get each first item.
-            items = [qs.first() for qs in self._querysets]
-
-            # Generate a comparator and sort the items.
-            comparator = self._generate_comparator(self._order_by)
-            items = sorted(items, key=functools.cmp_to_key(comparator))
-
-            # Return the first one.
-            return items[0]
+            # Get each first item for each and compare them, return the "first".
+            return self._get_first_or_last(
+                [qs.first() for qs in self._querysets], False)
 
     def last(self):
         # See the comments for first().
@@ -600,15 +603,9 @@ class QuerySetSequence(ComparatorMixin):
             return self._querysets[-1].last()
 
         else:
-            # Get each last item.
-            items = [qs.last() for qs in self._querysets]
-
-            # Generate a comparator and sort the items.
-            comparator = self._generate_comparator(self._order_by)
-            items = sorted(items, key=functools.cmp_to_key(comparator))
-
-            # Return the first one.
-            return items[-1]
+            # Get each last item for each and compare them, return the "last".
+            return self._get_first_or_last(
+                [qs.last() for qs in self._querysets], True)
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
