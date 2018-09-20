@@ -568,6 +568,16 @@ class QuerySetSequence(object):
         clone._querysets = [qs.iterator() for qs in self._querysets]
         return clone
 
+    def first(self):
+        if not self._querysets:
+            return None
+        return self._querysets[0].first()
+
+    def last(self):
+        if not self._querysets:
+            return None
+        return self._querysets[-1].last()
+
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
 

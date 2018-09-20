@@ -145,10 +145,10 @@ multiple ``QuerySets``:
       - |xmark|
       - 
     * - |first|_
-      - |xmark|
+      - |check|
       - 
     * - |last|_
-      - |xmark|
+      - |check|
       - 
     * - |aggregate|_
       - |xmark|

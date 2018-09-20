@@ -1127,6 +1127,23 @@ class TestBoolean(TestBase):
             self.assertTrue(self.all.filter(author=self.bob))
 
 
+class TestFirstLast(TestBase):
+    def test_first(self):
+        """Should return the first element of the first QuerySet."""
+        with self.assertNumQueries(1):
+            self.assertEqual(self.all.first().title, 'Fiction')
+
+    def test_last(self):
+        """Should return the last element of the last QuerySet."""
+        with self.assertNumQueries(1):
+            self.assertEqual(self.all.last().title, 'Some Article')
+
+    def test_empty(self):
+        """Empty QuerySetSequence should work."""
+        qs = QuerySetSequence()
+        self.assertIsNone(qs.first())
+
+
 class TestExists(TestBase):
     def test_exists(self):
         """Ensure that exists() returns True if the item is found in the first QuerySet."""
