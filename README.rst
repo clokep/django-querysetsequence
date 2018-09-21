@@ -109,7 +109,7 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |using|_
-      - |xmark|
+      - |check|
       -
     * - |select_for_update|_
       - |xmark|

@@ -439,6 +439,22 @@ class TestDeferOnly(TestBase):
         self.empty.only('publisher')
 
 
+class TestUsing(TestBase):
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
+    def test_using(self):
+        """Using should be passed through to each QuerySet."""
+        with self.assertNumQueries(2):
+            titles = [b.title for b in self.all.using('default')]
+        self.assertEqual(titles, self.EXPECTED)
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
@@ -1468,10 +1484,6 @@ class TestCannotImplement(TestCase):
     def test_extra(self):
         with self.assertRaises(NotImplementedError):
             self.all.extra()
-
-    def test_using(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.using('default')
 
     def test_select_for_update(self):
         with self.assertRaises(NotImplementedError):
