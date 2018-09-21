@@ -9,6 +9,7 @@ from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
+from django.db.models.query import EmptyQuerySet, QuerySet
 from django.utils import six
 
 # Only export the public API for QuerySetSequence. (Note that QuerySequence and
@@ -301,9 +302,7 @@ class QuerySetSequence(ComparatorMixin):
     """
 
     def __init__(self, *args):
-        self._querysets = list(args)
-        # The original ordering of the QuerySets.
-        self._queryset_idxs = list(range(len(self._querysets)))
+        self._set_querysets(args)
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
         self._standard_ordering = True
@@ -311,6 +310,11 @@ class QuerySetSequence(ComparatorMixin):
 
         self._iterable_class = QuerySequenceIterable
         self._result_cache = None
+
+    def _set_querysets(self, querysets):
+        self._querysets = list(querysets)
+        # The original ordering of the QuerySets.
+        self._queryset_idxs = list(range(len(self._querysets)))
 
     def _clone(self):
         clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
@@ -378,6 +382,40 @@ class QuerySetSequence(ComparatorMixin):
         qs._low_mark += k
         qs._high_mark = qs._low_mark + 1
         return list(qs)[0]
+
+    def __and__(self, other):
+        # If the other QuerySet is an EmptyQuerySet, this is a no-op.
+        if isinstance(other, EmptyQuerySet):
+            return other
+        combined = self._clone()
+
+        querysets = []
+        for qs in combined._querysets:
+            # Only QuerySets of the same type can have any overlap.
+            if issubclass(qs.model, other.model):
+                querysets.append(qs & other)
+
+        # If none are left, we're left with an EmptyQuerySet.
+        if not querysets:
+            return other.none()
+
+        combined._set_querysets(querysets)
+        return combined
+
+    def __or__(self, other):
+        # If the other QuerySet is an EmptyQuerySet, this is a no-op.
+        if isinstance(other, EmptyQuerySet):
+            return self
+        combined = self._clone()
+
+        # If the other instance is a QuerySetSequence, combine the QuerySets.
+        if isinstance(other, QuerySetSequence):
+            combined._set_querysets(self._querysets + other._querysets)
+
+        elif isinstance(other, QuerySet):
+            combined._set_querysets(self._querysets + [other])
+
+        return combined
 
     def _separate_filter_fields(self, **kwargs):
         qss_fields, std_fields = self._separate_fields(*kwargs.keys())

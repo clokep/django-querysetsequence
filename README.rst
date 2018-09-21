@@ -128,11 +128,16 @@ multiple ``QuerySets``:
       - Notes
 
     * - |AND (&)|_
-      - |xmark|
-      -
+      - |check|
+      - A ``QuerySetSequence`` can be combined with a ``QuerySet``. The
+        ``QuerySets`` in the ``QuerySetSequence`` are filtered to ones matching
+        the same ``Model``. Each of those is ANDed with the other ``QuerySet``.
     * - |OR (\|)|_
-      - |xmark|
-      -
+      - |check|
+      - A ``QuerySetSequence`` can be combined with a ``QuerySet`` or
+        ``QuerySetSequence``. When combining with a ``QuerySet``, it is added to
+        the ``QuerySetSequence``. Combiningg with another ``QuerySetSequence``
+        adds together the two underlying sets of ``QuerySets``.
 
 .. list-table:: Methods that do not return ``QuerySets``
     :widths: 15 10 30
