@@ -1343,6 +1343,32 @@ class TestCannotImplement(TestCase):
     def setUp(self):
         self.all = QuerySetSequence()
 
+    def test_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.create()
+
+    def test_get_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.get_or_create()
+
+    def test_update_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.update_or_create()
+
+    def test_bulk_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.bulk_create([])
+
+    def test_in_bulk(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.in_bulk()
+
+
+class TestNotImplemented(TestCase):
+    """The following methods have not been implemented in QuerySetSequence."""
+    def setUp(self):
+        self.all = QuerySetSequence()
+
     def test_annotate(self):
         with self.assertRaises(NotImplementedError):
             self.all.annotate()
@@ -1391,36 +1417,6 @@ class TestCannotImplement(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.raw()
 
-    def test_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.create()
-
-    def test_get_or_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.get_or_create()
-
-    def test_update_or_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.update_or_create()
-
-    def test_bulk_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.bulk_create([])
-
-    def test_in_bulk(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.in_bulk()
-
-    def test_update(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.update()
-
-
-class TestNotImplemented(TestCase):
-    """The following methods have not been implemented in QuerySetSequence."""
-    def setUp(self):
-        self.all = QuerySetSequence()
-
     def test_latest(self):
         with self.assertRaises(NotImplementedError):
             self.all.latest()
@@ -1432,6 +1428,10 @@ class TestNotImplemented(TestCase):
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate()
+
+    def test_update(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.update()
 
     def test_explain(self):
         with self.assertRaises(NotImplementedError):
