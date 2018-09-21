@@ -6,6 +6,11 @@ Changelog
 next (2018-xx-xx)
 =================
 
+* [Enhancement] Support ``first()`` and ``last()`` methods.
+* [Enhancement] Support the ``&`` and ``|`` operators.
+* [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
+  regression introduced in 0.9.
+
 0.9 (2018-09-20)
 ================
 
