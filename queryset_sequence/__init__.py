@@ -539,6 +539,9 @@ class QuerySetSequence(ComparatorMixin):
         clone._querysets = [qs.exclude(**fields) for qs in clone._querysets]
         return clone
 
+    def annotate(self, *args, **kwargs):
+        raise NotImplementedError()
+
     def order_by(self, *fields):
         _, filtered_fields = self._separate_fields(*fields)
 
@@ -556,6 +559,21 @@ class QuerySetSequence(ComparatorMixin):
         clone._standard_ordering = not self._standard_ordering
         return clone
 
+    def distinct(self, *fields):
+        raise NotImplementedError()
+
+    def values(self, *fields, **expressions):
+        raise NotImplementedError()
+
+    def values_list(self, *fields, **kwargs):
+        raise NotImplementedError()
+
+    def dates(self, field, kind, order='ASC'):
+        raise NotImplementedError()
+
+    def datetimes(self, field_name, kind, order='ASC', tzinfo=None):
+        raise NotImplementedError()
+
     def none(self):
         # This is a bit odd, but use the first QuerySet to properly return an
         # that is an instance of EmptyQuerySet.
@@ -566,6 +584,15 @@ class QuerySetSequence(ComparatorMixin):
         clone._querysets = [qs.all() for qs in self._querysets]
         return clone
 
+    def union(self, *other_qs, **kwargs):
+        raise NotImplementedError()
+
+    def intersection(self, *other_qs, **kwargs):
+        raise NotImplementedError()
+
+    def difference(self, *other_qs, **kwargs):
+        raise NotImplementedError()
+
     def select_related(self, *fields):
         clone = self._clone()
         clone._querysets = [qs.select_related(*fields) for qs in self._querysets]
@@ -575,6 +602,24 @@ class QuerySetSequence(ComparatorMixin):
         clone = self._clone()
         clone._querysets = [qs.prefetch_related(*lookups) for qs in self._querysets]
         return clone
+
+    def extra(self, select=None, where=None, params=None, tables=None, order_by=None, select_params=None):
+        raise NotImplementedError()
+
+    def defer(self, *fields):
+        raise NotImplementedError()
+
+    def only(self, *fields):
+        raise NotImplementedError()
+
+    def using(self, alias):
+        raise NotImplementedError()
+
+    def select_for_update(self):
+        raise NotImplementedError()
+
+    def raw(self):
+        raise NotImplementedError()
 
     # Methods that do not return QuerySets
     def get(self, **kwargs):
@@ -600,8 +645,23 @@ class QuerySetSequence(ComparatorMixin):
         # Return the only result found.
         return result
 
+    def create(self, **kwargs):
+        raise NotImplementedError()
+
+    def get_or_create(self, defaults=None, **kwargs):
+        raise NotImplementedError()
+
+    def update_or_create(self, defaults=None, **kwargs):
+        raise NotImplementedError()
+
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
+        raise NotImplementedError()
+
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
+
+    def in_bulk(self, id_list=None, field_name='pk'):
+        raise NotImplementedError()
 
     def iterator(self):
         clone = self._clone()
@@ -616,6 +676,12 @@ class QuerySetSequence(ComparatorMixin):
         # Return the first one (whether this is first or last is controlled by
         # reverse).
         return items[0]
+
+    def latest(self, *fields):
+        raise NotImplementedError()
+
+    def earliest(self, *fields):
+        raise NotImplementedError()
 
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
@@ -645,8 +711,14 @@ class QuerySetSequence(ComparatorMixin):
             return self._get_first_or_last(
                 [qs.last() for qs in self._querysets], True)
 
+    def aggregate(self, *args, **kwargs):
+        raise NotImplementedError()
+
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
+
+    def update(self, **kwargs):
+        raise NotImplementedError()
 
     def delete(self):
         deleted_count = 0
@@ -663,7 +735,10 @@ class QuerySetSequence(ComparatorMixin):
         return deleted_count, dict(deleted_objects)
 
     def as_manager(self):
-        pass
+        raise NotImplementedError()
+
+    def explain(self):
+        raise NotImplementedError()
 
     # Public attributes
     @property

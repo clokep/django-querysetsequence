@@ -29,8 +29,7 @@ multiple ``QuerySets``:
   iteration, slicing, pickling, ``repr()``/``len()``/``list()``/``bool()``
   calls).
 * Public ``QuerySet`` API methods that are untested/unimplemented raise
-  ``NotImplementedError``. ``AttributeError`` is raised on attributes not
-  explictly inherited from ``QuerySet``.
+  ``NotImplementedError``.
 
 .. Auto-generated content, run python gen_docs.py to generate this.
 .. ATTRIBUTES_TABLE_START

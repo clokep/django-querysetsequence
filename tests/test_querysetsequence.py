@@ -1282,3 +1282,115 @@ class TestDelete(TestBase):
 
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 3)
+
+
+class TestCannotImplement(TestCase):
+    """The following methods cannot be implemented in QuerySetSequence."""
+    def setUp(self):
+        self.all = QuerySetSequence()
+
+    def test_annotate(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.annotate()
+
+    def test_distinct(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.distinct()
+
+    def test_values(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.values()
+
+    def test_values_list(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.values_list()
+
+    def test_dates(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.dates(None, None)
+
+    def test_datetimes(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.datetimes(None, None)
+
+    def test_union(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.union()
+
+    def test_intersection(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.intersection()
+
+    def test_difference(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.difference()
+
+    def test_extra(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.extra()
+
+    def test_defer(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.defer()
+
+    def test_only(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.only()
+
+    def test_using(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.using('default')
+
+    def test_select_for_update(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.select_for_update()
+
+    def test_raw(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.raw()
+
+    def test_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.create()
+
+    def test_get_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.get_or_create()
+
+    def test_update_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.update_or_create()
+
+    def test_bulk_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.bulk_create([])
+
+    def test_in_bulk(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.in_bulk()
+
+    def test_update(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.update()
+
+
+class TestNotImplemented(TestCase):
+    """The following methods have not been implemented in QuerySetSequence."""
+    def setUp(self):
+        self.all = QuerySetSequence()
+
+    def test_latest(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.latest()
+
+    def test_earliest(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.earliest()
+
+    def test_aggregate(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.aggregate()
+
+    def test_explain(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.explain()
