@@ -395,6 +395,66 @@ class TestPrefetchRelated(TestBase):
         self.empty.prefetch_related('author')
 
 
+class TestDeferOnly(TestBase):
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
+    def test_defer(self):
+        """A deferred field will be loaded on access."""
+        with self.assertNumQueries(2):
+            books = list(self.all.defer('title'))
+        with self.assertNumQueries(5):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    def test_clear_defer(self):
+        """Ensure the original behavior is restored if defer is cleared."""
+        with self.assertNumQueries(2):
+            books = list(self.all.defer('title').defer(None))
+        with self.assertNumQueries(0):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    def test_empty_defer(self):
+        """Calling defer on an empty QuerySetSequence doesn't error."""
+        self.empty.defer('title')
+
+    def test_only(self):
+        """Only causes other fields to load on access (opposite of defer)."""
+        with self.assertNumQueries(2):
+            books = list(self.all.only('publisher'))
+        with self.assertNumQueries(5):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    # Note that you cannot clear an only call, so None is not a valid value.
+
+    def test_empty_only(self):
+        """Calling only on an empty QuerySetSequence doesn't error."""
+        self.empty.only('publisher')
+
+
+class TestUsing(TestBase):
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
+    def test_using(self):
+        """Using should be passed through to each QuerySet."""
+        with self.assertNumQueries(2):
+            titles = [b.title for b in self.all.using('default')]
+        self.assertEqual(titles, self.EXPECTED)
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
@@ -1424,18 +1484,6 @@ class TestCannotImplement(TestCase):
     def test_extra(self):
         with self.assertRaises(NotImplementedError):
             self.all.extra()
-
-    def test_defer(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.defer()
-
-    def test_only(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.only()
-
-    def test_using(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.using('default')
 
     def test_select_for_update(self):
         with self.assertRaises(NotImplementedError):

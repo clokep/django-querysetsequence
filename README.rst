@@ -103,13 +103,13 @@ multiple ``QuerySets``:
       - |xmark|
       -
     * - |defer|_
-      - |xmark|
+      - |check|
       -
     * - |only|_
-      - |xmark|
+      - |check|
       -
     * - |using|_
-      - |xmark|
+      - |check|
       -
     * - |select_for_update|_
       - |xmark|
