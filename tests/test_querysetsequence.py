@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
-from django.core.exceptions import (FieldError, MultipleObjectsReturned,
+from unittest import skip
+
+from django.core.exceptions import (FieldError,
+                                    MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
@@ -57,6 +60,9 @@ class TestBase(TestCase):
         # Many tests start with the same QuerySetSequence.
         self.all = QuerySetSequence(Book.objects.all(), Article.objects.all())
 
+        # An empty QuerySetSequence.
+        self.empty = QuerySetSequence()
+
 
 class TestLength(TestBase):
     """
@@ -91,6 +97,14 @@ class TestLength(TestBase):
         # called.
         with self.assertNumQueries(4):
             self.assertEqual(len(self.all[1:]), 4)
+
+    def test_empty_count(self):
+        """An empty QuerySetSequence has a count of 0."""
+        self.assertEqual(self.empty.count(), 0)
+
+    def test_empty_len(self):
+        """An empty QuerySetSequence has a count of 0."""
+        self.assertEqual(len(self.empty), 0)
 
 
 class TestIterator(TestBase):
@@ -133,9 +147,12 @@ class TestIterator(TestBase):
 
     def test_empty(self):
         """Test an empty iteration."""
-        qss = QuerySetSequence()
         with self.assertNumQueries(0):
-            self.assertEqual(list(qss), [])
+            self.assertEqual(list(self.empty.iterator()), [])
+
+    def test_empty_iter(self):
+        with self.assertNumQueries(0):
+            self.assertEqual(list(self.empty), [])
 
     def test_empty_subqueryset(self):
         """Iterating an empty set should work."""
@@ -169,6 +186,12 @@ class TestOperators(TestBase):
         with self.assertNumQueries(1):
             data = [it.title for it in combined.iterator()]
         self.assertEqual(data, ["Fiction"])
+
+    def test_empty_and(self):
+        """An empty QuerySetSequence can be ANDed with a QuerySet, but returns an EmptyQuerySet."""
+        combined = self.empty & BlogPost.objects.all()
+        self.assertIsInstance(combined, EmptyQuerySet)
+        self.assertEqual(list(combined), [])
 
     def test_or_identity(self):
         """ORing with an empty QuerySet should just return the same QuerySetSequence."""
@@ -223,6 +246,25 @@ class TestOperators(TestBase):
             "Post",
         ])
 
+    def test_empty_or(self):
+        """An empty QuerySetSequence can be ORed with a QuerySet, but returns an EmptyQuerySet."""
+        combined = self.empty | BlogPost.objects.all()
+        self.assertIsInstance(combined, QuerySetSequence)
+        self.assertEqual(len(combined._querysets), 1)
+
+        with self.assertNumQueries(1):
+            data = [it.title for it in combined.iterator()]
+        self.assertEqual(data, ["Post"])
+
+    def test_empty_or_querysetsequence(self):
+        combined = self.empty | QuerySetSequence(BlogPost.objects.all())
+        self.assertIsInstance(combined, QuerySetSequence)
+        self.assertEqual(len(combined._querysets), 1)
+
+        with self.assertNumQueries(1):
+            data = [it.title for it in combined.iterator()]
+        self.assertEqual(data, ["Post"])
+
 
 class TestNone(TestBase):
     def test_none(self):
@@ -234,19 +276,18 @@ class TestNone(TestBase):
             qss = self.all.none()
             data = list(qss)
 
-        # This returns a special EmptyQuerySet.
+        # This returns an EmptyQuerySet.
         self.assertIsInstance(qss, EmptyQuerySet)
 
         # Should have no data.
         self.assertEqual(data, [])
 
-    def test_count(self):
-        """An empty QuerySet should have no data."""
-        with self.assertNumQueries(0):
-            qss = self.all.none()
+    @skip('Currently not working.')
+    def test_empty(self):
+        qss = self.empty.none()
 
-            self.assertEqual(qss.count(), 0)
-            self.assertEqual(len(qss), 0)
+        # This returns an EmptyQuerySet.
+        self.assertIsInstance(qss, EmptyQuerySet)
 
 
 class TestAll(TestBase):
@@ -273,6 +314,14 @@ class TestAll(TestBase):
         with self.assertNumQueries(2):
             data = [it.title for it in copy]
         self.assertEqual(data, expected)
+
+    def test_empty(self):
+        """Copying an empty QuerySetSequence works fine."""
+        copy = self.empty.all()
+
+        # Different QuerySetSequences, but the same content.
+        self.assertNotEqual(self.all, copy)
+        self.assertEqual(list(copy), [])
 
 
 class TestSelectRelated(TestBase):
@@ -306,6 +355,10 @@ class TestSelectRelated(TestBase):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
+    def test_empty(self):
+        """Calling select_related on an empty QuerySetSequence doesn't error."""
+        self.empty.select_related('author')
+
 
 class TestPrefetchRelated(TestBase):
     # Bob, Bob, Alice, Alice, Bob.
@@ -336,6 +389,10 @@ class TestPrefetchRelated(TestBase):
         with self.assertNumQueries(5):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
+
+    def test_empty(self):
+        """Calling prefetch_related on an empty QuerySetSequence doesn't error."""
+        self.empty.prefetch_related('author')
 
 
 class TestFilter(TestBase):
@@ -550,6 +607,10 @@ class TestFilter(TestBase):
         data = [it.title for it in qss]
         self.assertEqual(data, [])
 
+    def test_empty(self):
+        """Calling filter on an empty QuerySetSequence doesn't error."""
+        self.empty.filter(title='')
+
 
 class TestExclude(TestBase):
     """
@@ -736,6 +797,10 @@ class TestExclude(TestBase):
         """Try excluding the QuerySets by a lookup that doesn't make sense."""
         with self.assertRaises(ValueError):
             self._get_qss().exclude(**{'#__year': 1})
+
+    def test_empty(self):
+        """Calling exclude on an empty QuerySetSequence doesn't error."""
+        self.empty.exclude(title='')
 
 
 class TestOrderBy(TestBase):
@@ -944,6 +1009,10 @@ class TestOrderBy(TestBase):
             ]
             self.assertEqual(data, expected)
 
+    def test_empty(self):
+        """Calling order_by on an empty QuerySetSequence doesn't error."""
+        self.empty.order_by('author')
+
 
 class TestReverse(TestBase):
     def test_reverse(self):
@@ -1015,6 +1084,10 @@ class TestReverse(TestBase):
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         self.assertEqual(data, expected)
+
+    def test_empty(self):
+        """Calling reverse on an empty QuerySetSequence doesn't error."""
+        self.empty.reverse()
 
 
 class TestSlicing(TestBase):
@@ -1135,6 +1208,10 @@ class TestSlicing(TestBase):
             data = [it.title for it in qss]
         self.assertEqual(['Alice in Django-land', 'Some Article'], data)
 
+    def test_empty(self):
+        """Slicing an empty QuerySetSequence doesn't error."""
+        self.assertEqual(list(self.empty[:]), [])
+
 
 class TestGet(TestBase):
     def test_get(self):
@@ -1181,6 +1258,11 @@ class TestGet(TestBase):
         self.assertEqual(article.title, 'Some Article')
         self.assertIsInstance(article, Article)
 
+    def test_empty(self):
+        """Calling get on an empty QuerySetSequence raises ObjectDoesNotExist."""
+        with self.assertRaises(ObjectDoesNotExist):
+            self.empty.get(pk=1)
+
 
 class TestBoolean(TestBase):
     """Tests related to casting the QuerySetSequence to a boolean."""
@@ -1204,6 +1286,10 @@ class TestBoolean(TestBase):
         with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(author=self.bob))
 
+    def test_empty(self):
+        """An empty QuerySetSequence should resolve to False."""
+        self.assertFalse(self.empty)
+
 
 class TestFirstLast(TestBase):
     def test_first_unordered(self):
@@ -1218,8 +1304,8 @@ class TestFirstLast(TestBase):
 
     def test_empty(self):
         """Empty QuerySetSequence should work."""
-        qs = QuerySetSequence()
-        self.assertIsNone(qs.first())
+        self.assertIsNone(self.empty.first())
+        self.assertIsNone(self.empty.last())
 
     def test_first_ordered(self):
         """When ordering, the items of each QuerySet must be compared."""
@@ -1261,6 +1347,10 @@ class TestExists(TestBase):
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(author=self.bob).exists())
 
+    def test_empty(self):
+        """An empty QuerySetSequence should return False."""
+        self.assertFalse(self.empty.exists())
+
 
 class TestDelete(TestBase):
     def test_delete_all(self):
@@ -1282,6 +1372,12 @@ class TestDelete(TestBase):
 
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 3)
+
+    def test_empty(self):
+        """Calling delete on an empty QuerySetSequence should work."""
+        result = self.empty.delete()
+        self.assertEqual(result[0], 0)
+        self.assertEqual(result[1], {})
 
 
 class TestCannotImplement(TestCase):
