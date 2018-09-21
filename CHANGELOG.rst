@@ -8,6 +8,7 @@ next (2018-xx-xx)
 
 * [Enhancement] Support ``first()`` and ``last()`` methods.
 * [Enhancement] Support the ``&`` and ``|`` operators.
+* [Enhancement] Support ``defer()`` method.
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
   regression introduced in 0.9.
 

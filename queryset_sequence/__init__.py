@@ -607,7 +607,9 @@ class QuerySetSequence(ComparatorMixin):
         raise NotImplementedError()
 
     def defer(self, *fields):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.defer(*fields) for qs in self._querysets]
+        return clone
 
     def only(self, *fields):
         raise NotImplementedError()

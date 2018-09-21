@@ -395,6 +395,36 @@ class TestPrefetchRelated(TestBase):
         self.empty.prefetch_related('author')
 
 
+class TestDefer(TestBase):
+    EXPECTED = [
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
+    ]
+
+    def test_defer(self):
+        """A deferred field will be loaded on access."""
+        with self.assertNumQueries(2):
+            books = list(self.all.defer('title'))
+        with self.assertNumQueries(5):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    def test_clear_defer(self):
+        """Ensure the original behavior is restored if defer is cleared."""
+        with self.assertNumQueries(2):
+            books = list(self.all.defer('title').defer(None))
+        with self.assertNumQueries(0):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    def test_empty(self):
+        """Calling defer on an empty QuerySetSequence doesn't error."""
+        self.empty.defer('title')
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
@@ -1424,10 +1454,6 @@ class TestCannotImplement(TestCase):
     def test_extra(self):
         with self.assertRaises(NotImplementedError):
             self.all.extra()
-
-    def test_defer(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.defer()
 
     def test_only(self):
         with self.assertRaises(NotImplementedError):
