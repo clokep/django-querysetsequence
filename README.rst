@@ -106,7 +106,7 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |only|_
-      - |xmark|
+      - |check|
       -
     * - |using|_
       - |xmark|

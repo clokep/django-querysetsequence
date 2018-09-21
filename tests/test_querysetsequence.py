@@ -395,7 +395,7 @@ class TestPrefetchRelated(TestBase):
         self.empty.prefetch_related('author')
 
 
-class TestDefer(TestBase):
+class TestDeferOnly(TestBase):
     EXPECTED = [
         "Fiction",
         "Biography",
@@ -420,9 +420,23 @@ class TestDefer(TestBase):
             titles = [b.title for b in books]
         self.assertEqual(titles, self.EXPECTED)
 
-    def test_empty(self):
+    def test_empty_defer(self):
         """Calling defer on an empty QuerySetSequence doesn't error."""
         self.empty.defer('title')
+
+    def test_only(self):
+        """Only causes other fields to load on access (opposite of defer)."""
+        with self.assertNumQueries(2):
+            books = list(self.all.only('publisher'))
+        with self.assertNumQueries(5):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, self.EXPECTED)
+
+    # Note that you cannot clear an only call, so None is not a valid value.
+
+    def test_empty_only(self):
+        """Calling only on an empty QuerySetSequence doesn't error."""
+        self.empty.only('publisher')
 
 
 class TestFilter(TestBase):
@@ -1454,10 +1468,6 @@ class TestCannotImplement(TestCase):
     def test_extra(self):
         with self.assertRaises(NotImplementedError):
             self.all.extra()
-
-    def test_only(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.only()
 
     def test_using(self):
         with self.assertRaises(NotImplementedError):

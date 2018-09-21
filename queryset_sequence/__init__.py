@@ -612,7 +612,9 @@ class QuerySetSequence(ComparatorMixin):
         return clone
 
     def only(self, *fields):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.only(*fields) for qs in self._querysets]
+        return clone
 
     def using(self, alias):
         raise NotImplementedError()
