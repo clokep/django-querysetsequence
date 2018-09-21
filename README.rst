@@ -192,8 +192,8 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |update|_
-      - |xmark|
-      - Cannot be implemented in ``QuerySetSequence``.
+      - |check|
+      -
     * - |delete|_
       - |check|
       -

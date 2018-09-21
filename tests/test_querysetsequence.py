@@ -1310,6 +1310,23 @@ class TestExists(TestBase):
         self.assertFalse(self.empty.exists())
 
 
+class TestUpdate(TestBase):
+    def test_update(self):
+        """Update should apply across all QuerySets."""
+        with self.assertNumQueries(2):
+            result = self.all.update(title='A New Title')
+        self.assertEqual(result, 5)
+
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all]
+        self.assertEqual(data, ['A New Title'] * 5)
+
+    def test_empty(self):
+        """Calling delete on an empty QuerySetSequence should work."""
+        result = self.empty.update()
+        self.assertEqual(result, 0)
+
+
 class TestDelete(TestBase):
     def test_delete_all(self):
         """Ensure that delete() works properly."""
@@ -1428,10 +1445,6 @@ class TestNotImplemented(TestCase):
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate()
-
-    def test_update(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.update()
 
     def test_explain(self):
         with self.assertRaises(NotImplementedError):

@@ -724,7 +724,7 @@ class QuerySetSequence(ComparatorMixin):
         return any(qs.exists() for qs in self._querysets)
 
     def update(self, **kwargs):
-        raise NotImplementedError()
+        return sum(qs.update(**kwargs) for qs in self._querysets)
 
     def delete(self):
         deleted_count = 0
