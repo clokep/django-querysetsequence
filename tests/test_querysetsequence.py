@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 from unittest import skip
 
-from django.core.exceptions import (FieldError,
+from django.core.exceptions import (FieldDoesNotExist,
+                                    FieldError,
                                     MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db.models.query import EmptyQuerySet
@@ -1310,6 +1311,38 @@ class TestExists(TestBase):
         self.assertFalse(self.empty.exists())
 
 
+class TestUpdate(TestBase):
+    def test_update(self):
+        """Update should apply across all QuerySets."""
+        # The queries are: creating a save point, the two updates, releasing the
+        # save point.
+        with self.assertNumQueries(4):
+            result = self.all.update(title='A New Title')
+        self.assertEqual(result, 5)
+
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all]
+        self.assertEqual(data, ['A New Title'] * 5)
+
+    def test_error(self):
+        """If an error occurs on one of the QuerySets, no changes should occur."""
+        # The queries are: creating a save point, attempting the two updates,
+        # releasing the save point.
+        with self.assertNumQueries(4):
+            with self.assertRaises(FieldDoesNotExist):
+                self.all.update(pages=8)
+
+        # The page counts for the Book objects are unmodified.
+        with self.assertNumQueries(1):
+            data = [it.pages for it in Book.objects.all()]
+        self.assertEqual(data, [10, 20])
+
+    def test_empty(self):
+        """Calling delete on an empty QuerySetSequence should work."""
+        result = self.empty.update()
+        self.assertEqual(result, 0)
+
+
 class TestDelete(TestBase):
     def test_delete_all(self):
         """Ensure that delete() works properly."""
@@ -1340,6 +1373,32 @@ class TestDelete(TestBase):
 
 class TestCannotImplement(TestCase):
     """The following methods cannot be implemented in QuerySetSequence."""
+    def setUp(self):
+        self.all = QuerySetSequence()
+
+    def test_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.create()
+
+    def test_get_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.get_or_create()
+
+    def test_update_or_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.update_or_create()
+
+    def test_bulk_create(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.bulk_create([])
+
+    def test_in_bulk(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.in_bulk()
+
+
+class TestNotImplemented(TestCase):
+    """The following methods have not been implemented in QuerySetSequence."""
     def setUp(self):
         self.all = QuerySetSequence()
 
@@ -1390,36 +1449,6 @@ class TestCannotImplement(TestCase):
     def test_raw(self):
         with self.assertRaises(NotImplementedError):
             self.all.raw()
-
-    def test_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.create()
-
-    def test_get_or_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.get_or_create()
-
-    def test_update_or_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.update_or_create()
-
-    def test_bulk_create(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.bulk_create([])
-
-    def test_in_bulk(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.in_bulk()
-
-    def test_update(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.update()
-
-
-class TestNotImplemented(TestCase):
-    """The following methods have not been implemented in QuerySetSequence."""
-    def setUp(self):
-        self.all = QuerySetSequence()
 
     def test_latest(self):
         with self.assertRaises(NotImplementedError):

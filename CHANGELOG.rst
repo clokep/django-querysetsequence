@@ -11,6 +11,7 @@ next (2018-xx-xx)
 * [Enhancement] Support ``defer()`` and ``only()`` methods.
 * [Enhancement] Support calling ``using()`` to switch databases for an entire
   ``QuerySetSequence``.
+* [Enhancement] Support calling ``update()``.
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
   regression introduced in 0.9.
 

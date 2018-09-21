@@ -7,6 +7,7 @@ from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
 
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
+from django.db import transaction
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -724,7 +725,8 @@ class QuerySetSequence(ComparatorMixin):
         return any(qs.exists() for qs in self._querysets)
 
     def update(self, **kwargs):
-        raise NotImplementedError()
+        with transaction.atomic():
+            return sum(qs.update(**kwargs) for qs in self._querysets)
 
     def delete(self):
         deleted_count = 0
