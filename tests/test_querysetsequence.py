@@ -6,6 +6,7 @@ from django.core.exceptions import (FieldDoesNotExist,
                                     FieldError,
                                     MultipleObjectsReturned,
                                     ObjectDoesNotExist)
+from django.db.models import Count
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 
@@ -789,6 +790,18 @@ class TestExclude(TestBase):
         self.empty.exclude(title='')
 
 
+class TestAnnotate(TestBase):
+    def test_annotate(self):
+        """Annotating should get applied to each QuerySet."""
+        qss = QuerySetSequence(Publisher.objects.all(), PeriodicalPublisher.objects.all())
+        qss = qss.annotate(published_count=Count('published'))
+
+        # Each Published gets the count of things in it added.
+        with self.assertNumQueries(2):
+            data = [it.published_count for it in qss]
+        self.assertEquals(data, [0, 2, 3])
+
+
 class TestOrderBy(TestBase):
     def test_order_by(self):
         """Ensure that order_by() propagates to QuerySets and iteration."""
@@ -1401,10 +1414,6 @@ class TestNotImplemented(TestCase):
     """The following methods have not been implemented in QuerySetSequence."""
     def setUp(self):
         self.all = QuerySetSequence()
-
-    def test_annotate(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.annotate()
 
     def test_distinct(self):
         with self.assertRaises(NotImplementedError):

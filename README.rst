@@ -54,7 +54,7 @@ multiple ``QuerySets``:
       - |check|
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |annotate|_
-      - |xmark|
+      - |check|
       -
     * - |order_by|_
       - |check|
