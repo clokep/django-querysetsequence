@@ -541,7 +541,9 @@ class QuerySetSequence(ComparatorMixin):
         return clone
 
     def annotate(self, *args, **kwargs):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.annotate(*args, **kwargs) for qs in clone._querysets]
+        return clone
 
     def order_by(self, *fields):
         _, filtered_fields = self._separate_fields(*fields)

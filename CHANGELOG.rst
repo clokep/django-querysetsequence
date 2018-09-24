@@ -8,10 +8,11 @@ next (2018-xx-xx)
 
 * [Enhancement] Support ``first()`` and ``last()`` methods.
 * [Enhancement] Support the ``&`` and ``|`` operators.
-* [Enhancement] Support ``defer()`` and ``only()`` methods.
+* [Enhancement] Support ``defer()`` and ``only()`` methods to control which
+  fields are returned.
 * [Enhancement] Support calling ``using()`` to switch databases for an entire
   ``QuerySetSequence``.
-* [Enhancement] Support calling ``update()``.
+* [Enhancement] Support calling ``update()`` and ``annotate()``.
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
   regression introduced in 0.9.
 
