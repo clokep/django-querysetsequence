@@ -607,7 +607,9 @@ class QuerySetSequence(ComparatorMixin):
         return clone
 
     def extra(self, select=None, where=None, params=None, tables=None, order_by=None, select_params=None):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.extra(select=select, where=where, params=params, tables=tables, order_by=order_by, select_params=select_params) for qs in self._querysets]
+        return clone
 
     def defer(self, *fields):
         clone = self._clone()
