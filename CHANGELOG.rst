@@ -12,7 +12,8 @@ next (2018-xx-xx)
   fields are returned.
 * [Enhancement] Support calling ``using()`` to switch databases for an entire
   ``QuerySetSequence``.
-* [Enhancement] Support calling ``update()`` and ``annotate()``.
+* [Enhancement] Support calling ``extra()`, ``update()``, and ``annotate()``
+  which get applied to each ``QuerySet``.
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
   regression introduced in 0.9.
 

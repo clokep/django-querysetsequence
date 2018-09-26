@@ -790,7 +790,15 @@ class TestExclude(TestBase):
         self.empty.exclude(title='')
 
 
-class TestAnnotate(TestBase):
+class TestExtraAnnotate(TestBase):
+    def test_extra(self):
+        """Calling extra() gets applied to each QuerySet."""
+        # Filter to just Bob's work.
+        with self.assertNumQueries(0):
+            bob_qss = self.all.extra(where=["author_id = '{}'".format(self.bob.id)])
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
+
     def test_annotate(self):
         """Annotating should get applied to each QuerySet."""
         qss = QuerySetSequence(Publisher.objects.all(), PeriodicalPublisher.objects.all())
@@ -1446,10 +1454,6 @@ class TestNotImplemented(TestCase):
     def test_difference(self):
         with self.assertRaises(NotImplementedError):
             self.all.difference()
-
-    def test_extra(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.extra()
 
     def test_select_for_update(self):
         with self.assertRaises(NotImplementedError):

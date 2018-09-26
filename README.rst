@@ -100,7 +100,7 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |extra|_
-      - |xmark|
+      - |check|
       -
     * - |defer|_
       - |check|
