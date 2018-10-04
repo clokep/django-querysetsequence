@@ -35,6 +35,9 @@ class Article(models.Model):
     publisher = models.ForeignKey(PeriodicalPublisher, related_name='published', on_delete=models.CASCADE)
     release = models.DateField()
 
+    class Meta:
+        get_latest_by = 'release'
+
     def __str__(self):
         return "%s by %s" % (self.title, self.author)
 
@@ -51,6 +54,9 @@ class Book(models.Model):
     publisher = models.ForeignKey(Publisher, related_name='published', on_delete=models.CASCADE)
     release = models.DateField()
     pages = models.PositiveSmallIntegerField()
+
+    class Meta:
+        get_latest_by = 'release'
 
     def __str__(self):
         return "%s by %s" % (self.title, self.author)

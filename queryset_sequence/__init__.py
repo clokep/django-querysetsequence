@@ -692,6 +692,27 @@ class QuerySetSequence(ComparatorMixin):
         return items[0]
 
     def latest(self, *fields):
+        # If fields are given, fallback to get_latest_by.
+        if not fields:
+            # Get each QuerySet's get_latest_by (ignore unset values).
+            get_latest_by = map(lambda qs: getattr(qs.model._meta, 'get_latest_by'), self._querysets)
+            get_latest_by = set(get_latest_by)
+
+            # Ensure all of them are identical.
+            if len(get_latest_by) > 1:
+                raise ValueError(
+                    "earliest() and latest() require 'get_latest_by' in each "
+                    "model's Meta to be identical.")
+
+            # If all the values are None, get_latest_by was not set.
+            if not get_latest_by:
+                raise ValueError(
+                    "earliest() and latest() require either fields as positional "
+                    "arguments or 'get_latest_by' in the model's Meta.")
+
+            # Since they are all identical, just use the first one.
+            fields = list(get_latest_by)
+
         objs = []
         for qs in self._querysets:
             try:
