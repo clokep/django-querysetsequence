@@ -1404,8 +1404,9 @@ class TestExplain(TestBase):
     def test_supported(self):
         """Supported versions of Django support explain() and return a string."""
         with self.assertNumQueries(2):
-            explaination = self.all.explain()
-        self.assertEqual(explaination, '2 0 0 SCAN TABLE tests_book\n2 0 0 SCAN TABLE tests_article')
+            explanation = self.all.explain()
+        # The output of explain is not guaranteed, so do some rough checks.
+        self.assertEqual(len(explanation.split('\n')), 2)
 
 
 class TestCannotImplement(TestCase):
