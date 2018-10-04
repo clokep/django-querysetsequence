@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 
-from unittest import skip
+from unittest import skip, skipIf
 
+import django
 from django.core.exceptions import (FieldDoesNotExist,
                                     FieldError,
                                     MultipleObjectsReturned,
@@ -1392,6 +1393,21 @@ class TestDelete(TestBase):
         self.assertEqual(result[1], {})
 
 
+class TestExplain(TestBase):
+    @skipIf(django.VERSION >= (2, 1), 'explain() added in Django 2.1')
+    def test_not_supported(self):
+        """Older versions of Django raise an attribute error."""
+        with self.assertRaises(AttributeError):
+            self.all.explain()
+
+    @skipIf(django.VERSION < (2, 1), 'explain() added in Django 2.1')
+    def test_supported(self):
+        """Supported versions of Django support explain() and return a string."""
+        with self.assertNumQueries(2):
+            explaination = self.all.explain()
+        self.assertEqual(explaination, '2 0 0 SCAN TABLE tests_book\n2 0 0 SCAN TABLE tests_article')
+
+
 class TestCannotImplement(TestCase):
     """The following methods cannot be implemented in QuerySetSequence."""
     def setUp(self):
@@ -1474,7 +1490,3 @@ class TestNotImplemented(TestCase):
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate()
-
-    def test_explain(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.explain()

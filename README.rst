@@ -201,8 +201,8 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |explain|_
-      - |xmark|
-      -
+      - |check|
+      - Only available on Django >= 2.1.
 
 .. |filter| replace:: ``filter()``
 .. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter

@@ -14,6 +14,7 @@ next (2018-xx-xx)
   ``QuerySetSequence``.
 * [Enhancement] Support calling ``extra()`, ``update()``, and ``annotate()``
   which get applied to each ``QuerySet``.
+* [Enhancement] Support calling ``explain()`` on Django >= 2.1.
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
   regression introduced in 0.9.
 
