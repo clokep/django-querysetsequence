@@ -1276,6 +1276,26 @@ class TestBoolean(TestBase):
         self.assertFalse(self.empty)
 
 
+class TestEarliestLatest(TestBase):
+    def test_earliest(self):
+        """The earliest release overall should be returned."""
+        with self.assertNumQueries(2):
+            earliest = self.all.earliest('release')
+        self.assertEqual(earliest.title, 'Some Article')
+
+    def test_latest(self):
+        """The latest release overall should be returned."""
+        with self.assertNumQueries(2):
+            latest = self.all.latest('release')
+        self.assertEqual(latest.title, 'Biography')
+
+    def test_latest_reverse(self):
+        """The latest release overall reversed is the earliest."""
+        with self.assertNumQueries(2):
+            latest = self.all.latest('-release')
+        self.assertEqual(latest.title, 'Some Article')
+
+
 class TestFirstLast(TestBase):
     def test_first_unordered(self):
         """Should return the first element of the first QuerySet."""
