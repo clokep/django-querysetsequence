@@ -5,6 +5,7 @@ import functools
 from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
 
+import django
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db import transaction
@@ -749,8 +750,9 @@ class QuerySetSequence(ComparatorMixin):
     def as_manager(self):
         raise NotImplementedError()
 
-    def explain(self):
-        raise NotImplementedError()
+    if django.VERSION >= (2, 1):
+        def explain(self, format=None, **options):
+            return '\n'.join(qs.explain() for qs in self._querysets)
 
     # Public attributes
     @property
