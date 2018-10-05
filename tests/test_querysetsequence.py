@@ -1295,13 +1295,24 @@ class TestEarliestLatest(TestBase):
             latest = self.all.latest('-release')
         self.assertEqual(latest.title, 'Some Article')
 
-    def test_get_latest_by(self):
+    def test_earliest_get_latest_by(self):
+        """Not providing fields causes the get_latest_by field to be used."""
+        with self.assertNumQueries(2):
+            latest = self.all.earliest()
+        self.assertEqual(latest.title, 'Some Article')
+
+    def test_earliest_get_latest_by_error(self):
+        """When get_latest_by is used, they must all be the same."""
+        with self.assertRaises(ValueError):
+            QuerySetSequence(Book.objects.all(), BlogPost.objects.all()).earliest()
+
+    def test_latest_get_latest_by(self):
         """Not providing fields causes the get_latest_by field to be used."""
         with self.assertNumQueries(2):
             latest = self.all.latest()
         self.assertEqual(latest.title, 'Biography')
 
-    def test_get_latest_by_error(self):
+    def test_latest_get_latest_by_error(self):
         """When get_latest_by is used, they must all be the same."""
         with self.assertRaises(ValueError):
             QuerySetSequence(Book.objects.all(), BlogPost.objects.all()).latest()
@@ -1310,6 +1321,9 @@ class TestEarliestLatest(TestBase):
         """An empty QuerySetSequence raises a ValueError."""
         with self.assertRaises(ValueError):
             self.empty.latest()
+
+        with self.assertRaises(ValueError):
+            self.empty.earliest()
 
 
 class TestFirstLast(TestBase):
