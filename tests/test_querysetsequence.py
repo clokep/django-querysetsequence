@@ -1289,6 +1289,14 @@ class TestEarliestLatest(TestBase):
             latest = self.all.latest('release')
         self.assertEqual(latest.title, 'Biography')
 
+    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
+    def test_earliest_reverse(self):
+        """The earliest release overall reversed is the latest."""
+        with self.assertNumQueries(2):
+            earliest = self.all.earliest('-release')
+        self.assertEqual(earliest.title, 'Biography')
+
+    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
     def test_latest_reverse(self):
         """The latest release overall reversed is the earliest."""
         with self.assertNumQueries(2):
