@@ -1,3 +1,4 @@
+from datetime import date
 import unittest
 
 from django.test import TestCase
@@ -48,7 +49,8 @@ class TestSequenceCursorPagination(TestCase):
             Book.objects.create(title='Book %s' % (d % 2),
                                 author=self.author,
                                 publisher=self.publisher,
-                                pages=d)
+                                pages=d,
+                                release=date(2018, 10, 5))
 
         self.pagination = _TestPagination()
         self.queryset = QuerySetSequence(Book.objects.filter(pages__lte=7),
@@ -226,7 +228,8 @@ class TestSequenceCursorPagination(TestCase):
             Book.objects.create(title=str(i),
                                 author=self.author,
                                 publisher=self.publisher,
-                                pages=PAGES)
+                                pages=PAGES,
+                                release=date(2018, 10, 5))
 
         # And use only those duplicate books.
         self.queryset = QuerySetSequence(Book.objects.filter(pages=PAGES))

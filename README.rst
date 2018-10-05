@@ -171,17 +171,18 @@ multiple ``QuerySets``:
       - |check|
       -
     * - |latest|_
-      - |xmark|
-      -
+      - |check|
+      - If no fields are given, ``get_latest_by`` on each model is required to
+        be identical.
     * - |earliest|_
-      - |xmark|
-      -
+      - |check|
+      - See the docuemntation for ``latest()``.
     * - |first|_
       - |check|
       - If no ordering is set this is essentially the same as calling
         ``first()`` on the first ``QuerySet``, if there is an ordering, the
         result of ``first()`` for each ``QuerySet`` is compared and the "first"
-        returned.
+        value is returned.
     * - |last|_
       - |check|
       - See the documentation for ``first()``.

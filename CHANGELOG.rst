@@ -6,7 +6,8 @@ Changelog
 next (2018-xx-xx)
 =================
 
-* [Enhancement] Support ``first()`` and ``last()`` methods.
+* [Enhancement] Support ``first()``, ``last()``, ``latest()``, and
+  ``earliest()`` methods.
 * [Enhancement] Support the ``&`` and ``|`` operators.
 * [Enhancement] Support ``defer()`` and ``only()`` methods to control which
   fields are returned.

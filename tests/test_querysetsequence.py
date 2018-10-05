@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from datetime import date
 from unittest import skip, skipIf
 
 import django
@@ -49,17 +50,17 @@ class TestBase(TestCase):
 
         # Alice wrote some articles.
         Article.objects.create(title="Django Rocks", author=alice,
-                               publisher=mad_magazine)
+                               publisher=mad_magazine, release=date(1980, 4, 21))
         Article.objects.create(title="Alice in Django-land", author=alice,
-                               publisher=mad_magazine)
+                               publisher=mad_magazine, release=date(1990, 8, 14))
 
         # Bob wrote a couple of books, an article, and a blog post.
         Book.objects.create(title="Fiction", author=bob, publisher=big_books,
-                            pages=10)
+                            pages=10, release=date(2001, 6, 12))
         Book.objects.create(title="Biography", author=bob, publisher=big_books,
-                            pages=20)
+                            pages=20, release=date(2002, 12, 24))
         Article.objects.create(title="Some Article", author=bob,
-                               publisher=mad_magazine)
+                               publisher=mad_magazine, release=date(1979, 1, 1))
         BlogPost.objects.create(title="Post", author=bob,
                                 publisher=wacky_website)
 
@@ -834,7 +835,8 @@ class TestOrderBy(TestBase):
         """Test ordering by multiple fields."""
         # Add another object with the same title, but a later release date.
         Book.objects.create(title="Fiction", author=self.alice,
-                            publisher=self.big_books, pages=1)
+                            publisher=self.big_books, pages=1,
+                            release=date(2018, 10, 3))
 
         with self.assertNumQueries(0):
             qss = self.all.order_by('title', '-release')
@@ -856,7 +858,8 @@ class TestOrderBy(TestBase):
         """Test ordering by multiple fields, where # is not first."""
         # Add another object with the same title, but in a different QuerySet.
         Article.objects.create(title="Fiction", author=self.alice,
-                               publisher=self.mad_magazine)
+                               publisher=self.mad_magazine,
+                               release=date(2018, 10, 3))
 
         with self.assertNumQueries(0):
             qss = self.all.order_by('title', '-#')
@@ -1181,7 +1184,8 @@ class TestSlicing(TestBase):
     def test_closed_slice_single_qs(self):
         """Test slicing if the start and end are within the same QuerySet."""
         Article.objects.create(title='Another Article', author=self.bob,
-                               publisher=self.mad_magazine)
+                               publisher=self.mad_magazine,
+                               release=date(2018, 10, 3))
 
         qss = QuerySetSequence(Article.objects.all())[1:3]
 
@@ -1270,6 +1274,64 @@ class TestBoolean(TestBase):
     def test_empty(self):
         """An empty QuerySetSequence should resolve to False."""
         self.assertFalse(self.empty)
+
+
+class TestEarliestLatest(TestBase):
+    def test_earliest(self):
+        """The earliest release overall should be returned."""
+        with self.assertNumQueries(2):
+            earliest = self.all.earliest('release')
+        self.assertEqual(earliest.title, 'Some Article')
+
+    def test_latest(self):
+        """The latest release overall should be returned."""
+        with self.assertNumQueries(2):
+            latest = self.all.latest('release')
+        self.assertEqual(latest.title, 'Biography')
+
+    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
+    def test_earliest_reverse(self):
+        """The earliest release overall reversed is the latest."""
+        with self.assertNumQueries(2):
+            earliest = self.all.earliest('-release')
+        self.assertEqual(earliest.title, 'Biography')
+
+    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
+    def test_latest_reverse(self):
+        """The latest release overall reversed is the earliest."""
+        with self.assertNumQueries(2):
+            latest = self.all.latest('-release')
+        self.assertEqual(latest.title, 'Some Article')
+
+    def test_earliest_get_latest_by(self):
+        """Not providing fields causes the get_latest_by field to be used."""
+        with self.assertNumQueries(2):
+            latest = self.all.earliest()
+        self.assertEqual(latest.title, 'Some Article')
+
+    def test_earliest_get_latest_by_error(self):
+        """When get_latest_by is used, they must all be the same."""
+        with self.assertRaises(ValueError):
+            QuerySetSequence(Book.objects.all(), BlogPost.objects.all()).earliest()
+
+    def test_latest_get_latest_by(self):
+        """Not providing fields causes the get_latest_by field to be used."""
+        with self.assertNumQueries(2):
+            latest = self.all.latest()
+        self.assertEqual(latest.title, 'Biography')
+
+    def test_latest_get_latest_by_error(self):
+        """When get_latest_by is used, they must all be the same."""
+        with self.assertRaises(ValueError):
+            QuerySetSequence(Book.objects.all(), BlogPost.objects.all()).latest()
+
+    def test_empty(self):
+        """An empty QuerySetSequence raises a ValueError."""
+        with self.assertRaises(ValueError):
+            self.empty.latest()
+
+        with self.assertRaises(ValueError):
+            self.empty.earliest()
 
 
 class TestFirstLast(TestBase):
@@ -1479,14 +1541,6 @@ class TestNotImplemented(TestCase):
     def test_raw(self):
         with self.assertRaises(NotImplementedError):
             self.all.raw()
-
-    def test_latest(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.latest()
-
-    def test_earliest(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.earliest()
 
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):

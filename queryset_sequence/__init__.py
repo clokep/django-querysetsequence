@@ -91,6 +91,8 @@ class ComparatorMixin(object):
         Returns:
             A comparator function.
         """
+        # Ensure that field names is a list and not a tuple.
+        field_names = list(field_names)
 
         # For fields that start with a '-', reverse the ordering of the
         # comparison.
@@ -680,9 +682,30 @@ class QuerySetSequence(ComparatorMixin):
         clone._querysets = [qs.iterator() for qs in self._querysets]
         return clone
 
-    def _get_first_or_last(self, items, reverse):
+    def _get_latest_by(self):
+        """Process get_latest_by Meta on each QuerySet and return the value."""
+        # Get each QuerySet's get_latest_by (ignore unset values).
+        get_latest_by = map(lambda qs: getattr(qs.model._meta, 'get_latest_by'), self._querysets)
+        get_latest_by = set(get_latest_by)
+
+        # Ensure all of them are identical.
+        if len(get_latest_by) > 1:
+            raise ValueError(
+                "earliest() and latest() require 'get_latest_by' in each "
+                "model's Meta to be identical.")
+
+        # If all the values are None, get_latest_by was not set.
+        if not get_latest_by:
+            raise ValueError(
+                "earliest() and latest() require either fields as positional "
+                "arguments or 'get_latest_by' in the model's Meta.")
+
+        # Cast to a list and return the value.
+        return list(get_latest_by)
+
+    def _get_first_or_last(self, items, order_fields, reverse):
         # Generate a comparator and sort the items.
-        comparator = self._generate_comparator(self._order_by)
+        comparator = self._generate_comparator(order_fields)
         items = sorted(items, key=functools.cmp_to_key(comparator), reverse=reverse)
 
         # Return the first one (whether this is first or last is controlled by
@@ -690,10 +713,42 @@ class QuerySetSequence(ComparatorMixin):
         return items[0]
 
     def latest(self, *fields):
-        raise NotImplementedError()
+        # If fields are given, fallback to get_latest_by.
+        if not fields:
+            fields = self._get_latest_by()
+
+        objs = []
+        for qs in self._querysets:
+            try:
+                objs.append(qs.latest(*fields))
+            except ObjectDoesNotExist:
+                pass
+
+        # Checked all QuerySets and no object was found.
+        if not objs:
+            raise ObjectDoesNotExist()
+
+        # Return the latest.
+        return self._get_first_or_last(objs, fields, True)
 
     def earliest(self, *fields):
-        raise NotImplementedError()
+        # If fields are given, fallback to get_latest_by.
+        if not fields:
+            fields = self._get_latest_by()
+
+        objs = []
+        for qs in self._querysets:
+            try:
+                objs.append(qs.earliest(*fields))
+            except ObjectDoesNotExist:
+                pass
+
+        # Checked all QuerySets and no object was found.
+        if not objs:
+            raise ObjectDoesNotExist()
+
+        # Return the latest.
+        return self._get_first_or_last(objs, fields, False)
 
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
@@ -708,7 +763,7 @@ class QuerySetSequence(ComparatorMixin):
         else:
             # Get each first item for each and compare them, return the "first".
             return self._get_first_or_last(
-                [qs.first() for qs in self._querysets], False)
+                [qs.first() for qs in self._querysets], self._order_by, False)
 
     def last(self):
         # See the comments for first().
@@ -721,7 +776,7 @@ class QuerySetSequence(ComparatorMixin):
         else:
             # Get each last item for each and compare them, return the "last".
             return self._get_first_or_last(
-                [qs.last() for qs in self._querysets], True)
+                [qs.last() for qs in self._querysets], self._order_by, True)
 
     def aggregate(self, *args, **kwargs):
         raise NotImplementedError()
