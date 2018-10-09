@@ -3,7 +3,7 @@
 Changelog
 #########
 
-next (2018-xx-xx)
+0.10 (2018-10-09)
 =================
 
 * [Enhancement] Support ``first()``, ``last()``, ``latest()``, and
