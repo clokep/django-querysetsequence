@@ -1,6 +1,14 @@
 language: python
 # This version of python is only used to run tox.
 python: 3.6
+matrix:
+  include:
+    - name: Django Releases
+      env: TOX_SKIP_ENV=".*djangomaster.*"
+    - name: Django development
+      env: TOX_SKIP_ENV=".*django[^m].*"
+  allow_failures:
+    - name: Django development
 script: tox
 notifications:
   email: false
