@@ -150,7 +150,7 @@ class QuerySequenceIterable(ComparatorMixin):
         # (Remember that each QuerySet is already sorted.)
         iterables = []
         for i, qs in zip(self._queryset_idxs, self._querysets):
-            it = iter(qs)
+            it = qs.iterator()
             try:
                 value = next(it)
             except StopIteration:
