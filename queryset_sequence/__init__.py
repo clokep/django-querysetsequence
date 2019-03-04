@@ -149,8 +149,16 @@ class QuerySequenceIterable(ComparatorMixin):
         #
         # (Remember that each QuerySet is already sorted.)
         iterables = []
+        if self._high_mark:
+            if self._low_mark:
+                qslice = slice(None, self._high_mark - self._low_mark)
+            else:
+                qslice = slice(None, self._high_mark)
+        else:
+            qslice = slice(None)
+
         for i, qs in zip(self._queryset_idxs, self._querysets):
-            it = qs.iterator()
+            it = iter(qs[qslice])
             try:
                 value = next(it)
             except StopIteration:
