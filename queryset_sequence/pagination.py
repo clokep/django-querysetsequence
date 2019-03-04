@@ -198,12 +198,7 @@ class SequenceCursorPagination(CursorPagination):
             tokens = urlparse.parse_qs(querystring, keep_blank_values=True)
 
             offset = tokens.get('o', ['0'])[0]
-            # This was hard-coded until Django REST Framework 3.4.0.
-            try:
-                offset_cutoff = self.offset_cutoff
-            except AttributeError:
-                offset_cutoff = 1000
-            offset = _positive_int(offset, cutoff=offset_cutoff)
+            offset = _positive_int(offset, cutoff=self.offset_cutoff)
 
             reverse = tokens.get('r', ['0'])[0]
             reverse = bool(int(reverse))
