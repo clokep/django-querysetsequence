@@ -249,3 +249,21 @@ class TestSequenceCursorPagination(TestCase):
             next_url = self.pagination.get_next_link()
 
         self.assertIsNone(next_url)
+
+
+class TestSequenceSlicing(TestCase):
+    def setUp(self):
+        for i in range(10):
+            Author.objects.create(name="{:02d}".format(2*i))
+            Publisher.objects.create(name="(:02d)".format(2*i + 1))
+
+    def test_slicing(self):
+        unsliced = list(QuerySetSequence(
+            Author.objects.all(),
+            Publisher.objects.all()
+        ))
+        sliced = list(QuerySetSequence(
+            Author.objects.all(),
+            Publisher.objects.all()
+        )[:5])
+        assert unsliced[:5] == sliced
