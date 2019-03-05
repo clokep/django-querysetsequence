@@ -252,18 +252,30 @@ class TestSequenceCursorPagination(TestCase):
 
 
 class TestSequenceSlicing(TestCase):
-    def setUp(self):
+    def test_slicing(self):
         for i in range(10):
             Author.objects.create(name="{:02d}".format(2*i))
             Publisher.objects.create(name="(:02d)".format(2*i + 1))
-
-    def test_slicing(self):
         unsliced = list(QuerySetSequence(
             Author.objects.all(),
             Publisher.objects.all()
-        ))
+        ).order_by("name"))
         sliced = list(QuerySetSequence(
             Author.objects.all(),
             Publisher.objects.all()
-        )[:5])
+        ).order_by("name")[:5])
+        assert unsliced[:5] == sliced
+
+    def test_slicing_single_queryset_source(self):
+        for i in range(5):
+            Author.objects.create(name="{:02d}".format(i))
+            Publisher.objects.create(name="(:02d)".format(i + 5))
+        unsliced = list(QuerySetSequence(
+            Author.objects.all(),
+            Publisher.objects.all()
+        ).order_by("name"))
+        sliced = list(QuerySetSequence(
+            Author.objects.all(),
+            Publisher.objects.all()
+        ).order_by("name")[:5])
         assert unsliced[:5] == sliced
