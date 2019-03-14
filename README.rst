@@ -205,6 +205,20 @@ multiple ``QuerySets``:
       - |check|
       - Only available on Django >= 2.1.
 
+.. list-table:: Additional methods specific to ``QuerySetSequence``
+    :widths: 15 30
+    :header-rows: 1
+
+    * - Method
+      - Notes
+
+    * - |get_querysets|
+      - Returns the list of ``QuerySet`` objects that comprise the sequence.
+        Note, if any methods have been called which modify the
+        ``QuerySetSequence``, the ``QuerySet`` objects returned by this
+        method will be similarly modified. The order of the ``QuerySet``
+        objects within the list is not guaranteed.
+
 .. |filter| replace:: ``filter()``
 .. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter
 .. |exclude| replace:: ``exclude()``
@@ -293,6 +307,8 @@ multiple ``QuerySets``:
 .. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as-manager
 .. |explain| replace:: ``explain()``
 .. _explain: https://docs.djangoproject.com/en/dev/ref/models/querysets/#explain
+
+.. |get_querysets| replace:: ``get_querysets()``
 
 .. [1]  ``QuerySetSequence`` supports a special field lookup that looks up the
         index of the ``QuerySet``, this is represented by ``'#'``. This can be

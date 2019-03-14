@@ -659,6 +659,10 @@ class QuerySetSequence(ComparatorMixin):
         # Return the only result found.
         return result
 
+    def get_querysets(self):
+        """ Returns the QuerySet objects which form the sequence"""
+        return self._querysets
+
     def create(self, **kwargs):
         raise NotImplementedError()
 
