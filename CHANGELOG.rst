@@ -6,6 +6,7 @@ Changelog
 next (2018-xx-xx)
 =================
 
+* [Enhancement] Add a ``QuerySetSequence`` specific method: ``get_querysets()``.
 * [Enhancement] Officially support Django 2.2.
 * [Enhancement] Officially support Django REST Framework 3.9.
 * [Enhancement] Officially support Python 3.7.
