@@ -1249,17 +1249,6 @@ class TestGet(TestBase):
             self.empty.get(pk=1)
 
 
-class TestGetQueryset(TestBase):
-    """Tests related to retrieving QuerySets from the Squence"""
-    def test_get_querysets(self):
-        """Ensure the correct QuerySet objects are returned."""
-        querysets = [Book.objects.all(), Article.objects.all()]
-        matched_qss = QuerySetSequence(*querysets)
-        unmatched_qss = QuerySetSequence(self.big_books)
-        self.assertEqual(set(querysets), set(matched_qss.get_querysets()))
-        self.assertNotEqual({self.wacky_website}, set(unmatched_qss.get_querysets()))
-
-
 class TestBoolean(TestBase):
     """Tests related to casting the QuerySetSequence to a boolean."""
     def test_exists(self):
@@ -1480,6 +1469,16 @@ class TestExplain(TestBase):
             explanation = self.all.explain()
         # The output of explain is not guaranteed, so do some rough checks.
         self.assertEqual(len(explanation.split('\n')), 2)
+
+
+class TestGetQueryset(TestBase):
+    """Tests related to retrieving QuerySets from the sequence."""
+    def test_get_querysets(self):
+        """Ensure the correct QuerySet objects are returned."""
+        querysets = [Book.objects.all(), Article.objects.all()]
+        matched_qss = QuerySetSequence(*querysets)
+
+        self.assertEqual(querysets, matched_qss.get_querysets())
 
 
 class TestCannotImplement(TestCase):
