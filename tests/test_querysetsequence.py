@@ -1471,6 +1471,16 @@ class TestExplain(TestBase):
         self.assertEqual(len(explanation.split('\n')), 2)
 
 
+class TestGetQueryset(TestBase):
+    """Tests related to retrieving QuerySets from the sequence."""
+    def test_get_querysets(self):
+        """Ensure the correct QuerySet objects are returned."""
+        querysets = [Book.objects.all(), Article.objects.all()]
+        matched_qss = QuerySetSequence(*querysets)
+
+        self.assertEqual(querysets, matched_qss.get_querysets())
+
+
 class TestCannotImplement(TestCase):
     """The following methods cannot be implemented in QuerySetSequence."""
     def setUp(self):

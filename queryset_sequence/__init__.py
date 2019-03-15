@@ -817,3 +817,8 @@ class QuerySetSequence(ComparatorMixin):
         clause.
         """
         return bool(self._order_by)
+
+    # Methods specific to QuerySetSequence.
+    def get_querysets(self):
+        """Returns a list of the QuerySet objects which form the sequence."""
+        return self._querysets
