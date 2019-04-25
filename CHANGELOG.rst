@@ -3,7 +3,7 @@
 Changelog
 #########
 
-next (2018-xx-xx)
+0.11 (2019-04-25)
 =================
 
 * [Enhancement] Add a ``QuerySetSequence`` specific method: ``get_querysets()``.
