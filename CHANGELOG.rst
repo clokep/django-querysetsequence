@@ -3,6 +3,11 @@
 Changelog
 #########
 
+next (xxx)
+==========
+
+* [Incompatible change] Drop support for Django 2.0.
+
 0.11 (2019-04-25)
 =================
 
