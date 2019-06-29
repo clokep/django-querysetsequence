@@ -226,7 +226,7 @@ multiple ``QuerySets``:
 .. |annotate| replace:: ``annotate()``
 .. _annotate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#annotate
 .. |order_by| replace:: ``order_by()``
-.. _order_by: https://docs.djangoproject.com/en/dev/ref/models/querysets/#order_by
+.. _order_by: https://docs.djangoproject.com/en/dev/ref/models/querysets/#order-by
 .. |reverse| replace:: ``reverse()``
 .. _reverse: https://docs.djangoproject.com/en/dev/ref/models/querysets/#reverse
 .. |distinct| replace:: ``distinct()``
