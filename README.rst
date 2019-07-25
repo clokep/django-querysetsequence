@@ -360,6 +360,8 @@ Requirements
 
 .. _Django REST Framework: http://www.django-rest-framework.org/
 
+* Version 0.8 lower supports Django 1.11 >= 1.8 
+
 Installation
 ============
 
