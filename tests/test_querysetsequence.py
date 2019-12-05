@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from datetime import date
 from unittest import skip, skipIf
+from unittest.mock import patch
 
 import django
 from django.core.exceptions import (FieldDoesNotExist,
@@ -11,11 +12,6 @@ from django.core.exceptions import (FieldDoesNotExist,
 from django.db.models import Count
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
-
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
 
 from queryset_sequence import QuerySetSequence
 
