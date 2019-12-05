@@ -805,7 +805,7 @@ class TestExtraAnnotate(TestBase):
         # Each Published gets the count of things in it added.
         with self.assertNumQueries(2):
             data = [it.published_count for it in qss]
-        self.assertEquals(data, [0, 2, 3])
+        self.assertEqual(data, [0, 2, 3])
 
 
 class TestOrderBy(TestBase):
