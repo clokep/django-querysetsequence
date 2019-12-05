@@ -9,8 +9,7 @@ particular fields.
 
 """
 from base64 import b64decode
-
-from django.utils.six.moves.urllib import parse as urlparse
+from urllib import parse
 
 from queryset_sequence import QuerySetSequence
 
@@ -195,7 +194,7 @@ class SequenceCursorPagination(CursorPagination):
 
         try:
             querystring = b64decode(encoded.encode('ascii')).decode('ascii')
-            tokens = urlparse.parse_qs(querystring, keep_blank_values=True)
+            tokens = parse.parse_qs(querystring, keep_blank_values=True)
 
             offset = tokens.get('o', ['0'])[0]
             offset = _positive_int(offset, cutoff=self.offset_cutoff)

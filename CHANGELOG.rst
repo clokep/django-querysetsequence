@@ -6,7 +6,7 @@ Changelog
 next (xxx)
 ==========
 
-* [Incompatible change] Drop support for Django 2.0.
+* [Incompatible change] Drop support for Python 2.7, Django 2.0.
 
 0.11 (2019-04-25)
 =================
