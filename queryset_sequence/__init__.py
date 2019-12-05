@@ -41,7 +41,7 @@ def cumsum(seq):
         yield s
 
 
-class ComparatorMixin(object):
+class ComparatorMixin:
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
