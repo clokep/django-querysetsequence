@@ -354,8 +354,8 @@ multiple ``QuerySets``:
 Requirements
 ============
 
-* Python (3.5, 3.6, 3.7)
-* Django (1.11, 2.2)
+* Python (3.5, 3.6, 3.7, 3.8)
+* Django (1.11, 2.2, 3.0)
 * (Optionally) `Django REST Framework`_ (3.6.3+, 3.7, 3.8, 3.9, 3.10)
 
 .. _Django REST Framework: http://www.django-rest-framework.org/

@@ -8,6 +8,8 @@ next (xxx)
 
 * [Incompatible change] Drop support for Python 2.7.
 * [Incompatible change] Drop support for Django 2.0 and 2.1.
+* [Enhancement] Officially support Django 3.0.
+* [Enhancement] Officially support Python 3.8.
 
 0.11 (2019-04-25)
 =================
