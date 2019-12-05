@@ -21,7 +21,7 @@ __all__ = ['QuerySetSequence']
 
 
 def cmp(a, b):
-    """Python 2 & 3 version of cmp built-in."""
+    """Python 3 version of cmp built-in."""
     return (a > b) - (a < b)
 
 
@@ -346,9 +346,6 @@ class QuerySetSequence(ComparatorMixin):
     def __bool__(self):
         self._fetch_all()
         return bool(self._result_cache)
-
-    def __nonzero__(self):      # Python 2 compatibility
-        return type(self).__bool__(self)
 
     def __getitem__(self, k):
         """
