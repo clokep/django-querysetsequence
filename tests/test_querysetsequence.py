@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from datetime import date
 from unittest import skip, skipIf
+from unittest.mock import patch
 
 import django
 from django.core.exceptions import (FieldDoesNotExist,
@@ -11,11 +12,6 @@ from django.core.exceptions import (FieldDoesNotExist,
 from django.db.models import Count
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
-
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
 
 from queryset_sequence import QuerySetSequence
 
@@ -809,7 +805,7 @@ class TestExtraAnnotate(TestBase):
         # Each Published gets the count of things in it added.
         with self.assertNumQueries(2):
             data = [it.published_count for it in qss]
-        self.assertEquals(data, [0, 2, 3])
+        self.assertEqual(data, [0, 2, 3])
 
 
 class TestOrderBy(TestBase):

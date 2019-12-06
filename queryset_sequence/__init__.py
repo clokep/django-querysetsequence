@@ -12,7 +12,6 @@ from django.db import transaction
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import EmptyQuerySet, QuerySet
-from django.utils import six
 
 # Only export the public API for QuerySetSequence. (Note that QuerySequence and
 # QuerySetSequenceModel are considered semi-public: the APIs probably won't
@@ -22,7 +21,7 @@ __all__ = ['QuerySetSequence']
 
 
 def cmp(a, b):
-    """Python 2 & 3 version of cmp built-in."""
+    """Python 3 version of cmp built-in."""
     return (a > b) - (a < b)
 
 
@@ -42,7 +41,7 @@ def cumsum(seq):
         yield s
 
 
-class ComparatorMixin(object):
+class ComparatorMixin:
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
@@ -348,14 +347,11 @@ class QuerySetSequence(ComparatorMixin):
         self._fetch_all()
         return bool(self._result_cache)
 
-    def __nonzero__(self):      # Python 2 compatibility
-        return type(self).__bool__(self)
-
     def __getitem__(self, k):
         """
         Retrieves an item or slice from the set of results.
         """
-        if not isinstance(k, (slice,) + six.integer_types):
+        if not isinstance(k, (int, slice)):
             raise TypeError
         assert ((not isinstance(k, slice) and (k >= 0)) or
                 (isinstance(k, slice) and (k.start is None or k.start >= 0) and
@@ -495,19 +491,19 @@ class QuerySetSequence(ComparatorMixin):
 
             # Some of these seem to get handled as bytes.
             if lookup in ('contains', 'icontains'):
-                value = six.text_type(value)
-                self._queryset_idxs = filter(lambda i: (value in six.text_type(i)) != negate, self._queryset_idxs)
+                value = str(value)
+                self._queryset_idxs = filter(lambda i: (value in str(i)) != negate, self._queryset_idxs)
 
             elif lookup == 'in':
                 self._queryset_idxs = filter(lambda i: (i in value) != negate, self._queryset_idxs)
 
             elif lookup in ('startswith', 'istartswith'):
-                value = six.text_type(value)
-                self._queryset_idxs = filter(lambda i: six.text_type(i).startswith(value) != negate, self._queryset_idxs)
+                value = str(value)
+                self._queryset_idxs = filter(lambda i: str(i).startswith(value) != negate, self._queryset_idxs)
 
             elif lookup in ('endswith', 'iendswith'):
-                value = six.text_type(value)
-                self._queryset_idxs = filter(lambda i: six.text_type(i).endswith(value) != negate, self._queryset_idxs)
+                value = str(value)
+                self._queryset_idxs = filter(lambda i: str(i).endswith(value) != negate, self._queryset_idxs)
 
             elif lookup == 'range':
                 # Inclusive include.
