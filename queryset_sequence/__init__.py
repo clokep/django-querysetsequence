@@ -250,7 +250,7 @@ class QuerySequenceIterable(ComparatorMixin):
         # Trim the beginning of the QuerySets, if necessary.
         start_index = 0
         low_mark, high_mark = self._low_mark, self._high_mark
-        if low_mark is not 0:
+        if low_mark != 0:
             # Convert a negative index into a positive.
             if low_mark < 0:
                 low_mark += counts[-1]
