@@ -10,6 +10,7 @@ next (xxx)
 * [Incompatible change] Drop support for Django 2.0 and 2.1.
 * [Enhancement] Officially support Django 3.0.
 * [Enhancement] Officially support Python 3.8.
+* [Bugfix] Do not use ``is not`` to compare to an integer literal.
 
 0.11 (2019-04-25)
 =================
