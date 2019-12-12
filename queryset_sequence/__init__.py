@@ -667,6 +667,10 @@ class QuerySetSequence(ComparatorMixin):
     def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
         raise NotImplementedError()
 
+    if django.VERSION >= (2, 2):
+        def bulk_update(self, objs, fields, batch_size=None):
+            raise NotImplementedError()
+
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
 
