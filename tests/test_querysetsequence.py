@@ -1498,6 +1498,16 @@ class TestCannotImplement(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.bulk_create([])
 
+    @skipIf(django.VERSION >= (2, 2), 'bulk_update() added in Django 2.2')
+    def test_bulk_update_not_supported(self):
+        with self.assertRaises(AttributeError):
+            self.all.bulk_update([], [])
+
+    @skipIf(django.VERSION < (2, 2), 'bulk_update() added in Django 2.2')
+    def test_bulk_update(self):
+        with self.assertRaises(NotImplementedError):
+            self.all.bulk_update([], [])
+
     def test_in_bulk(self):
         with self.assertRaises(NotImplementedError):
             self.all.in_bulk()

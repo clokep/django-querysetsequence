@@ -161,6 +161,9 @@ multiple ``QuerySets``:
     * - |bulk_create|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
+    * - |bulk_update|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |count|_
       - |check|
       -
@@ -281,6 +284,8 @@ multiple ``QuerySets``:
 .. _update_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create
 .. |bulk_create| replace:: ``bulk_create()``
 .. _bulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
+.. |bulk_update| replace:: ``bulk_update()``
+.. _bulk_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-update
 .. |count| replace:: ``count()``
 .. _count: https://docs.djangoproject.com/en/dev/ref/models/querysets/#count
 .. |in_bulk| replace:: ``in_bulk()``
