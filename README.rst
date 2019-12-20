@@ -361,7 +361,7 @@ Requirements
 
 * Python (3.5, 3.6, 3.7, 3.8)
 * Django (1.11, 2.2, 3.0)
-* (Optionally) `Django REST Framework`_ (3.6.3+, 3.7, 3.8, 3.9, 3.10)
+* (Optionally) `Django REST Framework`_ (3.6.3+, 3.7, 3.8, 3.9, 3.10, 3.11)
 
 .. _Django REST Framework: http://www.django-rest-framework.org/
 
