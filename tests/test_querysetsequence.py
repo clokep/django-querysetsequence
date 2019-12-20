@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from datetime import date
 from unittest import skip, skipIf
 from unittest.mock import patch
