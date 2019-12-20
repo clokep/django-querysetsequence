@@ -3,8 +3,8 @@
 Changelog
 #########
 
-next (xxx)
-==========
+0.12 (2019-12-20)
+=================
 
 * [Incompatible change] Drop support for Python 2.7.
 * [Incompatible change] Drop support for Django 2.0 and 2.1.
