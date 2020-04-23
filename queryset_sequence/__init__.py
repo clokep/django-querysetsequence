@@ -7,6 +7,7 @@ import django
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
                                     ObjectDoesNotExist)
 from django.db import transaction
+from django.db.models import sql
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import EmptyQuerySet, QuerySet
