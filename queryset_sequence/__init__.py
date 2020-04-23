@@ -308,6 +308,14 @@ class QuerySetSequence(ComparatorMixin):
         self._order_by = []
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
+        
+        # Query ( test case : admin model records )
+        self.model = args[0].model
+        self.query = args[0].query or sql.Query(self.model)
+
+        # verbose_name ( test case : admin delete )
+        self.verbose_name        = args[0].model._meta.verbose_name
+        self.verbose_name_plural = args[0].model._meta.verbose_name_plural
 
         self._iterable_class = QuerySequenceIterable
         self._result_cache = None
