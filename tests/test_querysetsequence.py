@@ -340,6 +340,14 @@ class TestRelated(TestBase):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
+    def test_prefetch_related_lookups(self):
+        self.assertFalse(
+            self.all._prefetch_related_lookups
+        )
+        self.assertTrue(
+            self.all.prefetch_related('author')._prefetch_related_lookups
+        )
+
     # TODO Add a test for prefetch_related that follows multiple ForeignKeys.
 
     def test_clear_prefetch_related(self):

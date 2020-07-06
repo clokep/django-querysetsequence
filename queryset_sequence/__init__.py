@@ -331,6 +331,14 @@ class QuerySetSequence(ComparatorMixin):
         if self._result_cache is None:
             self._result_cache = list(self._iterable_class(self))
 
+    @property
+    def _prefetch_related_lookups(self):
+        # for django ModelChoiceField, pending for removal
+        return any(map(
+            lambda qs: qs._prefetch_related_lookups,
+            self._querysets
+        ))
+
     # Python magic methods.
 
     def __len__(self):
