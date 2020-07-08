@@ -805,7 +805,7 @@ class QuerySetSequence(ComparatorMixin):
 
     if django.VERSION >= (2, 1):
         def explain(self, format=None, **options):
-            return '\n'.join(qs.explain() for qs in self._querysets)
+            return '\n'.join(qs.explain(format=format, **options) for qs in self._querysets)
 
     # Public attributes
     @property
