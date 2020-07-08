@@ -6,6 +6,10 @@ Changelog
 next (xxx)
 ==========
 
+* [Enhancement] Officially support Django 3.1.
+* [Bugfix] ``explain()`` now passes through parameters to the underlying
+  ``QuerySet`` instances.
+
 0.12 (2019-12-20)
 =================
 
