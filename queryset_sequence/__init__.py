@@ -571,7 +571,7 @@ class QuerySetSequence(ComparatorMixin):
     def dates(self, field, kind, order='ASC'):
         raise NotImplementedError()
 
-    def datetimes(self, field_name, kind, order='ASC', tzinfo=None):
+    def datetimes(self, field_name, kind, order='ASC', tzinfo=None, is_dst=None):
         raise NotImplementedError()
 
     def none(self):
