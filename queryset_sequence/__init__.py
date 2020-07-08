@@ -455,7 +455,7 @@ class QuerySetSequence(ComparatorMixin):
             # Don't allow __ multiple times.
             if len(parts) > 2:
                 raise ValueError("Keyword '%s' must not contain multiple "
-                                 "lookup seperators." % kwarg)
+                                 "lookup separators." % kwarg)
 
             # The actual lookup is the second part.
             try:

@@ -574,7 +574,7 @@ class TestFilter(TestBase):
 
     def test_queryset_multiple(self):
         """
-        When using multiple paramters to filter they get ANDed together. Ensure
+        When using multiple parameters to filter they get ANDed together. Ensure
         this works when filtering by QuerySet.
         """
         with self.assertNumQueries(0):
@@ -1206,7 +1206,7 @@ class TestGet(TestBase):
         self.assertIsInstance(book, Book)
 
     def test_not_found(self):
-        # An exception is rasied if get() is called and nothing is found.
+        # An exception is raised if get() is called and nothing is found.
         with self.assertNumQueries(2):
             with self.assertRaises(ObjectDoesNotExist):
                 self.all.get(title='')
