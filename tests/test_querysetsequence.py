@@ -820,9 +820,11 @@ class TestOrderBy(TestBase):
 
     def test_order_by_non_existent_field(self):
         """Ordering by a non-existent field raises an exception upon evaluation."""
-        with self.assertNumQueries(0):
-            qss = self.all.order_by('pages')
         with self.assertRaises(FieldError):
+            with self.assertNumQueries(0):
+                qss = self.all.order_by('pages')
+            # Note that starting in Django 3.1 the exception is raised when the
+            # QuerySet is created, not when it is evaluated.
             list(qss)
 
     def test_order_by_multi(self):
@@ -1437,7 +1439,11 @@ class TestDelete(TestBase):
         with self.assertNumQueries(2):
             result = self.all.filter(author=self.alice).delete()
         self.assertEqual(result[0], 2)
-        self.assertEqual(result[1], {'tests.Article': 2, 'tests.Book': 0})
+        # Django 3.1 no longer returns 0 as the number of objects deleted.
+        expected = {'tests.Article': 2}
+        if django.VERSION < (3, 1):
+            expected['tests.Book'] = 0
+        self.assertEqual(result[1], expected)
 
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 3)
