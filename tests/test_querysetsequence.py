@@ -1285,14 +1285,12 @@ class TestEarliestLatest(TestBase):
             latest = self.all.latest('release')
         self.assertEqual(latest.title, 'Biography')
 
-    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
     def test_earliest_reverse(self):
         """The earliest release overall reversed is the latest."""
         with self.assertNumQueries(2):
             earliest = self.all.earliest('-release')
         self.assertEqual(earliest.title, 'Biography')
 
-    @skipIf(django.VERSION < (2, 0), 'Support for reversed calls to earliest() and latest() was added in Django 2.0')
     def test_latest_reverse(self):
         """The latest release overall reversed is the earliest."""
         with self.assertNumQueries(2):
@@ -1456,13 +1454,6 @@ class TestDelete(TestBase):
 
 
 class TestExplain(TestBase):
-    @skipIf(django.VERSION >= (2, 1), 'explain() added in Django 2.1')
-    def test_not_supported(self):
-        """Older versions of Django raise an attribute error."""
-        with self.assertRaises(AttributeError):
-            self.all.explain()
-
-    @skipIf(django.VERSION < (2, 1), 'explain() added in Django 2.1')
     def test_supported(self):
         """Supported versions of Django support explain() and return a string."""
         with self.assertNumQueries(2):
@@ -1502,12 +1493,6 @@ class TestCannotImplement(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.bulk_create([])
 
-    @skipIf(django.VERSION >= (2, 2), 'bulk_update() added in Django 2.2')
-    def test_bulk_update_not_supported(self):
-        with self.assertRaises(AttributeError):
-            self.all.bulk_update([], [])
-
-    @skipIf(django.VERSION < (2, 2), 'bulk_update() added in Django 2.2')
     def test_bulk_update(self):
         with self.assertRaises(NotImplementedError):
             self.all.bulk_update([], [])
