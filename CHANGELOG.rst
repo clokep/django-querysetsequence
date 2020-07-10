@@ -7,6 +7,7 @@ next (xxx)
 ==========
 
 * [Enhancement] Officially support Django 3.1.
+* [Incompatible change] Drop support for Django < 2.2.
 * [Bugfix] ``explain()`` now passes through parameters to the underlying
   ``QuerySet`` instances.
 

@@ -670,9 +670,8 @@ class QuerySetSequence(ComparatorMixin):
     def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
         raise NotImplementedError()
 
-    if django.VERSION >= (2, 2):
-        def bulk_update(self, objs, fields, batch_size=None):
-            raise NotImplementedError()
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise NotImplementedError()
 
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
@@ -808,9 +807,8 @@ class QuerySetSequence(ComparatorMixin):
     def as_manager(self):
         raise NotImplementedError()
 
-    if django.VERSION >= (2, 1):
-        def explain(self, format=None, **options):
-            return '\n'.join(qs.explain(format=format, **options) for qs in self._querysets)
+    def explain(self, format=None, **options):
+        return '\n'.join(qs.explain(format=format, **options) for qs in self._querysets)
 
     # Public attributes
     @property
