@@ -455,7 +455,7 @@ class QuerySetSequence(ComparatorMixin):
             # Don't allow __ multiple times.
             if len(parts) > 2:
                 raise ValueError("Keyword '%s' must not contain multiple "
-                                 "lookup seperators." % kwarg)
+                                 "lookup separators." % kwarg)
 
             # The actual lookup is the second part.
             try:
@@ -571,8 +571,13 @@ class QuerySetSequence(ComparatorMixin):
     def dates(self, field, kind, order='ASC'):
         raise NotImplementedError()
 
-    def datetimes(self, field_name, kind, order='ASC', tzinfo=None):
-        raise NotImplementedError()
+    # Django 3.1 added an additional parameter.
+    if django.VERSION < (3, 1):
+        def datetimes(self, field_name, kind, order='ASC', tzinfo=None):
+            raise NotImplementedError()
+    else:
+        def datetimes(self, field_name, kind, order='ASC', tzinfo=None, is_dst=None):
+            raise NotImplementedError()
 
     def none(self):
         # This is a bit odd, but use the first QuerySet to properly return an
@@ -805,7 +810,7 @@ class QuerySetSequence(ComparatorMixin):
 
     if django.VERSION >= (2, 1):
         def explain(self, format=None, **options):
-            return '\n'.join(qs.explain() for qs in self._querysets)
+            return '\n'.join(qs.explain(format=format, **options) for qs in self._querysets)
 
     # Public attributes
     @property
