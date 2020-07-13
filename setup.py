@@ -26,9 +26,9 @@ setup(
         'Environment :: Web Environment',
         'Topic :: Internet',
         'Framework :: Django',
-        'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.2',
         'Framework :: Django :: 3.0',
+        'Framework :: Django :: 3.1',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
@@ -37,7 +37,7 @@ setup(
         'License :: OSI Approved :: ISC License (ISCL)',
     ],
     install_requires=[
-        'django>=1.11',
+        'django>=2.2',
     ],
     python_requires=">=3.5",
 )
