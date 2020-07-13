@@ -333,11 +333,17 @@ class QuerySetSequence(ComparatorMixin):
 
     @property
     def _prefetch_related_lookups(self):
-        # for django ModelChoiceField, pending for removal
-        return any(map(
-            lambda qs: qs._prefetch_related_lookups,
-            self._querysets
-        ))
+        # A hack for ModelChoiceField, which uses internal APIs from QuerySet.
+        # This should be fixed when https://code.djangoproject.com/ticket/29984
+        # is fixed.
+        #
+        # Note that this really just needs to return a truth-y value if any of
+        # the QuerySets are using prefetch_related, but this tries to keep the
+        # type sane at least.
+        result = ()
+        for qs in self._querysets:
+            result += qs._prefetch_related_lookups
+        return result
 
     # Python magic methods.
 
