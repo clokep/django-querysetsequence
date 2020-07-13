@@ -6,6 +6,8 @@ Changelog
 next (xxx)
 ==========
 
+* Fix use of ``ModelChoiceField`` with a ``QuerySetSequence``.
+
 0.12 (2019-12-20)
 =================
 
