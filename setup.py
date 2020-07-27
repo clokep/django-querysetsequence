@@ -10,7 +10,7 @@ def long_description():
 setup(
     name='django-querysetsequence',
     packages=find_packages(),
-    version='0.13dev',
+    version='0.13',
     description='Chain together multiple (disparate) QuerySets to treat them as a single QuerySet.',
     long_description=long_description(),
     author='Percipient Networks, LLC',
