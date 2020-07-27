@@ -3,6 +3,7 @@ from unittest import skip, skipIf
 from unittest.mock import patch
 
 import django
+from django import forms
 from django.core.exceptions import (FieldDoesNotExist,
                                     FieldError,
                                     MultipleObjectsReturned,
@@ -353,6 +354,13 @@ class TestRelated(TestBase):
     def test_empty_prefetch_related(self):
         """Calling prefetch_related on an empty QuerySetSequence doesn't error."""
         self.empty.prefetch_related('author')
+
+    def test_model_choice_iterator(self):
+        """Ensure that ModelChoiceField works for QuerySetSequence."""
+        f = forms.ModelChoiceField(self.all)
+        self.assertEqual(list(f.choices), [
+            ('', '---------'),
+        ] + [(it.pk, str(it)) for it in self.all])
 
 
 class TestDeferOnly(TestBase):
