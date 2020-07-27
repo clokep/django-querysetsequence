@@ -11,7 +11,7 @@ Changelog
 * [Bugfix] ``explain()`` now passes through parameters to the underlying
   ``QuerySet`` instances.
 * [Bugfix] Fixes compatibility issue with ``ModelChoiceField``. Report and
-  initial pull request from @jpic. [\#68](https://github.com/percipient/django-querysetsequence/pull/68)
+  initial pull request from @jpic. `#68 <https://github.com/percipient/django-querysetsequence/pull/68>`_
 
 0.12 (2019-12-20)
 =================
