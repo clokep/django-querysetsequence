@@ -13,6 +13,7 @@ setup(
     version='0.13',
     description='Chain together multiple (disparate) QuerySets to treat them as a single QuerySet.',
     long_description=long_description(),
+    long_description_content_type='text/x-rst',
     author='Percipient Networks, LLC',
     author_email='support@strongarm.io',
     url='https://github.com/percipient/django-querysetsequence',
