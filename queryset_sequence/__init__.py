@@ -39,7 +39,7 @@ def cumsum(seq):
         yield s
 
 
-class QuerySequenceIterable:
+class BaseIterable:
     def __init__(self, querysetsequence):
         # Create a clone so that subsequent calls to iterate are kept separate.
         self._querysets = querysetsequence._querysets
@@ -48,6 +48,14 @@ class QuerySequenceIterable:
         self._standard_ordering = querysetsequence._standard_ordering
         self._low_mark = querysetsequence._low_mark
         self._high_mark = querysetsequence._high_mark
+
+    @staticmethod
+    def _get_fields(obj, field_names):
+        raise NotImplementedError()
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        raise NotImplementedError()
 
     @classmethod
     def _get_field_names(cls, model):
@@ -112,11 +120,11 @@ class QuerySequenceIterable:
 
         def comparator(i1, i2):
             # Get a tuple of values for comparison.
-            v1 = attrgetter(*field_names)(i1)
-            v2 = attrgetter(*field_names)(i2)
+            v1 = cls._get_fields(i1, *field_names)
+            v2 = cls._get_fields(i2, *field_names)
 
-            # If there's only one arg supplied, attrgetter returns a single
-            # item, directly return the result in this case.
+            # If there's only one arg supplied, a single item is returned,
+            # directly return the result in this case.
             if len(field_names) == 1:
                 return cls._cmp(v1, v2) * reverses[0]
 
@@ -152,7 +160,7 @@ class QuerySequenceIterable:
                 # If this is already empty, just skip it.
                 continue
             # Set the QuerySet number so that the comparison works properly.
-            setattr(value, '#', i)
+            self._set_field(value, '#', i)
             iterables.append((it, i, value))
 
         # The offset of items returned.
@@ -197,7 +205,7 @@ class QuerySequenceIterable:
             try:
                 value = next(it)
                 # Set the QuerySet number so that the comparison works properly.
-                setattr(value, '#', i)
+                self._set_field(value, '#', i)
                 iterables[next_value_ind] = it, i, value
             except StopIteration:
                 # This iterator is done, remove it.
@@ -210,7 +218,7 @@ class QuerySequenceIterable:
         """
         for i, qs in zip(self._queryset_idxs, self._querysets):
             for item in qs:
-                setattr(item, '#', i)
+                self._set_field(item, '#', i)
                 yield item
 
     def __iter__(self):
@@ -293,6 +301,16 @@ class QuerySequenceIterable:
         return self._unordered_iterator()
 
 
+class ModelIterable(BaseIterable):
+    @staticmethod
+    def _get_fields(obj, *field_names):
+        return attrgetter(*field_names)(obj)
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        setattr(obj, field_name, value)
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -307,7 +325,7 @@ class QuerySetSequence:
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
 
-        self._iterable_class = QuerySequenceIterable
+        self._iterable_class = ModelIterable
         self._result_cache = None
 
     def _set_querysets(self, querysets):

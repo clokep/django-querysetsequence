@@ -986,7 +986,7 @@ class TestOrderBy(TestBase):
             qss = self.all.order_by('#', 'title')
 
         # Ensure that _ordered_iterator isn't called.
-        with patch('queryset_sequence.QuerySequenceIterable._ordered_iterator',
+        with patch('queryset_sequence.BaseIterable._ordered_iterator',
                    side_effect=AssertionError('_ordered_iterator should not be called')):
             # Check the titles are properly ordered.
             data = [it.title for it in qss]
@@ -1014,7 +1014,7 @@ class TestOrderBy(TestBase):
             qss = self.all.order_by('-#', 'title')
 
         # Ensure that _ordered_iterator isn't called.
-        with patch('queryset_sequence.QuerySequenceIterable._ordered_iterator',
+        with patch('queryset_sequence.BaseIterable._ordered_iterator',
                    side_effect=AssertionError('_ordered_iterator should not be called')):
             # Check the titles are properly ordered.
             data = [it.title for it in qss]
