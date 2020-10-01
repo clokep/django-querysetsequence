@@ -394,6 +394,18 @@ class TestDeferOnly(TestBase):
 
     # Note that you cannot clear an only call, so None is not a valid value.
 
+    def test_order_by(self):
+        """Ensure ordering still works when some fields are not included."""
+        # Additional queries are due to the field needing to be pulled
+        # individually during sorting.
+        with self.assertNumQueries(7):
+            books = list(self.all.only('publisher').order_by('title'))
+        # No additional queries are necessary since the titles were used in
+        # sorting.
+        with self.assertNumQueries(0):
+            titles = [b.title for b in books]
+        self.assertEqual(titles, sorted(self.TITLES_BY_PK))
+
     def test_empty_only(self):
         """Calling only on an empty QuerySetSequence doesn't error."""
         self.empty.only('publisher')
