@@ -39,7 +39,16 @@ def cumsum(seq):
         yield s
 
 
-class ComparatorMixin:
+class QuerySequenceIterable:
+    def __init__(self, querysetsequence):
+        # Create a clone so that subsequent calls to iterate are kept separate.
+        self._querysets = querysetsequence._querysets
+        self._queryset_idxs = querysetsequence._queryset_idxs
+        self._order_by = querysetsequence._order_by
+        self._standard_ordering = querysetsequence._standard_ordering
+        self._low_mark = querysetsequence._low_mark
+        self._high_mark = querysetsequence._high_mark
+
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
@@ -122,17 +131,6 @@ class ComparatorMixin:
                 return 0
 
         return comparator
-
-
-class QuerySequenceIterable(ComparatorMixin):
-    def __init__(self, querysetsequence):
-        # Create a clone so that subsequent calls to iterate are kept separate.
-        self._querysets = querysetsequence._querysets
-        self._queryset_idxs = querysetsequence._queryset_idxs
-        self._order_by = querysetsequence._order_by
-        self._standard_ordering = querysetsequence._standard_ordering
-        self._low_mark = querysetsequence._low_mark
-        self._high_mark = querysetsequence._high_mark
 
     def _ordered_iterator(self):
         """
@@ -295,7 +293,7 @@ class QuerySequenceIterable(ComparatorMixin):
         return self._unordered_iterator()
 
 
-class QuerySetSequence(ComparatorMixin):
+class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
     the base models.
@@ -721,7 +719,7 @@ class QuerySetSequence(ComparatorMixin):
 
     def _get_first_or_last(self, items, order_fields, reverse):
         # Generate a comparator and sort the items.
-        comparator = self._generate_comparator(order_fields)
+        comparator = self._iterable_class._generate_comparator(order_fields)
         items = sorted(items, key=functools.cmp_to_key(comparator), reverse=reverse)
 
         # Return the first one (whether this is first or last is controlled by
