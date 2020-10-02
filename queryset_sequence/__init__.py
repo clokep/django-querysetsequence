@@ -1,7 +1,7 @@
 from collections import defaultdict
 import functools
 from itertools import dropwhile
-from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
+from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
 
 import django
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
@@ -39,7 +39,24 @@ def cumsum(seq):
         yield s
 
 
-class ComparatorMixin:
+class BaseIterable:
+    def __init__(self, querysetsequence):
+        # Create a clone so that subsequent calls to iterate are kept separate.
+        self._querysets = querysetsequence._querysets
+        self._queryset_idxs = querysetsequence._queryset_idxs
+        self._order_by = querysetsequence._order_by
+        self._standard_ordering = querysetsequence._standard_ordering
+        self._low_mark = querysetsequence._low_mark
+        self._high_mark = querysetsequence._high_mark
+
+    @staticmethod
+    def _get_fields(obj, field_names):
+        raise NotImplementedError()
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        raise NotImplementedError()
+
     @classmethod
     def _get_field_names(cls, model):
         """Return a list of field names that are part of a model."""
@@ -103,11 +120,11 @@ class ComparatorMixin:
 
         def comparator(i1, i2):
             # Get a tuple of values for comparison.
-            v1 = attrgetter(*field_names)(i1)
-            v2 = attrgetter(*field_names)(i2)
+            v1 = cls._get_fields(i1, *field_names)
+            v2 = cls._get_fields(i2, *field_names)
 
-            # If there's only one arg supplied, attrgetter returns a single
-            # item, directly return the result in this case.
+            # If there's only one arg supplied, a single item is returned,
+            # directly return the result in this case.
             if len(field_names) == 1:
                 return cls._cmp(v1, v2) * reverses[0]
 
@@ -122,17 +139,6 @@ class ComparatorMixin:
                 return 0
 
         return comparator
-
-
-class QuerySequenceIterable(ComparatorMixin):
-    def __init__(self, querysetsequence):
-        # Create a clone so that subsequent calls to iterate are kept separate.
-        self._querysets = querysetsequence._querysets
-        self._queryset_idxs = querysetsequence._queryset_idxs
-        self._order_by = querysetsequence._order_by
-        self._standard_ordering = querysetsequence._standard_ordering
-        self._low_mark = querysetsequence._low_mark
-        self._high_mark = querysetsequence._high_mark
 
     def _ordered_iterator(self):
         """
@@ -154,7 +160,7 @@ class QuerySequenceIterable(ComparatorMixin):
                 # If this is already empty, just skip it.
                 continue
             # Set the QuerySet number so that the comparison works properly.
-            setattr(value, '#', i)
+            self._set_field(value, '#', i)
             iterables.append((it, i, value))
 
         # The offset of items returned.
@@ -199,7 +205,7 @@ class QuerySequenceIterable(ComparatorMixin):
             try:
                 value = next(it)
                 # Set the QuerySet number so that the comparison works properly.
-                setattr(value, '#', i)
+                self._set_field(value, '#', i)
                 iterables[next_value_ind] = it, i, value
             except StopIteration:
                 # This iterator is done, remove it.
@@ -212,7 +218,7 @@ class QuerySequenceIterable(ComparatorMixin):
         """
         for i, qs in zip(self._queryset_idxs, self._querysets):
             for item in qs:
-                setattr(item, '#', i)
+                self._set_field(item, '#', i)
                 yield item
 
     def __iter__(self):
@@ -295,7 +301,58 @@ class QuerySequenceIterable(ComparatorMixin):
         return self._unordered_iterator()
 
 
-class QuerySetSequence(ComparatorMixin):
+class ModelIterable(BaseIterable):
+    @staticmethod
+    def _get_fields(obj, *field_names):
+        return attrgetter(*field_names)(obj)
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        setattr(obj, field_name, value)
+
+
+class ValuesIterable(BaseIterable):
+    def __init__(self, querysetsequence):
+        super().__init__(querysetsequence)
+
+        self._fields = querysetsequence._fields
+        self._removable_fields = set()
+
+        # If there are any "order_by" fields which are *not* the fields to be
+        # returned, they also need to be captured.
+        if self._order_by:
+            all_fields = set(self._fields) | set(self._order_by)
+            self._querysets = [qs.values(*all_fields) for qs in self._querysets]
+
+            # Fields not to return.
+            self._removable_fields = set(self._order_by) - set(self._fields)
+
+        # If specific fields were requested, but one of them was not the
+        # QuerySet sequence number, remove it.
+        if self._fields and '#' not in self._fields:
+            self._removable_fields.add('#')
+
+    def __iter__(self):
+        if not self._removable_fields:
+            yield from super().__iter__()
+            return
+
+        # Fields need to be removed from the result.
+        for it in super().__iter__():
+            for field in self._removable_fields:
+                it.pop(field)
+            yield it
+
+    @staticmethod
+    def _get_fields(obj, *field_names):
+        return itemgetter(*field_names)(obj)
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        obj[field_name] = value
+
+
+class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
     the base models.
@@ -306,10 +363,11 @@ class QuerySetSequence(ComparatorMixin):
         self._set_querysets(args)
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
+        self._fields = None
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
 
-        self._iterable_class = QuerySequenceIterable
+        self._iterable_class = ModelIterable
         self._result_cache = None
 
     def _set_querysets(self, querysets):
@@ -321,9 +379,11 @@ class QuerySetSequence(ComparatorMixin):
         clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
         clone._queryset_idxs = self._queryset_idxs
         clone._order_by = self._order_by
+        clone._fields = self._fields
         clone._standard_ordering = self._standard_ordering
         clone._low_mark = self._low_mark
         clone._high_mark = self._high_mark
+        clone._iterable_class = self._iterable_class
 
         return clone
 
@@ -577,7 +637,14 @@ class QuerySetSequence(ComparatorMixin):
         raise NotImplementedError()
 
     def values(self, *fields, **expressions):
-        raise NotImplementedError()
+        _, std_fields = self._separate_fields(*fields)
+
+        clone = self._clone()
+        clone._querysets = [qs.values(*std_fields, **expressions) for qs in self._querysets]
+        clone._fields = list(fields) + list(expressions.keys())
+        clone._iterable_class = ValuesIterable
+
+        return clone
 
     def values_list(self, *fields, **kwargs):
         raise NotImplementedError()
@@ -721,7 +788,7 @@ class QuerySetSequence(ComparatorMixin):
 
     def _get_first_or_last(self, items, order_fields, reverse):
         # Generate a comparator and sort the items.
-        comparator = self._generate_comparator(order_fields)
+        comparator = self._iterable_class._generate_comparator(order_fields)
         items = sorted(items, key=functools.cmp_to_key(comparator), reverse=reverse)
 
         # Return the first one (whether this is first or last is controlled by

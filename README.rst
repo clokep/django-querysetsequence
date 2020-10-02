@@ -67,8 +67,8 @@ multiple ``QuerySets``:
       - |xmark|
       -
     * - |values|_
-      - |xmark|
-      -
+      - |check|
+      - See [1]_ for information on including the ``QuerySet`` index: ``'#'``.
     * - |values_list|_
       - |xmark|
       -
@@ -318,7 +318,8 @@ multiple ``QuerySets``:
 .. [1]  ``QuerySetSequence`` supports a special field lookup that looks up the
         index of the ``QuerySet``, this is represented by ``'#'``. This can be
         used in any of the operations that normally take field lookups (i.e.
-        ``filter()``, ``exclude()``, and ``get()``), as well as ``order_by()``.
+        ``filter()``, ``exclude()``, and ``get()``), as well as ``order_by()``
+        and ``values()``.
 
         A few examples are below:
 
