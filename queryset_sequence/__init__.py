@@ -316,7 +316,7 @@ class ValuesIterable(BaseIterable):
         super().__init__(querysetsequence)
 
         self._fields = querysetsequence._fields
-        self._removable_fields = None
+        self._removable_fields = set()
 
         # If there are any "order_by" fields which are *not* the fields to be
         # returned, they also need to be captured.
@@ -326,6 +326,11 @@ class ValuesIterable(BaseIterable):
 
             # Fields not to return.
             self._removable_fields = set(self._order_by) - set(self._fields)
+
+        # If specific fields were requested, but one of them was not the
+        # QuerySet sequence number, remove it.
+        if self._fields and '#' not in self._fields:
+            self._removable_fields.add('#')
 
     def __iter__(self):
         if not self._removable_fields:
@@ -632,8 +637,10 @@ class QuerySetSequence:
         raise NotImplementedError()
 
     def values(self, *fields, **expressions):
+        _, std_fields = self._separate_fields(*fields)
+
         clone = self._clone()
-        clone._querysets = [qs.values(*fields, **expressions) for qs in self._querysets]
+        clone._querysets = [qs.values(*std_fields, **expressions) for qs in self._querysets]
         clone._fields = list(fields) + list(expressions.keys())
         clone._iterable_class = ValuesIterable
 

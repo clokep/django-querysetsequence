@@ -11,6 +11,7 @@ class TestValues(TestBase):
         authors = [it['author_id'] for it in values]
         self.assertEqual(titles, self.TITLES_BY_PK)
         self.assertEqual(authors, [2, 2, 1, 1, 2])
+        self.assertCountEqual(values[0].keys(), ['#', 'id', 'author_id', 'pages', 'publisher_id', 'release', 'title'])
 
     def test_fields(self):
         """Ensure the proper fields are returned."""
@@ -19,17 +20,24 @@ class TestValues(TestBase):
             # logic this converts the entire results to a list before getting
             # the first element.
             data = list(self.all.values('title'))[0]
-        self.assertEqual(data, {'#': 0, 'title': 'Fiction'})
+        self.assertEqual(data, {'title': 'Fiction'})
 
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
             data = list(self.all.values('author'))[0]
-        self.assertEqual(data, {'#': 0, 'author': 2})
+        self.assertEqual(data, {'author': 2})
 
     def test_join(self):
+        """Including a field across a foreign key join should work."""
         with self.assertNumQueries(2):
             data = list(self.all.values('author__name'))[0]
+        self.assertEqual(data, {'author__name': 'Bob'})
+
+    def test_qss_field(self):
+        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        with self.assertNumQueries(2):
+            data = list(self.all.values('#', 'author__name'))[0]
         self.assertEqual(data, {'#': 0, 'author__name': 'Bob'})
 
     def test_order_by(self):
@@ -54,4 +62,4 @@ class TestValues(TestBase):
         ])
 
         # Check that only the requested fields are returned.
-        self.assertEqual(values[0], {'#': 1, 'title': 'Some Article'})
+        self.assertEqual(values[0], {'title': 'Some Article'})
