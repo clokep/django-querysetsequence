@@ -67,7 +67,7 @@ multiple ``QuerySets``:
       - |xmark|
       -
     * - |values|_
-      - |xmark|
+      - |check|
       -
     * - |values_list|_
       - |xmark|

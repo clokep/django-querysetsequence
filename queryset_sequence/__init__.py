@@ -1,7 +1,7 @@
 from collections import defaultdict
 import functools
 from itertools import dropwhile
-from operator import __not__, attrgetter, eq, ge, gt, le, lt, mul
+from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
 
 import django
 from django.core.exceptions import (FieldError, MultipleObjectsReturned,
@@ -311,6 +311,42 @@ class ModelIterable(BaseIterable):
         setattr(obj, field_name, value)
 
 
+class ValuesIterable(BaseIterable):
+    def __init__(self, querysetsequence):
+        super().__init__(querysetsequence)
+
+        self._fields = querysetsequence._fields
+        self._removable_fields = None
+
+        # If there are any "order_by" fields which are *not* the fields to be
+        # returned, they also need to be captured.
+        if self._order_by:
+            all_fields = set(self._fields) | set(self._order_by)
+            self._querysets = [qs.values(*all_fields) for qs in self._querysets]
+
+            # Fields not to return.
+            self._removable_fields = set(self._order_by) - set(self._fields)
+
+    def __iter__(self):
+        if not self._removable_fields:
+            yield from super().__iter__()
+            return
+
+        # Fields need to be removed from the result.
+        for it in super().__iter__():
+            for field in self._removable_fields:
+                it.pop(field)
+            yield it
+
+    @staticmethod
+    def _get_fields(obj, *field_names):
+        return itemgetter(*field_names)(obj)
+
+    @staticmethod
+    def _set_field(obj, field_name, value):
+        obj[field_name] = value
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -322,6 +358,7 @@ class QuerySetSequence:
         self._set_querysets(args)
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
+        self._fields = None
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
 
@@ -337,9 +374,11 @@ class QuerySetSequence:
         clone = QuerySetSequence(*[qs._clone() for qs in self._querysets])
         clone._queryset_idxs = self._queryset_idxs
         clone._order_by = self._order_by
+        clone._fields = self._fields
         clone._standard_ordering = self._standard_ordering
         clone._low_mark = self._low_mark
         clone._high_mark = self._high_mark
+        clone._iterable_class = self._iterable_class
 
         return clone
 
@@ -593,7 +632,12 @@ class QuerySetSequence:
         raise NotImplementedError()
 
     def values(self, *fields, **expressions):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.values(*fields, **expressions) for qs in self._querysets]
+        clone._fields = list(fields) + list(expressions.keys())
+        clone._iterable_class = ValuesIterable
+
+        return clone
 
     def values_list(self, *fields, **kwargs):
         raise NotImplementedError()

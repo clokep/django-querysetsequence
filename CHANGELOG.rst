@@ -6,6 +6,8 @@ Changelog
 next
 ====
 
+* [Enhancement] Support the ``values()`` method.
+
 0.13 (2020-07-27)
 =================
 

@@ -1,5 +1,5 @@
 from datetime import date
-from unittest import skip, skipIf
+from unittest import skip
 from unittest.mock import patch
 
 import django
@@ -1530,10 +1530,6 @@ class TestNotImplemented(TestCase):
     def test_distinct(self):
         with self.assertRaises(NotImplementedError):
             self.all.distinct()
-
-    def test_values(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.values()
 
     def test_values_list(self):
         with self.assertRaises(NotImplementedError):
