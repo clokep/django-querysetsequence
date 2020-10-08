@@ -233,3 +233,82 @@ class TestFlatValuesList(TestBase):
             'Biography',
             'Some Article',
         ])
+
+
+class TestNamedValuesList(TestBase):
+    def test_values_list(self):
+        """Ensure the values conversion works as expected."""
+        with self.assertNumQueries(2):
+            values = list(self.all.values_list(named=True))
+        self.assertEqual(values[0], (1, 'Fiction', 2, 2, datetime.date(2001, 6, 12), 10))
+        self.assertEqual(values[0]._fields, ('id', 'title', 'author_id', 'publisher_id', 'release', 'pages'))
+        # Also check one of the other types.
+        self.assertEqual(values[2]._fields, ('id', 'title', 'author_id', 'publisher_id', 'release'))
+
+    def test_fields(self):
+        """Ensure the proper fields are returned."""
+        with self.assertNumQueries(2):
+            values = list(self.all.values_list('title', named=True))
+        self.assertEqual([value.title for value in values], self.TITLES_BY_PK)
+        # There should only be a single field.
+        self.assertEqual(values[0]._fields, ('title',))
+
+    def test_foreign_key(self):
+        """Calling values for a foreign key should end up with the ID."""
+        with self.assertNumQueries(2):
+            data = list(self.all.values_list('author', named=True))[0]
+        self.assertEqual(data, (2,))
+
+    def test_join(self):
+        with self.assertNumQueries(2):
+            data = list(self.all.values_list('author__name', named=True))[0]
+        self.assertEqual(data, ('Bob',))
+
+    def test_qss_field(self):
+        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        with self.assertNumQueries(2):
+            data = list(self.all.values_list('#', 'author__name', named=True))[0]
+        self.assertEqual(data, (0, 'Bob'))
+
+    def test_order_by(self):
+        """Ensure that order_by() propagates to QuerySets and iteration."""
+        # Check the titles are properly ordered.
+        with self.assertNumQueries(2):
+            data = [it[0] for it in self.all.values_list('title', named=True).order_by('title')]
+        self.assertEqual(data, sorted(self.TITLES_BY_PK))
+
+        with self.assertNumQueries(2):
+            data = [it[0] for it in self.all.values_list('title', named=True).order_by('-title')]
+        self.assertEqual(data, sorted(self.TITLES_BY_PK, reverse=True))
+
+    def test_order_by_other_field(self):
+        """Ordering by a field that isn't included in the responses should work."""
+        with self.assertNumQueries(2):
+            values = list(self.all.values_list('title', named=True).order_by('release'))
+        titles = [it[0] for it in values]
+        # Check the expected ordering.
+        self.assertEqual(titles, [
+            'Some Article',
+            'Django Rocks',
+            'Alice in Django-land',
+            'Fiction',
+            'Biography',
+        ])
+        # Check that only the requested fields are returned.
+        self.assertEqual(values[0], ('Some Article', ))
+
+    def test_order_by_qs(self):
+        """Ordering by a QuerySet should work."""
+        with self.assertNumQueries(2):
+            values = list(self.all.values_list('title', named=True).order_by('author', '#'))
+        data = [it[0] for it in values]
+        # Check the expected ordering.
+        self.assertEqual(data, [
+            'Django Rocks',
+            'Alice in Django-land',
+            'Fiction',
+            'Biography',
+            'Some Article',
+        ])
+        # Check that only the requested fields are returned.
+        self.assertEqual(values[0], ('Django Rocks',))

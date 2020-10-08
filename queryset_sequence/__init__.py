@@ -438,6 +438,10 @@ class FlatValuesListIterable(ValuesListIterable):
             yield row[0]
 
 
+class NamedValuesListIterable(ValuesListIterable):
+    pass
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -733,6 +737,8 @@ class QuerySetSequence:
         return clone
 
     def values_list(self, *fields, flat=False, named=False):
+        if flat and named:
+            raise TypeError("'flat' and 'named' can't be used together.")
         if flat and len(fields) > 1:
             raise TypeError("'flat' is not valid when values_list is called with more than one field.")
 
@@ -743,7 +749,8 @@ class QuerySetSequence:
         clone._querysets = [qs.values_list(*std_fields, flat=False, named=named) for qs in self._querysets]
         clone._fields = list(fields)
         clone._iterable_class = (
-            FlatValuesListIterable if flat
+            NamedValuesListIterable if named
+            else FlatValuesListIterable if flat
             else ValuesListIterable
         )
 
