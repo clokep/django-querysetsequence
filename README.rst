@@ -70,8 +70,8 @@ multiple ``QuerySets``:
       - |check|
       - See [1]_ for information on including the ``QuerySet`` index: ``'#'``.
     * - |values_list|_
-      - |xmark|
-      -
+      - |check|
+      - See [1]_ for information on including the ``QuerySet`` index: ``'#'``.
     * - |dates|_
       - |xmark|
       -

@@ -354,6 +354,83 @@ class ValuesIterable(BaseIterable):
         return obj
 
 
+class ValuesListIterable(BaseIterable):
+    def __init__(self, querysetsequence):
+        super().__init__(querysetsequence)
+
+        fields = querysetsequence._fields
+        # Only keep the values from fields.
+        self._last_field = len(fields)
+        # The location of the QuerySet index.
+        try:
+            self._qs_index = fields.index('#')
+        except ValueError:
+            self._qs_index = None
+
+        # If there are any "order_by" fields which are *not* the fields to be
+        # returned, they also need to be captured.
+        if self._order_by:
+            # Find any fields which are only used for ordering.
+            _, std_fields = querysetsequence._separate_fields(*fields)
+            _, std_order_fields = querysetsequence._separate_fields(*self._order_by)
+            order_only_fields = [f for f in std_order_fields if f.lstrip('-') not in std_fields]
+
+            # Capture both the fields to return as well as the fields used only
+            # for ordering.
+            all_fields = std_fields + order_only_fields
+            self._querysets = [qs.values_list(*std_fields, *order_only_fields) for qs in self._querysets]
+
+            # If one of the returned fields is the QuerySet index, insert it so
+            # that the indexes of the fields after it are correct.
+            if self._qs_index:
+                all_fields = all_fields[:self._qs_index] + ('#',) + all_fields[self._qs_index:]
+
+            # Convert the order_by field names into indexes, but encoded as strings.
+            #
+            # Note that this assumes that the ordering of the values is shallow
+            # (i.e. nothing returns a Model instance).
+            order_by_indexes = []
+            for field in self._order_by:
+                field_name = field.lstrip('-')
+
+                if field_name == '#':
+                    # If the index is not one of the returned fields, add it as
+                    # the last field.
+                    if not self._qs_index:
+                        self._qs_index = len(all_fields)
+                    field_index = self._qs_index
+                else:
+                    field_index = all_fields.index(field_name)
+
+                order_by_indexes.append(
+                    ('-' if field[0] == '-' else '') + str(field_index)
+                )
+            self._order_by = order_by_indexes
+
+    def __iter__(self):
+        # If there's no particular ordering, do not rebuild the tuples.
+        if not self._order_by:
+            yield from super().__iter__()
+            return
+
+        # Remove the fields only used for ordering from the result.
+        for row in super().__iter__():
+            yield row[:self._last_field]
+
+    @staticmethod
+    def _get_fields(obj, *field_names):
+        # Note that BaseIterable.__iter__ strips '-' before getting here, so all
+        # indexes are positive.
+        field_indexes = [int(f) for f in field_names]
+        return itemgetter(*field_indexes)(obj)
+
+    def _add_queryset_index(self, obj, value):
+        # If the QuerySet index needs to be inserted, build a new tuple with it.
+        if self._qs_index is None:
+            return obj
+        return obj[:self._qs_index] + (value, ) + obj[self._qs_index:]
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -648,8 +725,16 @@ class QuerySetSequence:
 
         return clone
 
-    def values_list(self, *fields, **kwargs):
-        raise NotImplementedError()
+    def values_list(self, *fields, flat=False, named=False):
+        _, std_fields = self._separate_fields(*fields)
+
+        clone = self._clone()
+        # Note that we always process the flat-ness ourself.
+        clone._querysets = [qs.values_list(*std_fields, flat=False, named=named) for qs in self._querysets]
+        clone._fields = list(fields)
+        clone._iterable_class = ValuesListIterable
+
+        return clone
 
     def dates(self, field, kind, order='ASC'):
         raise NotImplementedError()
