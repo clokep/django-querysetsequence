@@ -431,6 +431,13 @@ class ValuesListIterable(BaseIterable):
         return obj[:self._qs_index] + (value, ) + obj[self._qs_index:]
 
 
+class FlatValuesListIterable(ValuesListIterable):
+    def __iter__(self):
+        # Flat values lists can only have a single value in them, yield it.
+        for row in super().__iter__():
+            yield row[0]
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -726,13 +733,19 @@ class QuerySetSequence:
         return clone
 
     def values_list(self, *fields, flat=False, named=False):
+        if flat and len(fields) > 1:
+            raise TypeError("'flat' is not valid when values_list is called with more than one field.")
+
         _, std_fields = self._separate_fields(*fields)
 
         clone = self._clone()
         # Note that we always process the flat-ness ourself.
         clone._querysets = [qs.values_list(*std_fields, flat=False, named=named) for qs in self._querysets]
         clone._fields = list(fields)
-        clone._iterable_class = ValuesListIterable
+        clone._iterable_class = (
+            FlatValuesListIterable if flat
+            else ValuesListIterable
+        )
 
         return clone
 
