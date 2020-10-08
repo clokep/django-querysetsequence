@@ -1531,10 +1531,6 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.distinct()
 
-    def test_values_list(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.values_list()
-
     def test_dates(self):
         with self.assertRaises(NotImplementedError):
             self.all.dates(None, None)

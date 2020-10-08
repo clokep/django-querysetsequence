@@ -6,7 +6,7 @@ Changelog
 next
 ====
 
-* [Enhancement] Support the ``values()`` method.
+* [Enhancement] Support the ``values()`` and ``values_list()`` methods.
 
 0.13 (2020-07-27)
 =================
