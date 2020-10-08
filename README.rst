@@ -4,6 +4,10 @@ Django QuerySetSequence
 .. image:: https://travis-ci.org/clokep/django-querysetsequence.svg?branch=master
     :target: https://travis-ci.org/clokep/django-querysetsequence
 
+.. image:: https://readthedocs.org/projects/django-querysetsequence/badge/?version=latest
+    :target: https://django-querysetsequence.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 .. image:: https://coveralls.io/repos/github/clokep/django-querysetsequence/badge.svg?branch=master
     :target: https://coveralls.io/github/clokep/django-querysetsequence?branch=master
 
@@ -69,10 +73,12 @@ Basic Usage
 Project Information
 ===================
 
-django-querysetsequence is released under the ISC license, its code lives on
-`GitHub`_, and the latest release on `PyPI`_. It supports Python 3.5+, Django 2.2+,
-and is optionally compatible with `Django REST Framework`_ 3.9+.
+django-querysetsequence is released under the ISC license, its documentation lives
+on `Read the Docs`_, the code on `GitHub`_, and the latest release on `PyPI`_. It
+supports Python 3.5+, Django 2.2+, and is optionally compatible with
+`Django REST Framework`_ 3.9+.
 
+.. _Read the Docs: https://django-querysetsequence.readthedocs.io/
 .. _GitHub: https://github.com/clokep/django-querysetsequence
 .. _PyPI: https://pypi.org/project/django-querysetsequence/
 .. _Django REST Framework: http://www.django-rest-framework.org/
