@@ -47,6 +47,10 @@ class TestValues(TestBase):
             data = [it['title'] for it in self.all.values('title').order_by('title')]
         self.assertEqual(data, sorted(self.TITLES_BY_PK))
 
+        with self.assertNumQueries(2):
+            data = [it['title'] for it in self.all.values('title').order_by('-title')]
+        self.assertEqual(data, sorted(self.TITLES_BY_PK, reverse=True))
+
     def test_order_by_other_field(self):
         """Ordering by a field that isn't included in the responses should work."""
         with self.assertNumQueries(2):
@@ -63,3 +67,20 @@ class TestValues(TestBase):
 
         # Check that only the requested fields are returned.
         self.assertEqual(values[0], {'title': 'Some Article'})
+
+    def test_order_by_qs(self):
+        """Ordering by a QuerySet should work."""
+        with self.assertNumQueries(2):
+            values = list(self.all.values('title').order_by('author', '#'))
+        data = [it['title'] for it in values]
+        # Check the expected ordering.
+        self.assertEqual(data, [
+            'Django Rocks',
+            'Alice in Django-land',
+            'Fiction',
+            'Biography',
+            'Some Article',
+        ])
+
+        # Check that only the requested fields are returned.
+        self.assertEqual(values[0], {'title': 'Django Rocks'})

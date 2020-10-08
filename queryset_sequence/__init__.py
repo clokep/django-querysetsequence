@@ -50,11 +50,12 @@ class BaseIterable:
         self._high_mark = querysetsequence._high_mark
 
     @staticmethod
-    def _get_fields(obj, field_names):
+    def _get_fields(obj, *field_names):
+        """Retrieve the values of fields from the object."""
         raise NotImplementedError()
 
-    @staticmethod
-    def _set_field(obj, field_name, value):
+    def _add_queryset_index(self, obj, value):
+        """Add the QuerySet index to the object and return the object."""
         raise NotImplementedError()
 
     @classmethod
@@ -160,7 +161,7 @@ class BaseIterable:
                 # If this is already empty, just skip it.
                 continue
             # Set the QuerySet number so that the comparison works properly.
-            self._set_field(value, '#', i)
+            value = self._add_queryset_index(value, i)
             iterables.append((it, i, value))
 
         # The offset of items returned.
@@ -205,7 +206,7 @@ class BaseIterable:
             try:
                 value = next(it)
                 # Set the QuerySet number so that the comparison works properly.
-                self._set_field(value, '#', i)
+                value = self._add_queryset_index(value, i)
                 iterables[next_value_ind] = it, i, value
             except StopIteration:
                 # This iterator is done, remove it.
@@ -218,8 +219,7 @@ class BaseIterable:
         """
         for i, qs in zip(self._queryset_idxs, self._querysets):
             for item in qs:
-                self._set_field(item, '#', i)
-                yield item
+                yield self._add_queryset_index(item, i)
 
     def __iter__(self):
         # If there's no QuerySets, just return an empty iterator.
@@ -306,9 +306,10 @@ class ModelIterable(BaseIterable):
     def _get_fields(obj, *field_names):
         return attrgetter(*field_names)(obj)
 
-    @staticmethod
-    def _set_field(obj, field_name, value):
-        setattr(obj, field_name, value)
+    def _add_queryset_index(self, obj, value):
+        # For models, always add the QuerySet index.
+        setattr(obj, '#', value)
+        return obj
 
 
 class ValuesIterable(BaseIterable):
@@ -316,40 +317,41 @@ class ValuesIterable(BaseIterable):
         super().__init__(querysetsequence)
 
         self._fields = querysetsequence._fields
-        self._removable_fields = set()
+        # If no fields are specified (or if '#' is explicitly specified) include
+        # the QuerySet index.
+        self._include_qs_index = not self._fields or '#' in self._fields
+        self._remove_fields = False
 
         # If there are any "order_by" fields which are *not* the fields to be
         # returned, they also need to be captured.
         if self._order_by:
-            all_fields = set(self._fields) | set(self._order_by)
-            self._querysets = [qs.values(*all_fields) for qs in self._querysets]
+            qss_fields, std_fields = querysetsequence._separate_fields(*self._fields)
+            qss_order_fields, std_order_fields = querysetsequence._separate_fields(*self._order_by)
+            extra_fields = [f for f in std_order_fields if f.lstrip('-') not in std_fields]
 
-            # Fields not to return.
-            self._removable_fields = set(self._order_by) - set(self._fields)
+            self._querysets = [qs.values(*std_fields, *extra_fields) for qs in self._querysets]
 
-        # If specific fields were requested, but one of them was not the
-        # QuerySet sequence number, remove it.
-        if self._fields and '#' not in self._fields:
-            self._removable_fields.add('#')
+            # If any additional fields are pulled, they'll need to be removed.
+            self._include_qs_index |= bool(qss_order_fields)
+            self._remove_fields = bool(extra_fields) or bool(qss_fields)
 
     def __iter__(self):
-        if not self._removable_fields:
+        if not self._remove_fields:
             yield from super().__iter__()
             return
 
-        # Fields need to be removed from the result.
+        # The extra fields added for ordering need to be removed.
         for it in super().__iter__():
-            for field in self._removable_fields:
-                it.pop(field)
-            yield it
+            yield {k: it[k] for k in self._fields}
 
     @staticmethod
     def _get_fields(obj, *field_names):
         return itemgetter(*field_names)(obj)
 
-    @staticmethod
-    def _set_field(obj, field_name, value):
-        obj[field_name] = value
+    def _add_queryset_index(self, obj, value):
+        if self._include_qs_index:
+            obj['#'] = value
+        return obj
 
 
 class QuerySetSequence:
