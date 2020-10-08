@@ -27,5 +27,8 @@ pip-log.txt
 # HTML files.
 *.html
 
+# Documentation output.
+docs/_build
+
 # Editor files
 .idea

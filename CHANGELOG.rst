@@ -182,3 +182,15 @@ next
 ================
 
 * Initial release to support Django 1.8.8
+
+The initial commits on based on DjangoSnippets and other code:
+
+* `DjangoSnippet 1103`_
+* `DjangoSnippet 1253`_ and some bugfixes in the comments
+* `DjangoSnippet 1933`_
+* `django-ko-demo from The Atlantic`_
+
+.. _DjangoSnippet 1103: https://www.djangosnippets.org/snippets/1103/
+.. _DjangoSnippet 1253: https://djangosnippets.org/snippets/1253/
+.. _DjangoSnippet 1933: https://djangosnippets.org/snippets/1933/
+.. _django-ko-demo from The Atlantic: https://github.com/theatlantic/django-ko-demo/blob/1a37c9ad9bcd68a40c35462fb819fff85a9533f7/apps/curation_nouveau/queryset_sequence.py
