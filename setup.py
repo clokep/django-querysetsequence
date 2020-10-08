@@ -40,5 +40,10 @@ setup(
     install_requires=[
         'django>=2.2',
     ],
+    extras_require={
+        'dev': [
+            'mock',
+        ],
+    },
     python_requires=">=3.5",
 )
