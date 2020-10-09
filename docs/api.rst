@@ -177,7 +177,7 @@ Summary of Supported APIs
       -
     * - |explain|_
       - |check|
-      - Only available on Django >= 2.1.
+      -
 
 .. list-table:: Additional methods specific to ``QuerySetSequence``
     :widths: 15 30
