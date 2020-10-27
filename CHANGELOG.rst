@@ -11,6 +11,7 @@ next
   `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
 * Add an additional test for the interaction of ``order_by()`` and ``only()``.
    (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
+* Officially support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
 
 0.13 (2020-07-27)
 =================
