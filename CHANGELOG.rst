@@ -7,85 +7,112 @@ next
 ====
 
 * [Enhancement] Support the ``values()`` and ``values_list()`` methods.
+  (`#73 <https://github.com/clokep/django-querysetsequence/pull/73>`_,
+  `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
+* Add an additional test for the interaction of ``order_by()`` and ``only()``.
+   (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
 
 0.13 (2020-07-27)
 =================
 
-* [Enhancement] Officially support Django 3.1.
-* [Incompatible change] Drop support for Django < 2.2.
+* [Enhancement] Officially support Django 3.1. (`#69 <https://github.com/clokep/django-querysetsequence/pull/69>`_)
+* [Incompatible change] Drop support for Django < 2.2.  (`#70 <https://github.com/clokep/django-querysetsequence/pull/70>`_)
 * [Bugfix] ``explain()`` now passes through parameters to the underlying
-  ``QuerySet`` instances.
-* [Bugfix] Fixes compatibility issue with ``ModelChoiceField``. Report and
-  initial pull request from @jpic. `#68 <https://github.com/clokep/django-querysetsequence/pull/68>`_
+  ``QuerySet`` instances. (`#69 <https://github.com/clokep/django-querysetsequence/pull/69>`_)
+* [Bugfix] Fixes compatibility issue with ``ModelChoiceField``. Contributed by
+  `@jpic <https://github.com/jpic>`_. (`#68 <https://github.com/clokep/django-querysetsequence/pull/68>`_)
 
 0.12 (2019-12-20)
 =================
 
-* [Incompatible change] Drop support for Python 2.7.
-* [Incompatible change] Drop support for Django 2.0 and 2.1.
-* [Enhancement] Officially support Django 3.0.
-* [Enhancement] Officially support Python 3.8.
-* [Enhancement] Officially support Django REST Framework 3.10 and 3.11.
-* [Bugfix] Do not use ``is not`` to compare to an integer literal.
+* [Incompatible change] Drop support for Python 2.7. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* [Incompatible change] Drop support for Django 2.0 and 2.1. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* [Enhancement] Officially support Django 3.0. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* [Enhancement] Officially support Python 3.8. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* [Enhancement] Officially support Django REST Framework 3.10 and 3.11. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_,
+  `#64 <https://github.com/clokep/django-querysetsequence/pull/64>`_)
+* [Bugfix] Do not use ``is not`` to compare to an integer literal.  (`#61 <https://github.com/clokep/django-querysetsequence/pull/61>`_)
 
 0.11 (2019-04-25)
 =================
 
 * [Enhancement] Add a ``QuerySetSequence`` specific method: ``get_querysets()``.
-* [Enhancement] Officially support Django 2.2.
-* [Enhancement] Officially support Django REST Framework 3.9.
-* [Enhancement] Officially support Python 3.7.
-* [Incompatible change] Drop support for Django REST Framework < 3.6.3.
-* [Incompatible change] Drop support for Python 3.4.
+  Contributed by
+  `@optiz0r <https://github.com/optiz0r>`_. (`#53 <https://github.com/clokep/django-querysetsequence/pull/53>`_)
+* [Enhancement] Officially support Django 2.2. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
+* [Enhancement] Officially support Django REST Framework 3.9. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
+* [Enhancement] Officially support Python 3.7. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
+* [Incompatible change] Drop support for Django REST Framework < 3.6.3. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
+* [Incompatible change] Drop support for Python 3.4. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
 
 0.10 (2018-10-09)
 =================
 
 * [Enhancement] Support ``first()``, ``last()``, ``latest()``, and
-  ``earliest()`` methods.
-* [Enhancement] Support the ``&`` and ``|`` operators.
+  ``earliest()`` methods. (`#40 <https://github.com/clokep/django-querysetsequence/pull/40>`_,
+  `#49 <https://github.com/clokep/django-querysetsequence/pull/49>`_)
+* [Enhancement] Support the ``&`` and ``|`` operators. (`#41 <https://github.com/clokep/django-querysetsequence/pull/41>`_)
 * [Enhancement] Support ``defer()`` and ``only()`` methods to control which
-  fields are returned.
+  fields are returned. (`#44 <https://github.com/clokep/django-querysetsequence/pull/44>`_)
 * [Enhancement] Support calling ``using()`` to switch databases for an entire
-  ``QuerySetSequence``.
+  ``QuerySetSequence``. (`#44 <https://github.com/clokep/django-querysetsequence/pull/44>`_)
 * [Enhancement] Support calling ``extra()`, ``update()``, and ``annotate()``
-  which get applied to each ``QuerySet``.
-* [Enhancement] Support calling ``explain()`` on Django >= 2.1.
+  which get applied to each ``QuerySet``. (`#46 <https://github.com/clokep/django-querysetsequence/pull/46>`_,
+  `#47 <https://github.com/clokep/django-querysetsequence/pull/47>`_)
+* [Enhancement] Support calling ``explain()`` on Django >= 2.1. (`#48 <https://github.com/clokep/django-querysetsequence/pull/48>`_)
 * [Bugfix] Raise ``NotImplementedError`` on unimplemented methods. This fixes a
-  regression introduced in 0.9.
+  regression introduced in 0.9. (`#42 <https://github.com/clokep/django-querysetsequence/pull/42>`_)
+* [Bugfix] Expand tests for empty QuerySets. (`#43 <https://github.com/clokep/django-querysetsequence/pull/43>`_)
 
 0.9 (2018-09-20)
 ================
 
-* [Enhancement] Officially support Django REST Framework 3.7 and 3.8
-* [Enhancement] Officially support Django 2.0 and 2.1.
+* [Enhancement] Officially support Django REST Framework 3.7 and 3.8.
+  (`#33 <https://github.com/clokep/django-querysetsequence/pull/33>`_,
+  `#39 <https://github.com/clokep/django-querysetsequence/pull/39>`_)
+* [Enhancement] Officially support Django 2.0 and 2.1. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#35 <https://github.com/clokep/django-querysetsequence/pull/35>`_,
+  `#39 <https://github.com/clokep/django-querysetsequence/pull/39>`_)
 * [Incompatible change] Drop support for Django < 1.11. Django 1.11 and above
   are supported. This also drops support for Django REST Framework < 3.4, since
-  they do not support Django 1.11.
+  they do not support Django 1.11. (`#36 <https://github.com/clokep/django-querysetsequence/pull/36>`_)
 * [Bugfix] Stop using the internals of QuerySet for better forward
   compatibility. This change means that ``QuerySetSequence`` is no longer a
   sub-class of ``QuerySet`` and should improve interactions with other packages
-  which modify ``QuerySet``.
+  which modify ``QuerySet``. (`#38 <https://github.com/clokep/django-querysetsequence/pull/38>`_)
 
 0.8 (2017-09-05)
 ================
 
 * [Enhancement] Optimize iteration when *not* slicing a ``QuerySetSequence``.
-  See #29.
-* [Enhancement] Officially support Django 1.11.
+  Contributed by `@EvgeneOskin <https://github.com/EvgeneOskin>`_.
+  (`#29 <https://github.com/clokep/django-querysetsequence/pull/29>`_)
+* [Enhancement] Officially support Django 1.11. Contributed by
+  `@michael-k <https://github.com/michael-k>`_. (`#26 <https://github.com/clokep/django-querysetsequence/pull/26>`_,
+  `#32 <https://github.com/clokep/django-querysetsequence/pull/32>`_)
 * [Enhancement] Officially support Django REST Framework 3.5 and 3.6.
+  (`#26 <https://github.com/clokep/django-querysetsequence/pull/26>`_)
 
 0.7.2 (2017-04-04)
 ==================
 
 * [Bugfix] Calling an unimplemented method with parameters on
-  ``QuerySetSequence`` raised a non-sensical error.
+  ``QuerySetSequence`` raised a non-sensical error. (`#28 <https://github.com/clokep/django-querysetsequence/pull/28>`_)
 
 0.7.1 (2017-03-31)
 ==================
 
 * [Bugfix] Slicing a ``QuerySetSequence`` did not work properly when the slice
-  reduced the ``QuerySetSequence`` to a single ``QuerySet``. See #23, #24.
+  reduced the ``QuerySetSequence`` to a single ``QuerySet``.
+  (`#23 <https://github.com/clokep/django-querysetsequence/pull/23>`_,
+  `#24 <https://github.com/clokep/django-querysetsequence/pull/24>`_)
+* [Enhancement] Officially support Django REST Framework 3.5. (`#20 <https://github.com/clokep/django-querysetsequence/pull/20>`_)
+* [Bugfix] Typo fixes. (`#19 <https://github.com/clokep/django-querysetsequence/pull/19>`_)
 
 0.7 (2016-10-20)
 ================
@@ -93,23 +120,26 @@ next
 * [Feature] Allow filtering / querying / ordering by the order of the
   ``QuerySets`` in the ``QuerySetSequence`` by using ``'#'``. This allows for
   additional optimizations when using third-party applications, e.g. Django REST
-  Framework.
+  Framework. (`#10 <https://github.com/clokep/django-querysetsequence/pull/10>`_,
+  `#14 <https://github.com/clokep/django-querysetsequence/pull/14>`_,
+  `#15 <https://github.com/clokep/django-querysetsequence/pull/15>`_,
+  `#16 <https://github.com/clokep/django-querysetsequence/pull/16>`_)
 * [Feature] `Django REST Framework`_ integration: includes a subclass of the
   ``CursorPagination`` from Django REST Framework under
   ``queryset_sequence.pagination.SequenceCursorPagination`` which is designed to
   work efficiently with a ``QuerySetSequence`` by first ordering by internal
-  ``QuerySet``, then by the ``ordering`` attribute.
+  ``QuerySet``, then by the ``ordering`` attribute. (`#17 <https://github.com/clokep/django-querysetsequence/pull/17>`_)
 * [Enhancement] Move ``queryset_sequence`` to an actual module in order to hide
-  some implementation details.
+  some implementation details. (`#11 <https://github.com/clokep/django-querysetsequence/pull/11>`_)
 * [Bugfix] ``PartialInheritanceMeta`` must be provided ``INHERITED_ATTRS`` and
-  ``NOT_IMPLEMENTED_ATTRS``.
+  ``NOT_IMPLEMENTED_ATTRS``. (`#12 <https://github.com/clokep/django-querysetsequence/pull/12>`_)
 
 .. _Django REST Framework: http://www.django-rest-framework.org/
 
 0.6.1 (2016-08-03)
 ==================
 
-* [Enhancement] Officially support Django 1.10.
+* [Enhancement] Officially support Django 1.10. (`#9 <https://github.com/clokep/django-querysetsequence/pull/9>`_)
 
 0.6 (2016-06-07)
 ================
@@ -117,27 +147,28 @@ next
 * [Feature] Allow specifying the ``Model`` to use when instantiating a
   ``QuerySetSequence``. This is required for compatibility with some third-party
   applications that check the ``model`` field for equality, e.g. when using the
-  ``DjangoFilterBackend`` with Django REST Framework. Thanks @CountZachula #6
-* [Feature] Support ``prefetch_related``.
-* [Bugfix] Fixes an issue when using Django Debug Toolbar, #8.
+  ``DjangoFilterBackend`` with Django REST Framework. Contributed by
+  `@CountZachula <https://github.com/CountZachula>`_.
+  (`#6 <https://github.com/clokep/django-querysetsequence/pull/6>`_)
+* [Feature] Support ``prefetch_related``. (`#7 <https://github.com/clokep/django-querysetsequence/pull/7>`_)
+* [Bugfix] Fixes an issue when using Django Debug Toolbar. (`#8 <https://github.com/clokep/django-querysetsequence/pull/8>`_)
 
 0.5 (2016-02-21)
 ================
 
 * [Enhancement] Significant performance improvements when ordering the
-  ``QuerySetSequence``. #5
+  ``QuerySetSequence``. (`#5 <https://github.com/clokep/django-querysetsequence/pull/5>`_)
 * [Feature] Support ``delete()`` to remove items.
 
 0.4 (2016-02-03)
 ================
 
-* [Enhancement] Python 3.4/3.5 support. Thanks @jpic #3
+* [Enhancement] Python 3.4/3.5 support. Contributed by `@jpic <https://github.com/jpic>`_. (`#3 <https://github.com/clokep/django-querysetsequence/pull/3>`_)
 
 0.3 (2016-01-29)
 ================
 
-* [Enhancement] Raises ``NotImplementedError`` for ``QuerySet`` methods that
-  ``QuerySetSequence`` does not implement.
+* Raises ``NotImplementedError`` for ``QuerySet`` methods that ``QuerySetSequence`` does not implement.
 * [Feature] Support ``reverse()`` to reverse the item ordering
 * [Feature] Support ``none()`` to return an ``EmptyQuerySet``
 * [Feature] Support ``exists()`` to check if a ``QuerySetSequence`` has any
@@ -145,7 +176,8 @@ next
 * [Feature] Support ``select_related`` to follow foreign-key relationships when
   generating results.
 * [Bugfix] Do not evaluate any ``QuerySets`` when calling ``filter()`` or
-  ``exclude()`` like a Django ``QuerySet``. Thanks @jpic #1
+  ``exclude()`` like a Django ``QuerySet``. Contributed by
+  `@jpic <https://github.com/jpic>`_. (`#1 <https://github.com/clokep/django-querysetsequence/pull/1>`_)
 * [Bugfix] Do not cache the results when calling ``iterator()``.
 
 0.2.4 (2016-01-21)
