@@ -7,6 +7,7 @@ next
 ====
 
 * [Enhancement] Support the ``values()`` and ``values_list()`` methods.
+* Officially support Django REST Framework 3.12.
 
 0.13 (2020-07-27)
 =================
