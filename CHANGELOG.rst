@@ -10,7 +10,7 @@ next
   (`#73 <https://github.com/clokep/django-querysetsequence/pull/73>`_,
   `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
 * Add an additional test for the interaction of ``order_by()`` and ``only()``.
-   (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
+  (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
 * Officially support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
 
 0.13 (2020-07-27)
@@ -218,12 +218,14 @@ next
 
 The initial commits on based on DjangoSnippets and other code:
 
-* `DjangoSnippet 1103`_
-* `DjangoSnippet 1253`_ and some bugfixes in the comments
-* `DjangoSnippet 1933`_
-* `django-ko-demo from The Atlantic`_
+* `DjangoSnippet 1103 <https://www.djangosnippets.org/snippets/1103/>`_ by
+  `mattdw <https://www.djangosnippets.org/users/mattdw/>`_.
+* `DjangoSnippet 1253 <https://djangosnippets.org/snippets/1253/>`_ by
+  `joonas <https://djangosnippets.org/users/joonas/>`_ and some bugfixes in the comments:
 
-.. _DjangoSnippet 1103: https://www.djangosnippets.org/snippets/1103/
-.. _DjangoSnippet 1253: https://djangosnippets.org/snippets/1253/
-.. _DjangoSnippet 1933: https://djangosnippets.org/snippets/1933/
-.. _django-ko-demo from The Atlantic: https://github.com/theatlantic/django-ko-demo/blob/1a37c9ad9bcd68a40c35462fb819fff85a9533f7/apps/curation_nouveau/queryset_sequence.py
+  * Updated per `comment 1553 <https://djangosnippets.org/snippets/1253/#c1553>`_ by `nosa_manuel <https://djangosnippets.org/users/nosa_manuel/>`_.
+  * Updated per `comment 4642 <https://djangosnippets.org/snippets/1253/#c4642>`_ by `esquevin <https://djangosnippets.org/users/esquevin/>`_.
+* `DjangoSnippet 1933 <https://djangosnippets.org/snippets/1933/>`_ by
+  `t_rybik <https://djangosnippets.org/users/t_rybik/>`_.
+* `django-ko-demo from The Atlantic <https://github.com/theatlantic/django-ko-demo/blob/1a37c9ad9bcd68a40c35462fb819fff85a9533f7/apps/curation_nouveau/queryset_sequence.py>`_
+  by `@fdintino <https://github.com/fdintino>`_.
