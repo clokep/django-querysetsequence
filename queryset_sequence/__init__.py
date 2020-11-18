@@ -685,12 +685,12 @@ class QuerySetSequence:
         self._querysets = [self._querysets[i] for i in self._queryset_idxs]
 
     # Methods that return new QuerySets
-    def filter(self, **kwargs):
+    def filter(self, *args, **kwargs):
         qss_fields, fields = self._separate_filter_fields(**kwargs)
 
         clone = self._clone()
         clone._filter_or_exclude_querysets(False, **qss_fields)
-        clone._querysets = [qs.filter(**fields) for qs in clone._querysets]
+        clone._querysets = [qs.filter(*args, **fields) for qs in clone._querysets]
         return clone
 
     def exclude(self, **kwargs):
