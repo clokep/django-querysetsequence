@@ -724,7 +724,9 @@ class QuerySetSequence:
         return clone
 
     def distinct(self, *fields):
-        raise NotImplementedError()
+        clone = self._clone()
+        clone._querysets = [qs.distinct() for qs in clone._querysets]
+        return clone
 
     def values(self, *fields, **expressions):
         _, std_fields = self._separate_fields(*fields)
