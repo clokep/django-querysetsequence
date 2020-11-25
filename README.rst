@@ -1,8 +1,8 @@
 Django QuerySetSequence
 #######################
 
-.. image:: https://travis-ci.org/clokep/django-querysetsequence.svg?branch=master
-    :target: https://travis-ci.org/clokep/django-querysetsequence
+.. image:: https://api.travis-ci.com/clokep/django-querysetsequence.svg?branch=main
+    :target: https://travis-ci.com/clokep/django-querysetsequence
 
 .. image:: https://readthedocs.org/projects/django-querysetsequence/badge/?version=latest
     :target: https://django-querysetsequence.readthedocs.io/en/latest/?badge=latest
