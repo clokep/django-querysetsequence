@@ -8,7 +8,7 @@ from django.core.exceptions import (FieldDoesNotExist,
                                     FieldError,
                                     MultipleObjectsReturned,
                                     ObjectDoesNotExist)
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 
@@ -440,6 +440,17 @@ class TestFilter(TestBase):
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
             bob_qss = self.all.filter(author__name=self.bob.name)
+        with self.assertNumQueries(2):
+            self.assertEqual(bob_qss.count(), 3)
+
+    def test_filter_args(self):
+        """
+        Ensure that filter() properly filters the children QuerySets, even when
+        being passed args.
+        """
+        # Filter to just Bob's work.
+        with self.assertNumQueries(0):
+            bob_qss = self.all.filter(Q(author=self.bob))
         with self.assertNumQueries(2):
             self.assertEqual(bob_qss.count(), 3)
 
