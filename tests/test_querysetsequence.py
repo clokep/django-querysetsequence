@@ -428,6 +428,11 @@ class TestDistinct(TestBase):
         for qs in distinct._querysets:
             assert qs.query.distinct
 
+    def test_multiple_querysets_same_model(self):
+        qss = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        with self.assertRaises(NotImplementedError):
+            qss.distinct()
+
 
 class TestFilter(TestBase):
     def test_filter(self):
