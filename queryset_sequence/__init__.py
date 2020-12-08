@@ -724,7 +724,11 @@ class QuerySetSequence:
         return clone
 
     def distinct(self, *fields):
-        raise NotImplementedError()
+        if len({qs.model for qs in self._querysets}) != len(self._querysets):
+            raise NotImplementedError('Multiple QS of same model unsupported')
+        clone = self._clone()
+        clone._querysets = [qs.distinct() for qs in clone._querysets]
+        return clone
 
     def values(self, *fields, **expressions):
         _, std_fields = self._separate_fields(*fields)

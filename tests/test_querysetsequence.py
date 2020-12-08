@@ -419,6 +419,21 @@ class TestUsing(TestBase):
         self.assertEqual(titles, self.TITLES_BY_PK)
 
 
+class TestDistinct(TestBase):
+    def test_distinct(self):
+        for qs in self.all._querysets:
+            assert not qs.query.distinct
+        with self.assertNumQueries(0):
+            distinct = self.all.distinct()
+        for qs in distinct._querysets:
+            assert qs.query.distinct
+
+    def test_multiple_querysets_same_model(self):
+        qss = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        with self.assertRaises(NotImplementedError):
+            qss.distinct()
+
+
 class TestFilter(TestBase):
     def test_filter(self):
         """
@@ -1537,10 +1552,6 @@ class TestNotImplemented(TestCase):
     """The following methods have not been implemented in QuerySetSequence."""
     def setUp(self):
         self.all = QuerySetSequence()
-
-    def test_distinct(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.distinct()
 
     def test_dates(self):
         with self.assertRaises(NotImplementedError):
