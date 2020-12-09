@@ -35,8 +35,9 @@ Summary of Supported APIs
       - |check|
       -
     * - |distinct|_
-      - |xmark|
-      -
+      - |check|
+      - Does not support calling ``distinct()`` if there are multiple underlying
+        ``QuerySet`` instances of the same model.
     * - |values|_
       - |check|
       - See [1]_ for information on including the ``QuerySet`` index: ``'#'``.

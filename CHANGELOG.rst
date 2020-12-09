@@ -12,13 +12,27 @@ Features
 * Support the ``values()`` and ``values_list()`` methods.
   (`#73 <https://github.com/clokep/django-querysetsequence/pull/73>`_,
   `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
-* Support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
+* Support the ``distinct()`` method when each ``QuerySet`` instance is from a
+  unique model. Contributed by
+  `@jpic <https://github.com/jpic>`_. (`#77 <https://github.com/clokep/django-querysetsequence/pull/77>`_)
+* Add `Sphinx documentation <https://django-querysetsequence.readthedocs.io/>`_
+  which is available at Read the Docs.
+
+Bugfixes
+--------
+
+* Support calling ``filter()`` with |Q() objects|_. Contributed by
+  `@jpic <https://github.com/jpic>`_. (`#76 <https://github.com/clokep/django-querysetsequence/pull/76>`_)
+
+.. |Q() objects| replace:: ``Q()`` objects
+.. _Q() objects: https://docs.djangoproject.com/en/dev/ref/models/querysets/#q-objects
 
 Miscellaneous
 -------------
 
 * Add an additional test for the interaction of ``order_by()`` and ``only()``.
   (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
+* Support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
 
 
 0.13 (2020-07-27)
