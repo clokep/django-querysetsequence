@@ -12,7 +12,7 @@ Features
 * Support the ``values()`` and ``values_list()`` methods.
   (`#73 <https://github.com/clokep/django-querysetsequence/pull/73>`_,
   `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
-* Officially support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
+* Support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
 
 Miscellaneous
 -------------
@@ -27,7 +27,7 @@ Miscellaneous
 Features
 --------
 
-* Officially support Django 3.1. (`#69 <https://github.com/clokep/django-querysetsequence/pull/69>`_)
+* Support Django 3.1. (`#69 <https://github.com/clokep/django-querysetsequence/pull/69>`_)
 * Drop support for Django < 2.2.  (`#70 <https://github.com/clokep/django-querysetsequence/pull/70>`_)
 
 Bugfixes
@@ -55,9 +55,9 @@ Bugfixes
 Miscellaneous
 -------------
 
-* Officially support Django 3.0. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
-* Officially support Python 3.8. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
-* Officially support Django REST Framework 3.10 and 3.11. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_,
+* Support Django 3.0. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* Support Python 3.8. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
+* Support Django REST Framework 3.10 and 3.11. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_,
   `#64 <https://github.com/clokep/django-querysetsequence/pull/64>`_)
 * Drop support for Python 2.7. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
 * Drop support for Django 2.0 and 2.1. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
@@ -75,11 +75,11 @@ Features
 Miscellaneous
 -------------
 
-* Officially support Django 2.2. Contributed by
+* Support Django 2.2. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
-* Officially support Django REST Framework 3.9. Contributed by
+* Support Django REST Framework 3.9. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
-* Officially support Python 3.7. Contributed by
+* Support Python 3.7. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
 * Drop support for Django REST Framework < 3.6.3. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
@@ -127,10 +127,10 @@ Bugfixes
 Miscellaneous
 -------------
 
-* Officially support Django REST Framework 3.7 and 3.8.
+* Support Django REST Framework 3.7 and 3.8.
   (`#33 <https://github.com/clokep/django-querysetsequence/pull/33>`_,
   `#39 <https://github.com/clokep/django-querysetsequence/pull/39>`_)
-* Officially support Django 2.0 and 2.1. Contributed by
+* Support Django 2.0 and 2.1. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#35 <https://github.com/clokep/django-querysetsequence/pull/35>`_,
   `#39 <https://github.com/clokep/django-querysetsequence/pull/39>`_)
 * Drop support for Django < 1.11. Django 1.11 and above
@@ -151,10 +151,10 @@ Features
 Miscellaneous
 -------------
 
-* Officially support Django 1.11. Contributed by
+* Support Django 1.11. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#26 <https://github.com/clokep/django-querysetsequence/pull/26>`_,
   `#32 <https://github.com/clokep/django-querysetsequence/pull/32>`_)
-* Officially support Django REST Framework 3.5 and 3.6.
+* Support Django REST Framework 3.5 and 3.6.
   (`#26 <https://github.com/clokep/django-querysetsequence/pull/26>`_)
 
 
@@ -182,7 +182,7 @@ Bugfixes
 Miscellaneous
 -------------
 
-* Officially support Django REST Framework 3.5. (`#20 <https://github.com/clokep/django-querysetsequence/pull/20>`_)
+* Support Django REST Framework 3.5. (`#20 <https://github.com/clokep/django-querysetsequence/pull/20>`_)
 
 
 0.7 (2016-10-20)
@@ -221,7 +221,7 @@ Bugfixes
 Miscellaneous
 -------------
 
-* Officially support Django 1.10. (`#9 <https://github.com/clokep/django-querysetsequence/pull/9>`_)
+* Support Django 1.10. (`#9 <https://github.com/clokep/django-querysetsequence/pull/9>`_)
 
 
 0.6 (2016-06-07)
