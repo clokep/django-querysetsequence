@@ -1579,8 +1579,16 @@ class TestNotImplemented(TestCase):
 
     def test_raw(self):
         with self.assertRaises(NotImplementedError):
-            self.all.raw()
+            self.all.raw("")
 
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate()
+
+    def test_alias(self):
+        if django.VERSION > (3, 2):
+            with self.assertRaises(NotImplementedError):
+                self.all.alias()
+        else:
+            with self.assertRaises(AttributeError):
+                self.all.alias()

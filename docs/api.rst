@@ -27,6 +27,9 @@ Summary of Supported APIs
     * - |annotate|_
       - |check|
       -
+    * - |alias|_
+      - |xmark|
+      -
     * - |order_by|_
       - |check|
       - Does not support random ordering (e.g. ``order_by('?')``). See [1]_ for
@@ -200,6 +203,8 @@ Summary of Supported APIs
 .. _exclude: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exclude
 .. |annotate| replace:: ``annotate()``
 .. _annotate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#annotate
+.. |alias| replace:: ``alias()``
+.. _alias: https://docs.djangoproject.com/en/dev/ref/models/querysets/#alias
 .. |order_by| replace:: ``order_by()``
 .. _order_by: https://docs.djangoproject.com/en/dev/ref/models/querysets/#order-by
 .. |reverse| replace:: ``reverse()``
