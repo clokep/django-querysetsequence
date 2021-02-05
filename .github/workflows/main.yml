@@ -30,15 +30,15 @@ jobs:
           python -VV
           python -m site
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --upgrade tox tox-venv
+          python -m pip install --upgrade tox
 
       - name: "Run tox targets for ${{ matrix.python-version }}"
         env:
           TOX_SKIP_ENV: ".*djangomaster.*"
-        run: "python -m tox -e py"
+        run: "python -m tox"
 
       - name: "Run tox targets for ${{ matrix.python-version }} for django master"
         env:
           TOX_SKIP_ENV: ".*django[^m].*"
-        run: "python -m tox -e py"
+        run: "python -m tox"
         continue-on-error: true
