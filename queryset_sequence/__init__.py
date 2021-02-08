@@ -706,6 +706,10 @@ class QuerySetSequence:
         clone._querysets = [qs.annotate(*args, **kwargs) for qs in clone._querysets]
         return clone
 
+    if django.VERSION > (3, 2):
+        def alias(self, *args, **kwargs):
+            raise NotImplementedError()
+
     def order_by(self, *fields):
         _, filtered_fields = self._separate_fields(*fields)
 
@@ -820,10 +824,10 @@ class QuerySetSequence:
         clone._querysets = [qs.using(alias) for qs in self._querysets]
         return clone
 
-    def select_for_update(self):
+    def select_for_update(self, nowait=False, skip_locked=False, of=(), no_key=False):
         raise NotImplementedError()
 
-    def raw(self):
+    def raw(self, raw_query, params=(), translations=None):
         raise NotImplementedError()
 
     # Methods that do not return QuerySets
@@ -868,7 +872,7 @@ class QuerySetSequence:
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
 
-    def in_bulk(self, id_list=None, field_name='pk'):
+    def in_bulk(self, id_list=None, *, field_name='pk'):
         raise NotImplementedError()
 
     def iterator(self):
