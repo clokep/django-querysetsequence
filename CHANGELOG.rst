@@ -9,7 +9,8 @@ next
 Features
 --------
 
-* Support Django 3.2 (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_)
+* Support Django 3.2 (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_,
+  `#81 <https://github.com/clokep/django-querysetsequence/pull/81>`_)
 * Support Python 3.9. (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_)
 * Support the ``values()`` and ``values_list()`` methods.
   (`#73 <https://github.com/clokep/django-querysetsequence/pull/73>`_,
@@ -36,6 +37,7 @@ Miscellaneous
   (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
 * Support Django REST Framework 3.12. (`#75 <https://github.com/clokep/django-querysetsequence/pull/75>`_)
 * Switch continuous integration to GitHub Actions. (`#79 <https://github.com/clokep/django-querysetsequence/pull/79>`_)
+* Drop support for Python 3.5. (`#82 <https://github.com/clokep/django-querysetsequence/pull/82>`_)
 
 
 0.13 (2020-07-27)
