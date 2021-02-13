@@ -31,19 +31,14 @@ setup(
         'Framework :: Django :: 3.0',
         'Framework :: Django :: 3.1',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: ISC License (ISCL)',
     ],
     install_requires=[
         'django>=2.2',
     ],
-    extras_require={
-        'dev': [
-            'mock',
-        ],
-    },
     python_requires=">=3.5",
 )
