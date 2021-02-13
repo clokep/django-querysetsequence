@@ -34,3 +34,6 @@ INSTALLED_APPS = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
+
+# Avoid a warning on Django >= 3.2.
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
