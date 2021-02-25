@@ -50,10 +50,12 @@ class TestBase(TestCase):
                                publisher=mad_magazine, release=date(1990, 8, 14))
 
         # Bob wrote a couple of books, an article, and a blog post.
-        Book.objects.create(title="Fiction", author=bob, publisher=big_books,
-                            pages=10, release=date(2001, 6, 12))
-        Book.objects.create(title="Biography", author=bob, publisher=big_books,
-                            pages=20, release=date(2002, 12, 24))
+        book = Book.objects.create(title="Fiction", author=bob,
+                                   pages=10, release=date(2001, 6, 12))
+        book.publishers.set([big_books])
+        book = Book.objects.create(title="Biography", author=bob,
+                                   pages=20, release=date(2002, 12, 24))
+        book.publishers.set([big_books])
         Article.objects.create(title="Some Article", author=bob,
                                publisher=mad_magazine, release=date(1979, 1, 1))
         BlogPost.objects.create(title="Post", author=bob,
@@ -387,7 +389,7 @@ class TestDeferOnly(TestBase):
     def test_only(self):
         """Only causes other fields to load on access (opposite of defer)."""
         with self.assertNumQueries(2):
-            books = list(self.all.only('publisher'))
+            books = list(self.all.only('author'))
         with self.assertNumQueries(5):
             titles = [b.title for b in books]
         self.assertEqual(titles, self.TITLES_BY_PK)
@@ -399,7 +401,7 @@ class TestDeferOnly(TestBase):
         # Additional queries are due to the field needing to be pulled
         # individually during sorting.
         with self.assertNumQueries(7):
-            books = list(self.all.only('publisher').order_by('title'))
+            books = list(self.all.only('author').order_by('title'))
         # No additional queries are necessary since the titles were used in
         # sorting.
         with self.assertNumQueries(0):
@@ -421,14 +423,34 @@ class TestUsing(TestBase):
 
 class TestDistinct(TestBase):
     def test_distinct(self):
-        for qs in self.all._querysets:
-            assert not qs.query.distinct
+        """
+        Distinct gets applied to each QuerySet, but not the overall QuerySetSequence.
+        """
+        # Create another publisher and add an existing book to it.
+        publisher = Publisher.objects.create(name="Bigger Books")
+        book = Book.objects.get(title="Biography")
+        book.publishers.add(publisher)
+
+        # Make a QuerySetSequence that would include non-distinct items.
+        big_books = Book.objects.filter(publishers__name__startswith="Big")
+        qss = QuerySetSequence(big_books, Article.objects.filter(publisher__name__startswith="Big"))
+
+        # There should be more items than unique items.
+        titles = [b.title for b in qss]
+        self.assertGreater(len(titles), len(set(titles)))
+
         with self.assertNumQueries(0):
-            distinct = self.all.distinct()
-        for qs in distinct._querysets:
-            assert qs.query.distinct
+            qss = qss.distinct()
+
+        # After calling distinct there should not be duplicated entries.
+        titles = [b.title for b in qss]
+        self.assertEqual(len(titles), len(set(titles)))
 
     def test_multiple_querysets_same_model(self):
+        """
+        Calling distinct on a QuerySetSequence made up of multiple QuerySet instances
+        of the same model is not supported.
+        """
         qss = QuerySetSequence(Book.objects.all(), Book.objects.all())
         with self.assertRaises(NotImplementedError):
             qss.distinct()
@@ -877,8 +899,7 @@ class TestOrderBy(TestBase):
         """Test ordering by multiple fields."""
         # Add another object with the same title, but a later release date.
         Book.objects.create(title="Fiction", author=self.alice,
-                            publisher=self.big_books, pages=1,
-                            release=date(2018, 10, 3))
+                            pages=1, release=date(2018, 10, 3))
 
         with self.assertNumQueries(0):
             qss = self.all.order_by('title', '-release')
@@ -937,20 +958,22 @@ class TestOrderBy(TestBase):
         Apply order_by() with a field that returns a model without a default
         ordering (i.e. using the pk).
         """
-        # Order by publisher and ensure it takes.
+        # Order by author and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('publisher')
+            qss = self.all.order_by('author')
 
         # Ensure that the test has any hope of passing.
-        self.assertLess(self.mad_magazine.pk, self.big_books.pk)
+        self.assertLess(self.alice.pk, self.bob.pk)
 
         # The first three should be from Mad Magazine, followed by three from
         # Big Books.
         # Note that the QuerySetSequence itself needs the publisher objects to
         # compare them, so they all get pulled in.
         with self.assertNumQueries(2 + 5):
-            for expected, element in zip([self.mad_magazine.id] * 3 + [self.big_books.id] * 2, qss):
-                self.assertEqual(element.publisher.id, expected)
+            self.assertEqual(
+                [self.alice.id] * 2 + [self.bob.id] * 3,
+                [b.author.id for b in qss],
+            )
 
     def test_order_by_relation_with_ordering(self):
         """
@@ -996,14 +1019,6 @@ class TestOrderBy(TestBase):
         with self.assertNumQueries(2 + 5):
             for expected, element in zip([self.alice.id] * 2 + [self.bob.id] * 3, qss):
                 self.assertEqual(element.author.id, expected)
-
-    def test_order_by_relation_no_existent_field(self):
-        """Apply order_by() with a field through a model relationship that doesn't exist."""
-        with self.assertNumQueries(0):
-            qss = self.all.order_by('publisher__address')
-
-        with self.assertRaises(FieldError):
-            list(qss)
 
     def test_order_by_queryset(self):
         """Ensure we can order by QuerySet and then other fields."""
@@ -1470,10 +1485,12 @@ class TestUpdate(TestBase):
 class TestDelete(TestBase):
     def test_delete_all(self):
         """Ensure that delete() works properly."""
-        with self.assertNumQueries(2):
+        # 4 queries is due to the models themselves and then the many-to-many
+        # relationships.
+        with self.assertNumQueries(4):
             result = self.all.delete()
-        self.assertEqual(result[0], 5)
-        self.assertEqual(result[1], {'tests.Article': 3, 'tests.Book': 2})
+        self.assertEqual(result[0], 7)
+        self.assertEqual(result[1], {'tests.Article': 3, 'tests.Book': 2, 'tests.Book_publishers': 2})
 
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 0)
@@ -1483,10 +1500,7 @@ class TestDelete(TestBase):
         with self.assertNumQueries(2):
             result = self.all.filter(author=self.alice).delete()
         self.assertEqual(result[0], 2)
-        # Django 3.1 no longer returns 0 as the number of objects deleted.
         expected = {'tests.Article': 2}
-        if django.VERSION < (3, 1):
-            expected['tests.Book'] = 0
         self.assertEqual(result[1], expected)
 
         with self.assertNumQueries(2):

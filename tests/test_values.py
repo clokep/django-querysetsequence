@@ -13,7 +13,7 @@ class TestValues(TestBase):
         authors = [it['author_id'] for it in values]
         self.assertEqual(titles, self.TITLES_BY_PK)
         self.assertEqual(authors, [2, 2, 1, 1, 2])
-        self.assertCountEqual(values[0].keys(), ['#', 'id', 'author_id', 'pages', 'publisher_id', 'release', 'title'])
+        self.assertCountEqual(values[0].keys(), ['#', 'id', 'author_id', 'pages', 'release', 'title'])
 
     def test_fields(self):
         """Ensure the proper fields are returned."""
@@ -93,7 +93,7 @@ class TestValuesList(TestBase):
         """Ensure the values conversion works as expected."""
         with self.assertNumQueries(2):
             values = list(self.all.values_list())
-        self.assertEqual(values[0], (1, 'Fiction', 2, 2, datetime.date(2001, 6, 12), 10))
+        self.assertEqual(values[0], (1, 'Fiction', 2, datetime.date(2001, 6, 12), 10))
 
     def test_fields(self):
         """Ensure the proper fields are returned."""
@@ -240,8 +240,8 @@ class TestNamedValuesList(TestBase):
         """Ensure the values conversion works as expected."""
         with self.assertNumQueries(2):
             values = list(self.all.values_list(named=True))
-        self.assertEqual(values[0], (1, 'Fiction', 2, 2, datetime.date(2001, 6, 12), 10))
-        self.assertEqual(values[0]._fields, ('id', 'title', 'author_id', 'publisher_id', 'release', 'pages'))
+        self.assertEqual(values[0], (1, 'Fiction', 2, datetime.date(2001, 6, 12), 10))
+        self.assertEqual(values[0]._fields, ('id', 'title', 'author_id', 'release', 'pages'))
         # Also check one of the other types.
         self.assertEqual(values[2]._fields, ('id', 'title', 'author_id', 'publisher_id', 'release'))
 

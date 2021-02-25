@@ -51,7 +51,7 @@ class BlogPost(models.Model):
 class Book(models.Model):
     title = models.CharField(max_length=50)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-    publisher = models.ForeignKey(Publisher, related_name='published', on_delete=models.CASCADE)
+    publishers = models.ManyToManyField(Publisher, related_name='published')
     release = models.DateField()
     pages = models.PositiveSmallIntegerField()
 
