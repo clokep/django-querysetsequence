@@ -17,7 +17,8 @@ Features
   `#74 <https://github.com/clokep/django-querysetsequence/pull/74>`_)
 * Support the ``distinct()`` method when each ``QuerySet`` instance is from a
   unique model. Contributed by
-  `@jpic <https://github.com/jpic>`_. (`#77 <https://github.com/clokep/django-querysetsequence/pull/77>`_)
+  `@jpic <https://github.com/jpic>`_. (`#77 <https://github.com/clokep/django-querysetsequence/pull/77>`_,
+  `#80 <https://github.com/clokep/django-querysetsequence/pull/80>`_)
 * Add `Sphinx documentation <https://django-querysetsequence.readthedocs.io/>`_
   which is available at Read the Docs.
 
