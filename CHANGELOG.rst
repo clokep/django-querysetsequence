@@ -6,6 +6,16 @@ Changelog
 next
 ====
 
+Features
+--------
+
+* Support Django 4.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
+
+Miscellaneous
+-------------
+
+* Drop support for Django 3.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
+
 
 0.14 (2021-02-26)
 =================
@@ -13,7 +23,7 @@ next
 Features
 --------
 
-* Support Django 3.2 (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_,
+* Support Django 3.2. (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_,
   `#81 <https://github.com/clokep/django-querysetsequence/pull/81>`_)
 * Support Python 3.9. (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_)
 * Support the ``values()`` and ``values_list()`` methods.
