@@ -9,12 +9,12 @@ next
 Features
 --------
 
-* Support Django 4.0. (`#78 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
+* Support Django 4.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
 
 Miscellaneous
 -------------
 
-* Drop support for Django 3.0. (`#78 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
+* Drop support for Django 3.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
 
 
 0.14 (2021-02-26)
