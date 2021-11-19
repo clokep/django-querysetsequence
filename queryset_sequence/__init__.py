@@ -982,6 +982,9 @@ class QuerySetSequence:
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
 
+    def contains(self, obj):
+        return any(qs.contains(obj) for qs in self._querysets)
+
     def update(self, **kwargs):
         with transaction.atomic():
             return sum(qs.update(**kwargs) for qs in self._querysets)
