@@ -1,5 +1,5 @@
 from datetime import date
-from unittest import skip
+from unittest import skip, skipIf
 from unittest.mock import patch
 
 import django
@@ -1450,6 +1450,38 @@ class TestExists(TestBase):
         self.assertFalse(self.empty.exists())
 
 
+@skipIf(django.VERSION < (4, 0), "Not supported in Django < 4.0.")
+class TestContains(TestBase):
+    def test_contains(self):
+        """Ensure that contains() returns True if the item is found in the first QuerySet."""
+        obj = self.all.get_querysets()[0].first()
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.contains(obj))
+
+    def test_contains_second(self):
+        """Ensure that contains() returns True if the item is found in a subsequent QuerySet."""
+        obj = self.all.get_querysets()[1].first()
+        with self.assertNumQueries(1):
+            self.assertTrue(self.all.contains(obj))
+
+    def test_not_found(self):
+        """Ensure that contains() returns False if the item is not found."""
+        obj = self.all.get_querysets()[0].first()
+        with self.assertNumQueries(1):
+            self.assertFalse(self.all.exclude(pk=obj.pk).contains(obj))
+
+    def test_wrong_type(self):
+        """Queries should not occur if the value is the wrong type."""
+        obj = self.all.get_querysets()[0].first().author
+        with self.assertNumQueries(0):
+            self.assertFalse(self.all.contains(obj))
+
+    def test_empty(self):
+        """An empty QuerySetSequence should return False."""
+        obj = self.all.get_querysets()[0].first()
+        self.assertFalse(self.empty.contains(obj))
+
+
 class TestUpdate(TestBase):
     def test_update(self):
         """Update should apply across all QuerySets."""
@@ -1606,3 +1638,8 @@ class TestNotImplemented(TestCase):
         else:
             with self.assertRaises(AttributeError):
                 self.all.alias()
+
+    @skipIf(django.VERSION >= (4, 0), "Contains exists starting on Django 4.0.")
+    def test_contains(self):
+        obj = 1
+        self.all.contains(obj)

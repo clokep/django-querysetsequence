@@ -170,6 +170,9 @@ Summary of Supported APIs
     * - |exists|_
       - |check|
       -
+    * - |contains|_
+      - |check|
+      -
     * - |update|_
       - |check|
       -
@@ -281,6 +284,8 @@ Summary of Supported APIs
 .. _aggregate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#aggregate
 .. |exists| replace:: ``exists()``
 .. _exists: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
+.. |contains| replace:: ``contains()``
+.. _contains: https://docs.djangoproject.com/en/dev/ref/models/querysets/#contains
 .. |update| replace:: ``update()``
 .. _update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update
 .. |delete| replace:: ``delete()``

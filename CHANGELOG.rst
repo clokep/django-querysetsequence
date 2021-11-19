@@ -10,6 +10,7 @@ Features
 --------
 
 * Support Django 4.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
+* Support the ``contains()`` method. (`#85 <https://github.com/clokep/django-querysetsequence/pull/85>`_)
 
 Miscellaneous
 -------------
