@@ -1,10 +1,10 @@
 
 project = "django-querysetsequence"
-copyright = "2020, Patrick Cloke"
+copyright = "2020 - 2021, Patrick Cloke"
 author = "Patrick Cloke"
 
 # The full version, including alpha/beta/rc tags
-release = "0.14"
+release = "0.15"
 
 
 # -- General configuration ---------------------------------------------------
