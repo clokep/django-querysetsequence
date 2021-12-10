@@ -4,7 +4,7 @@ copyright = "2020 - 2021, Patrick Cloke"
 author = "Patrick Cloke"
 
 # The full version, including alpha/beta/rc tags
-release = "0.15"
+release = "0.16"
 
 
 # -- General configuration ---------------------------------------------------

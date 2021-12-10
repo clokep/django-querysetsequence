@@ -6,6 +6,7 @@ Releasing django-querysetsequence
    supported Python version in ``README.rst`` and ``tox.ini``).
 3. Make a git commit.
 4. Create a git tag: ``git tag <version>``
-5. Build the package via ``python -m build``.
-6. Run twine checks: ``twine check dist/*``
-7. Upload to PyPI: ``twine upload dist/*``
+5. Push to GitHub: ``git push origin main`` & ``git push --tags``
+6. Build the package via ``python -m build``.
+7. Run twine checks: ``twine check dist/*``
+8. Upload to PyPI: ``twine upload dist/*``
