@@ -20,7 +20,7 @@ Miscellaneous
 -------------
 
 * Drop support for Django 3.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
-* Changed packaging to use setuptools declarative config in `setup.cfg`.
+* Changed packaging to use setuptools declarative config in ``setup.cfg``.
   (`#84 <https://github.com/clokep/django-querysetsequence/pull/84>`_)
 
 
