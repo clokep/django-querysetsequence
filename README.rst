@@ -1,15 +1,12 @@
 Django QuerySetSequence
 #######################
 
-.. image:: https://api.travis-ci.com/clokep/django-querysetsequence.svg?branch=main
-    :target: https://travis-ci.com/clokep/django-querysetsequence
+.. image:: https://github.com/clokep/django-querysetsequence/actions/workflows/main.yml/badge.svg
+    :target: https://github.com/clokep/django-querysetsequence/actions/workflows/main.yml
 
 .. image:: https://readthedocs.org/projects/django-querysetsequence/badge/?version=latest
     :target: https://django-querysetsequence.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
-
-.. image:: https://coveralls.io/repos/github/clokep/django-querysetsequence/badge.svg?branch=master
-    :target: https://coveralls.io/github/clokep/django-querysetsequence?branch=master
 
 .. include-start
 
