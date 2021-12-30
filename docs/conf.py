@@ -1,10 +1,13 @@
+from importlib import metadata
 
 project = "django-querysetsequence"
 copyright = "2020 - 2021, Patrick Cloke"
 author = "Patrick Cloke"
 
 # The full version, including alpha/beta/rc tags
-release = "0.16"
+release = metadata.version("django-querysetsequence")
+# The short X.Y version.
+version = ".".join(release.split(".")[0:2])
 
 
 # -- General configuration ---------------------------------------------------

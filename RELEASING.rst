@@ -1,7 +1,7 @@
 Releasing django-querysetsequence
 =================================
 
-1. Bump the version in ``setup.cfg``, ``CHANGELOG.rst``, and ``docs/conf.py``.
+1. Bump the version in ``setup.cfg`` and ``CHANGELOG.rst``.
 2. Double check the trove classifiers in ``setup.cfg`` (they should match the
    supported Python version in ``README.rst`` and ``tox.ini``).
 3. Make a git commit.
