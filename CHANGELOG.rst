@@ -9,7 +9,7 @@ next
 Features
 --------
 
-* Drop support for Python 3.6. (`#87 <https://github.com/clokep/django-querysetsequence/pull/87>`_)
+* Drop support for Python 3.6.
 * Support Python 3.10. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
 * Support django-rest-framework 3.13. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
 
