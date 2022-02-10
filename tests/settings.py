@@ -37,3 +37,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Avoid a warning on Django >= 3.2.
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+REST_FRAMEWORK = {
+    'UNAUTHENTICATED_USER': None
+}
