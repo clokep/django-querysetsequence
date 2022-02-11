@@ -26,6 +26,13 @@ try:
         filter_backends = [filters.SearchFilter]
         search_fields = ["^name"]
 
+    class AbstractModelTestListView(generics.ListAPIView):
+        queryset = QuerySetSequence(Author.objects.all(), model=AbtractModel)
+        serializer_class = TestSerializer
+        permission_classes = []
+        filter_backends = [filters.SearchFilter]
+        search_fields = ["^name"]
+
     class AbstractModelTestRetrieveView(generics.RetrieveAPIView):
         queryset = QuerySetSequence(Author.objects.all(), model=AbtractModel)
         serializer_class = TestSerializer
@@ -66,3 +73,17 @@ class TestViews(TestCase):
         request = factory.get('/')
         response = AbstractModelTestRetrieveView.as_view()(request, pk=2)
         self.assertEqual(response.status_code, 404)
+
+    def test_filter_success_abstract_model(self):
+        """Try to filter for an abstract object with name 'bob' (should return)."""
+        request = factory.get('/', {'search': 'bob'})
+        response = AbstractModelTestListView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+    def test_filter_empty_abstract_model(self):
+        """Try to filter for an abstract object with name 'alice' (should be empty)."""
+        request = factory.get('/', {'search': 'alice'})
+        response = AbstractModelTestListView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)

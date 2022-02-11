@@ -63,5 +63,7 @@ class Book(models.Model):
 
 
 class AbtractModel(models.Model):
+    name = models.CharField(max_length=50)
+
     class Meta:
         abstract = True
