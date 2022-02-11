@@ -459,7 +459,11 @@ class QuerySetSequence:
 
         self._iterable_class = ModelIterable
         self._result_cache = None
+
         self._model = kwargs.get("model", None)
+        # add missing DoesNotExist to abstract models
+        if self._model and self._model._meta.abstract:
+            self._model.DoesNotExist = ObjectDoesNotExist
 
     def _set_querysets(self, querysets):
         self._querysets = list(querysets)

@@ -2,7 +2,7 @@ import unittest
 
 from django.test import TestCase
 from queryset_sequence import QuerySetSequence
-from tests.models import Author
+from tests.models import AbtractModel, Author
 
 # In-case someone doesn't have Django REST Framework installed, guard tests.
 try:
@@ -26,6 +26,11 @@ try:
         filter_backends = [filters.SearchFilter]
         search_fields = ["^name"]
 
+    class AbstractModelTestRetrieveView(generics.RetrieveAPIView):
+        queryset = QuerySetSequence(Author.objects.all(), model=AbtractModel)
+        serializer_class = TestSerializer
+        permission_classes = []
+
 except ImportError:
     factory = None
 
@@ -34,7 +39,7 @@ except ImportError:
 class TestViews(TestCase):
 
     def setUp(self):
-        bob = Author.objects.create(name="Bob")
+        Author.objects.create(name="Bob")
 
     def test_get_object(self):
         """Try to get an object that does not exist (should return 404)."""
@@ -55,3 +60,9 @@ class TestViews(TestCase):
         response = TestListView.as_view()(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+    def test_get_object_abstract_model(self):
+        """Try to get an abstract object that does not exist (should return 404)."""
+        request = factory.get('/')
+        response = AbstractModelTestRetrieveView.as_view()(request, pk=2)
+        self.assertEqual(response.status_code, 404)
