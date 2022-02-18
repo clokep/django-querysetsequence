@@ -12,6 +12,7 @@ Features
 * Drop support for Python 3.6.
 * Support Python 3.10. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
 * Support django-rest-framework 3.13. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
+* Improve package metadata. (`#89 <https://github.com/clokep/django-querysetsequence/pull/89>`_)
 
 
 0.15 (2021-12-10)
