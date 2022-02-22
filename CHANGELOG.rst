@@ -6,8 +6,8 @@ Changelog
 next
 ====
 
-Features
---------
+Maintenance
+-----------
 
 * Drop support for Python 3.6.
 * Support Python 3.10. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
@@ -18,14 +18,14 @@ Features
 0.15 (2021-12-10)
 =================
 
-Features
---------
+Improvements
+------------
 
 * Support Django 4.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
 * Support the ``contains()`` method. (`#85 <https://github.com/clokep/django-querysetsequence/pull/85>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Drop support for Django 3.0. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
 * Changed packaging to use setuptools declarative config in ``setup.cfg``.
@@ -35,8 +35,8 @@ Miscellaneous
 0.14 (2021-02-26)
 =================
 
-Features
---------
+Improvements
+------------
 
 * Support Django 3.2. (`#78 <https://github.com/clokep/django-querysetsequence/pull/78>`_,
   `#81 <https://github.com/clokep/django-querysetsequence/pull/81>`_)
@@ -60,8 +60,8 @@ Bugfixes
 .. |Q() objects| replace:: ``Q()`` objects
 .. _Q() objects: https://docs.djangoproject.com/en/dev/ref/models/querysets/#q-objects
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Add an additional test for the interaction of ``order_by()`` and ``only()``.
   (`#72 <https://github.com/clokep/django-querysetsequence/pull/72>`_)
@@ -73,8 +73,8 @@ Miscellaneous
 0.13 (2020-07-27)
 =================
 
-Features
---------
+Improvements
+------------
 
 * Support Django 3.1. (`#69 <https://github.com/clokep/django-querysetsequence/pull/69>`_)
 * Drop support for Django < 2.2.  (`#70 <https://github.com/clokep/django-querysetsequence/pull/70>`_)
@@ -87,8 +87,8 @@ Bugfixes
 * Fixes compatibility issue with ``ModelChoiceField``. Contributed by
   `@jpic <https://github.com/jpic>`_. (`#68 <https://github.com/clokep/django-querysetsequence/pull/68>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Drop support for Django < 2.2.  (`#70 <https://github.com/clokep/django-querysetsequence/pull/70>`_)
 
@@ -101,8 +101,8 @@ Bugfixes
 
 * Do not use ``is not`` to compare to an integer literal.  (`#61 <https://github.com/clokep/django-querysetsequence/pull/61>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django 3.0. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
 * Support Python 3.8. (`#59 <https://github.com/clokep/django-querysetsequence/pull/59>`_)
@@ -115,14 +115,14 @@ Miscellaneous
 0.11 (2019-04-25)
 =================
 
-Features
---------
+Improvements
+------------
 
 * Add a ``QuerySetSequence`` specific method: ``get_querysets()``. Contributed by
   `@optiz0r <https://github.com/optiz0r>`_. (`#53 <https://github.com/clokep/django-querysetsequence/pull/53>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django 2.2. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#51 <https://github.com/clokep/django-querysetsequence/pull/51>`_)
@@ -139,8 +139,8 @@ Miscellaneous
 0.10 (2018-10-09)
 =================
 
-Features
---------
+Improvements
+------------
 
 * Support ``first()``, ``last()``, ``latest()``, and ``earliest()`` methods.
   (`#40 <https://github.com/clokep/django-querysetsequence/pull/40>`_,
@@ -173,8 +173,8 @@ Bugfixes
   should improve interactions with other packages which modify ``QuerySet``.
   (`#38 <https://github.com/clokep/django-querysetsequence/pull/38>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django REST Framework 3.7 and 3.8.
   (`#33 <https://github.com/clokep/django-querysetsequence/pull/33>`_,
@@ -190,15 +190,15 @@ Miscellaneous
 0.8 (2017-09-05)
 ================
 
-Features
---------
+Improvements
+------------
 
 * Optimize iteration when *not* slicing a ``QuerySetSequence``. Contributed by
   `@EvgeneOskin <https://github.com/EvgeneOskin>`_.
   (`#29 <https://github.com/clokep/django-querysetsequence/pull/29>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django 1.11. Contributed by
   `@michael-k <https://github.com/michael-k>`_. (`#26 <https://github.com/clokep/django-querysetsequence/pull/26>`_,
@@ -228,8 +228,8 @@ Bugfixes
   `#24 <https://github.com/clokep/django-querysetsequence/pull/24>`_)
 * Typo fixes. (`#19 <https://github.com/clokep/django-querysetsequence/pull/19>`_)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django REST Framework 3.5. (`#20 <https://github.com/clokep/django-querysetsequence/pull/20>`_)
 
@@ -237,8 +237,8 @@ Miscellaneous
 0.7 (2016-10-20)
 ================
 
-Features
---------
+Improvements
+------------
 
 * Allow filtering / querying / ordering by the order of the ``QuerySets`` in the
   ``QuerySetSequence`` by using ``'#'``. This allows for additional optimizations
@@ -267,8 +267,8 @@ Bugfixes
 0.6.1 (2016-08-03)
 ==================
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Support Django 1.10. (`#9 <https://github.com/clokep/django-querysetsequence/pull/9>`_)
 
@@ -276,8 +276,8 @@ Miscellaneous
 0.6 (2016-06-07)
 ================
 
-Features
---------
+Improvements
+------------
 
 * Allow specifying the ``Model`` to use when instantiating a ``QuerySetSequence``.
   This is required for compatibility with some third-party applications that check
@@ -295,8 +295,8 @@ Bugfixes
 0.5 (2016-02-21)
 ================
 
-Features
---------
+Improvements
+------------
 
 * Significant performance improvements when ordering the
   ``QuerySetSequence``. (`#5 <https://github.com/clokep/django-querysetsequence/pull/5>`_)
@@ -306,8 +306,8 @@ Features
 0.4 (2016-02-03)
 ================
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Python 3.4/3.5 support. Contributed by `@jpic <https://github.com/jpic>`_.
   (`#3 <https://github.com/clokep/django-querysetsequence/pull/3>`_)
@@ -316,8 +316,8 @@ Miscellaneous
 0.3 (2016-01-29)
 ================
 
-Features
---------
+Improvements
+------------
 
 * Raises ``NotImplementedError`` for ``QuerySet`` methods that ``QuerySetSequence`` does not implement.
 * Support ``reverse()`` to reverse the item ordering
@@ -337,16 +337,16 @@ Bugfixes
 0.2.4 (2016-01-21)
 ==================
 
-Features
---------
+Improvements
+------------
 
 * Support ``order_by()`` that references a related model (e.g. a ``ForeignKey``
   relationship using ``foo`` or ``foo_id`` syntaxes)
 * Support ``order_by()`` that references a field on a related model (e.g.
   ``foo__bar``)
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Add support for Django 1.9.1
 
@@ -363,8 +363,8 @@ Bugfixes
 0.2.2 (2016-01-08)
 ==================
 
-Features
---------
+Improvements
+------------
 
 * Support the ``get()`` method on ``QuerySetSequence``
 
@@ -386,8 +386,8 @@ Bugfixes
 
 * Do not try to instantiate ``EmptyQuerySet``.
 
-Miscellaneous
--------------
+Maintenance
+-----------
 
 * Fixed packaging for pypi.
 
