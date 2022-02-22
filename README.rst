@@ -1,6 +1,9 @@
 Django QuerySetSequence
 #######################
 
+.. image:: https://img.shields.io/pypi/v/django-querysetsequence.svg
+    :target: https://pypi.org/project/django-querysetsequence/
+
 .. image:: https://github.com/clokep/django-querysetsequence/actions/workflows/main.yml/badge.svg
     :target: https://github.com/clokep/django-querysetsequence/actions/workflows/main.yml
 
