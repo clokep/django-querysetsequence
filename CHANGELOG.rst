@@ -168,7 +168,7 @@ Bugfixes
 Bugfixes
 --------
 
-* Stop using the internals of QuerySet for better forward compatibility. This change
+* Stop using the internals of `QuerySet` for better forward compatibility. This change
   means that ``QuerySetSequence`` is no longer a sub-class of ``QuerySet`` and
   should improve interactions with other packages which modify ``QuerySet``.
   (`#38 <https://github.com/clokep/django-querysetsequence/pull/38>`_)
@@ -252,8 +252,6 @@ Improvements
   ``queryset_sequence.pagination.SequenceCursorPagination`` which is designed to
   work efficiently with a ``QuerySetSequence`` by first ordering by internal
   ``QuerySet``, then by the ``ordering`` attribute. (`#17 <https://github.com/clokep/django-querysetsequence/pull/17>`_)
-* Move ``queryset_sequence`` to an actual module in order to hide some
-  implementation details. (`#11 <https://github.com/clokep/django-querysetsequence/pull/11>`_)
 
 Bugfixes
 --------
@@ -262,6 +260,12 @@ Bugfixes
   ``NOT_IMPLEMENTED_ATTRS``. (`#12 <https://github.com/clokep/django-querysetsequence/pull/12>`_)
 
 .. _Django REST Framework: http://www.django-rest-framework.org/
+
+Maintenance
+-----------
+
+* Move ``queryset_sequence`` to an actual module in order to hide some
+  implementation details. (`#11 <https://github.com/clokep/django-querysetsequence/pull/11>`_)
 
 
 0.6.1 (2016-08-03)
