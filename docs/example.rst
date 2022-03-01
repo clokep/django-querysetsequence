@@ -76,9 +76,8 @@ helps integration with Django REST Framework. It is optimized to iterate over a
 configuration. This uses the optimized code-path for iteration that avoids
 interleaving the individual ``QuerySets``.
 
-To handle exceptions and filtering correctly, django-querysetsequence needs to 
-specify a ``model`` to Django REST Framework. The ``QuerySetSequence`` also 
-works with abstract models. 
+To handle exceptions and filtering correctly, a ``model`` must be specified when creating
+the ``QuerySetSequence``. Note that an abstract model may be used.
 
 For example:
 

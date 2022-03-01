@@ -449,7 +449,7 @@ class QuerySetSequence:
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, model=None):
         self._set_querysets(args)
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
@@ -460,10 +460,10 @@ class QuerySetSequence:
         self._iterable_class = ModelIterable
         self._result_cache = None
 
-        self._model = kwargs.get("model", None)
+        self.model = model
         # add missing DoesNotExist to abstract models
-        if self._model and self._model._meta.abstract:
-            self._model.DoesNotExist = ObjectDoesNotExist
+        if self.model and self.model._meta.abstract:
+            self.model.DoesNotExist = ObjectDoesNotExist
 
     def _set_querysets(self, querysets):
         self._querysets = list(querysets)
@@ -479,7 +479,7 @@ class QuerySetSequence:
         clone._low_mark = self._low_mark
         clone._high_mark = self._high_mark
         clone._iterable_class = self._iterable_class
-        clone._model = self._model
+        clone.model = self.model
 
         return clone
 
@@ -1034,13 +1034,6 @@ class QuerySetSequence:
         clause.
         """
         return bool(self._order_by)
-
-    @property
-    def model(self):
-        """
-        Returns the specified model or None.
-        """
-        return self._model
 
     # Methods specific to QuerySetSequence.
     def get_querysets(self):
