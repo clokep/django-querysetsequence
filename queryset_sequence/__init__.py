@@ -441,6 +441,7 @@ class FlatValuesListIterable(ValuesListIterable):
 class NamedValuesListIterable(ValuesListIterable):
     pass
 
+
 class ProxyModel:
     """
     Wrapper for generating DoesNotExist exceptions without modifying
@@ -450,7 +451,7 @@ class ProxyModel:
     def __init__(self, model=None):
         self._model = model
 
-        # only non-abstract models do already define DoesNotExist
+        # Define DoesNotExist for abstract models.
         if self._model and not self._model._meta.abstract:
             self.DoesNotExist = model.DoesNotExist
         else:
