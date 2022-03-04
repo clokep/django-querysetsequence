@@ -6,6 +6,14 @@ Changelog
 next
 ====
 
+Bugfixes
+--------
+
+* Fix ``QuerySetSequence``'s support with Django REST Framework's ``DjangoFilterBackend``
+  by accepting a ``model`` parameter. If one is not provided, a dummy model is
+  used to provide a reasonable ``DoesNotExist`` error. Contributed by
+  `@j0nm1 <https://github.com/j0nm1>`_. (`#88 <https://github.com/clokep/django-querysetsequence/pull/88>`_)
+
 Maintenance
 -----------
 
