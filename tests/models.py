@@ -60,3 +60,10 @@ class Book(models.Model):
 
     def __str__(self):
         return "%s by %s" % (self.title, self.author)
+
+
+class AbtractModel(models.Model):
+    name = models.CharField(max_length=50)
+
+    class Meta:
+        abstract = True

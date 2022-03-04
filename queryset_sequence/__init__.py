@@ -442,6 +442,26 @@ class NamedValuesListIterable(ValuesListIterable):
     pass
 
 
+class ProxyModel:
+    """
+    Wrapper for generating DoesNotExist exceptions without modifying
+    the provided model. This is needed by DRF as the views only handle 
+    the specific exception by the model.
+    """
+    def __init__(self, model=None):
+        self._model = model
+
+        # Define DoesNotExist for abstract models.
+        if self._model and not self._model._meta.abstract:
+            self.DoesNotExist = model.DoesNotExist
+        else:
+            self.DoesNotExist = ObjectDoesNotExist
+
+    def __getattr__(self, name):
+        return getattr(self._model, name)
+
+
+
 class QuerySetSequence:
     """
     Wrapper for multiple QuerySets without the restriction on the identity of
@@ -449,7 +469,7 @@ class QuerySetSequence:
 
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, model=None):
         self._set_querysets(args)
         # Some information necessary for properly iterating through a QuerySet.
         self._order_by = []
@@ -459,6 +479,8 @@ class QuerySetSequence:
 
         self._iterable_class = ModelIterable
         self._result_cache = None
+
+        self.model = ProxyModel(model)
 
     def _set_querysets(self, querysets):
         self._querysets = list(querysets)
@@ -474,6 +496,7 @@ class QuerySetSequence:
         clone._low_mark = self._low_mark
         clone._high_mark = self._high_mark
         clone._iterable_class = self._iterable_class
+        clone.model = self.model
 
         return clone
 
@@ -849,7 +872,7 @@ class QuerySetSequence:
 
         # Checked all QuerySets and no object was found.
         if result is None:
-            raise ObjectDoesNotExist()
+            raise self.model.DoesNotExist()
 
         # Return the only result found.
         return result
@@ -924,7 +947,7 @@ class QuerySetSequence:
 
         # Checked all QuerySets and no object was found.
         if not objs:
-            raise ObjectDoesNotExist()
+            raise self.model.DoesNotExist()
 
         # Return the latest.
         return self._get_first_or_last(objs, fields, True)
@@ -943,7 +966,7 @@ class QuerySetSequence:
 
         # Checked all QuerySets and no object was found.
         if not objs:
-            raise ObjectDoesNotExist()
+            raise self.model.DoesNotExist()
 
         # Return the latest.
         return self._get_first_or_last(objs, fields, False)

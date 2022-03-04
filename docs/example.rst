@@ -74,7 +74,12 @@ django-querysetsequence comes with a custom |CursorPagination|_ class that
 helps integration with Django REST Framework. It is optimized to iterate over a
 ``QuerySetSequence`` first by ``QuerySet`` and then by the normal ``ordering``
 configuration. This uses the optimized code-path for iteration that avoids
-interleaving the individual ``QuerySets``. For example:
+interleaving the individual ``QuerySets``.
+
+To handle exceptions and filtering correctly, a ``model`` must be specified when creating
+the ``QuerySetSequence``. Note that an abstract model may be used.
+
+For example:
 
 .. code-block:: python
 
@@ -89,7 +94,7 @@ interleaving the individual ``QuerySets``. For example:
         def get_queryset(self):
             # This will return all Books first, then all Articles. Each of those
             # is individually ordered by ``author``, then ``title``.
-            return QuerySetSequence(Book.objects.all(), Article.objects.all())
+            return QuerySetSequence(Book.objects.all(), Article.objects.all(), model=Book)
 
 
 .. |CursorPagination| replace:: ``CursorPagination``
