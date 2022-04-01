@@ -711,7 +711,7 @@ class TestFilter(TestBase):
         data = [it.title for it in qss]
         self.assertEqual(data, [])
 
-    def test_empty(self):
+    def test_filter_empty(self):
         """Calling filter on an empty QuerySetSequence doesn't error."""
         self.empty.filter(title="")
 
@@ -902,7 +902,7 @@ class TestExclude(TestBase):
         with self.assertRaises(ValueError):
             self._get_qss().exclude(**{"#__year": 1})
 
-    def test_empty(self):
+    def test_exclude_empty(self):
         """Calling exclude on an empty QuerySetSequence doesn't error."""
         self.empty.exclude(title="")
 
