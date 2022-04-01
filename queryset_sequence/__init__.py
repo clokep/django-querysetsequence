@@ -4,8 +4,11 @@ from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
 
 import django
-from django.core.exceptions import (FieldError, MultipleObjectsReturned,
-                                    ObjectDoesNotExist)
+from django.core.exceptions import (
+    FieldError,
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+)
 from django.db import transaction
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
@@ -15,7 +18,7 @@ from django.db.models.query import EmptyQuerySet, QuerySet
 # QuerySetSequenceModel are considered semi-public: the APIs probably won't
 # change, but implementation is not guaranteed. Other functions/classes are
 # considered implementation details.)
-__all__ = ['QuerySetSequence']
+__all__ = ["QuerySetSequence"]
 
 
 def cmp(a, b):
@@ -27,8 +30,9 @@ def multiply_iterables(it1, it2):
     """
     Element-wise iterables multiplications.
     """
-    assert len(it1) == len(it2),\
-        "Can not element-wise multiply iterables of different length."
+    assert len(it1) == len(
+        it2
+    ), "Can not element-wise multiply iterables of different length."
     return list(map(mul, it1, it2))
 
 
@@ -78,15 +82,17 @@ class BaseIterable:
 
             # Assert that the ordering is the same between different models.
             if field_names != value2._meta.ordering:
-                valid_field_names = (set(cls._get_field_names(value1)) &
-                                     set(cls._get_field_names(value2)))
+                valid_field_names = set(cls._get_field_names(value1)) & set(
+                    cls._get_field_names(value2)
+                )
                 raise FieldError(
-                    "Ordering differs between models. Choices are: %s" %
-                    ', '.join(valid_field_names))
+                    "Ordering differs between models. Choices are: %s"
+                    % ", ".join(valid_field_names)
+                )
 
             # By default, order by the pk.
             if not field_names:
-                field_names = ['pk']
+                field_names = ["pk"]
 
             # TODO Figure out if we don't need to generate this comparator every
             # time.
@@ -113,11 +119,11 @@ class BaseIterable:
         # comparison.
         reverses = [1] * len(field_names)
         for i, field_name in enumerate(field_names):
-            if field_name[0] == '-':
+            if field_name[0] == "-":
                 reverses[i] = -1
                 field_names[i] = field_name[1:]
 
-        field_names = [f.replace(LOOKUP_SEP, '.') for f in field_names]
+        field_names = [f.replace(LOOKUP_SEP, ".") for f in field_names]
 
         def comparator(i1, i2):
             # Get a tuple of values for comparison.
@@ -169,9 +175,11 @@ class BaseIterable:
 
         # Create a comparison function based on the requested ordering.
         _comparator = self._generate_comparator(self._order_by)
+
         def comparator(tuple_1, tuple_2):
             # The last element in each tuple is the actual item to compare.
             return _comparator(tuple_1[2], tuple_2[2])
+
         comparator = functools.cmp_to_key(comparator)
 
         # If in reverse mode, get the last value instead of the first value from
@@ -231,12 +239,12 @@ class BaseIterable:
             # If the first element of order_by is '#', this means first order by
             # QuerySet. If it isn't this, then returned the interleaved
             # iterator.
-            if self._order_by[0].lstrip('-') != '#':
+            if self._order_by[0].lstrip("-") != "#":
                 return self._ordered_iterator()
 
             # Otherwise, order by QuerySet first. Handle reversing the
             # QuerySets, if necessary.
-            elif self._order_by[0].startswith('-'):
+            elif self._order_by[0].startswith("-"):
                 self._querysets = self._querysets[::-1]
 
         # If there is no ordering, or the ordering is specific to each QuerySet,
@@ -308,7 +316,7 @@ class ModelIterable(BaseIterable):
 
     def _add_queryset_index(self, obj, value):
         # For models, always add the QuerySet index.
-        setattr(obj, '#', value)
+        setattr(obj, "#", value)
         return obj
 
 
@@ -319,17 +327,23 @@ class ValuesIterable(BaseIterable):
         self._fields = querysetsequence._fields
         # If no fields are specified (or if '#' is explicitly specified) include
         # the QuerySet index.
-        self._include_qs_index = not self._fields or '#' in self._fields
+        self._include_qs_index = not self._fields or "#" in self._fields
         self._remove_fields = False
 
         # If there are any "order_by" fields which are *not* the fields to be
         # returned, they also need to be captured.
         if self._order_by:
             qss_fields, std_fields = querysetsequence._separate_fields(*self._fields)
-            qss_order_fields, std_order_fields = querysetsequence._separate_fields(*self._order_by)
-            extra_fields = [f for f in std_order_fields if f.lstrip('-') not in std_fields]
+            qss_order_fields, std_order_fields = querysetsequence._separate_fields(
+                *self._order_by
+            )
+            extra_fields = [
+                f for f in std_order_fields if f.lstrip("-") not in std_fields
+            ]
 
-            self._querysets = [qs.values(*std_fields, *extra_fields) for qs in self._querysets]
+            self._querysets = [
+                qs.values(*std_fields, *extra_fields) for qs in self._querysets
+            ]
 
             # If any additional fields are pulled, they'll need to be removed.
             self._include_qs_index |= bool(qss_order_fields)
@@ -350,7 +364,7 @@ class ValuesIterable(BaseIterable):
 
     def _add_queryset_index(self, obj, value):
         if self._include_qs_index:
-            obj['#'] = value
+            obj["#"] = value
         return obj
 
 
@@ -363,7 +377,7 @@ class ValuesListIterable(BaseIterable):
         self._last_field = len(fields)
         # The location of the QuerySet index.
         try:
-            self._qs_index = fields.index('#')
+            self._qs_index = fields.index("#")
         except ValueError:
             self._qs_index = None
 
@@ -373,17 +387,24 @@ class ValuesListIterable(BaseIterable):
             # Find any fields which are only used for ordering.
             _, std_fields = querysetsequence._separate_fields(*fields)
             _, std_order_fields = querysetsequence._separate_fields(*self._order_by)
-            order_only_fields = [f for f in std_order_fields if f.lstrip('-') not in std_fields]
+            order_only_fields = [
+                f for f in std_order_fields if f.lstrip("-") not in std_fields
+            ]
 
             # Capture both the fields to return as well as the fields used only
             # for ordering.
             all_fields = std_fields + order_only_fields
-            self._querysets = [qs.values_list(*std_fields, *order_only_fields) for qs in self._querysets]
+            self._querysets = [
+                qs.values_list(*std_fields, *order_only_fields)
+                for qs in self._querysets
+            ]
 
             # If one of the returned fields is the QuerySet index, insert it so
             # that the indexes of the fields after it are correct.
             if self._qs_index:
-                all_fields = all_fields[:self._qs_index] + ('#',) + all_fields[self._qs_index:]
+                all_fields = (
+                    all_fields[: self._qs_index] + ("#",) + all_fields[self._qs_index :]
+                )
 
             # Convert the order_by field names into indexes, but encoded as strings.
             #
@@ -391,9 +412,9 @@ class ValuesListIterable(BaseIterable):
             # (i.e. nothing returns a Model instance).
             order_by_indexes = []
             for field in self._order_by:
-                field_name = field.lstrip('-')
+                field_name = field.lstrip("-")
 
-                if field_name == '#':
+                if field_name == "#":
                     # If the index is not one of the returned fields, add it as
                     # the last field.
                     if not self._qs_index:
@@ -403,7 +424,7 @@ class ValuesListIterable(BaseIterable):
                     field_index = all_fields.index(field_name)
 
                 order_by_indexes.append(
-                    ('-' if field[0] == '-' else '') + str(field_index)
+                    ("-" if field[0] == "-" else "") + str(field_index)
                 )
             self._order_by = order_by_indexes
 
@@ -415,7 +436,7 @@ class ValuesListIterable(BaseIterable):
 
         # Remove the fields only used for ordering from the result.
         for row in super().__iter__():
-            yield row[:self._last_field]
+            yield row[: self._last_field]
 
     @staticmethod
     def _get_fields(obj, *field_names):
@@ -428,7 +449,7 @@ class ValuesListIterable(BaseIterable):
         # If the QuerySet index needs to be inserted, build a new tuple with it.
         if self._qs_index is None:
             return obj
-        return obj[:self._qs_index] + (value, ) + obj[self._qs_index:]
+        return obj[: self._qs_index] + (value,) + obj[self._qs_index :]
 
 
 class FlatValuesListIterable(ValuesListIterable):
@@ -445,9 +466,10 @@ class NamedValuesListIterable(ValuesListIterable):
 class ProxyModel:
     """
     Wrapper for generating DoesNotExist exceptions without modifying
-    the provided model. This is needed by DRF as the views only handle 
+    the provided model. This is needed by DRF as the views only handle
     the specific exception by the model.
     """
+
     def __init__(self, model=None):
         self._model = model
 
@@ -459,7 +481,6 @@ class ProxyModel:
 
     def __getattr__(self, name):
         return getattr(self._model, name)
-
 
 
 class QuerySetSequence:
@@ -538,10 +559,11 @@ class QuerySetSequence:
         """
         if not isinstance(k, (int, slice)):
             raise TypeError
-        assert ((not isinstance(k, slice) and (k >= 0)) or
-                (isinstance(k, slice) and (k.start is None or k.start >= 0) and
-                 (k.stop is None or k.stop >= 0))), \
-            "Negative indexing is not supported."
+        assert (not isinstance(k, slice) and (k >= 0)) or (
+            isinstance(k, slice)
+            and (k.start is None or k.start >= 0)
+            and (k.stop is None or k.stop >= 0)
+        ), "Negative indexing is not supported."
 
         if isinstance(k, slice):
             qs = self._clone()
@@ -561,7 +583,7 @@ class QuerySetSequence:
                 # offsets of the low mark.
                 offset = stop - start
                 qs._high_mark = qs._low_mark + offset
-            return list(qs)[::k.step] if k.step else qs
+            return list(qs)[:: k.step] if k.step else qs
 
         qs = self._clone()
         qs._low_mark += k
@@ -606,8 +628,12 @@ class QuerySetSequence:
         qss_fields, std_fields = self._separate_fields(*kwargs.keys())
 
         # Remove any fields that start with '#' from kwargs.
-        qss_kwargs = {field: value for field, value in kwargs.items() if field in qss_fields}
-        std_kwargs = {field: value for field, value in kwargs.items() if field in std_fields}
+        qss_kwargs = {
+            field: value for field, value in kwargs.items() if field in qss_fields
+        }
+        std_kwargs = {
+            field: value for field, value in kwargs.items() if field in std_fields
+        }
 
         return qss_kwargs, std_kwargs
 
@@ -616,7 +642,7 @@ class QuerySetSequence:
         qss_fields = []
         std_fields = []
         for field in fields:
-            if field.startswith('#') or field.startswith('-#'):
+            if field.startswith("#") or field.startswith("-#"):
                 qss_fields.append(field)
             else:
                 std_fields.append(field)
@@ -635,29 +661,33 @@ class QuerySetSequence:
             parts = kwarg.split(LOOKUP_SEP)
 
             # Ensure this is being used to filter QuerySets.
-            if parts[0] != '#':
-                raise ValueError("Keyword '%s' is not a valid keyword to filter over, "
-                                 "it must begin with '#'." % kwarg)
+            if parts[0] != "#":
+                raise ValueError(
+                    "Keyword '%s' is not a valid keyword to filter over, "
+                    "it must begin with '#'." % kwarg
+                )
 
             # Don't allow __ multiple times.
             if len(parts) > 2:
-                raise ValueError("Keyword '%s' must not contain multiple "
-                                 "lookup separators." % kwarg)
+                raise ValueError(
+                    "Keyword '%s' must not contain multiple "
+                    "lookup separators." % kwarg
+                )
 
             # The actual lookup is the second part.
             try:
                 lookup = parts[1]
             except IndexError:
-                lookup = 'exact'
+                lookup = "exact"
 
             # Math operators that all have the same logic.
             LOOKUP_TO_OPERATOR = {
-                'exact': eq,
-                'iexact': eq,
-                'gt': gt,
-                'gte': ge,
-                'lt': lt,
-                'lte': le,
+                "exact": eq,
+                "iexact": eq,
+                "gt": gt,
+                "gte": ge,
+                "lt": lt,
+                "lte": le,
             }
             try:
                 operator = LOOKUP_TO_OPERATOR[lookup]
@@ -668,32 +698,44 @@ class QuerySetSequence:
                 if value is not None:
                     value = int(value)
 
-                self._queryset_idxs = filter(lambda i: operator(i, value) != negate, self._queryset_idxs)
+                self._queryset_idxs = filter(
+                    lambda i: operator(i, value) != negate, self._queryset_idxs
+                )
                 continue
             except KeyError:
                 # It wasn't one of the above operators, keep trying.
                 pass
 
             # Some of these seem to get handled as bytes.
-            if lookup in ('contains', 'icontains'):
+            if lookup in ("contains", "icontains"):
                 value = str(value)
-                self._queryset_idxs = filter(lambda i: (value in str(i)) != negate, self._queryset_idxs)
+                self._queryset_idxs = filter(
+                    lambda i: (value in str(i)) != negate, self._queryset_idxs
+                )
 
-            elif lookup == 'in':
-                self._queryset_idxs = filter(lambda i: (i in value) != negate, self._queryset_idxs)
+            elif lookup == "in":
+                self._queryset_idxs = filter(
+                    lambda i: (i in value) != negate, self._queryset_idxs
+                )
 
-            elif lookup in ('startswith', 'istartswith'):
+            elif lookup in ("startswith", "istartswith"):
                 value = str(value)
-                self._queryset_idxs = filter(lambda i: str(i).startswith(value) != negate, self._queryset_idxs)
+                self._queryset_idxs = filter(
+                    lambda i: str(i).startswith(value) != negate, self._queryset_idxs
+                )
 
-            elif lookup in ('endswith', 'iendswith'):
+            elif lookup in ("endswith", "iendswith"):
                 value = str(value)
-                self._queryset_idxs = filter(lambda i: str(i).endswith(value) != negate, self._queryset_idxs)
+                self._queryset_idxs = filter(
+                    lambda i: str(i).endswith(value) != negate, self._queryset_idxs
+                )
 
-            elif lookup == 'range':
+            elif lookup == "range":
                 # Inclusive include.
                 start, end = value
-                self._queryset_idxs = filter(lambda i: (start <= i <= end) != negate, self._queryset_idxs)
+                self._queryset_idxs = filter(
+                    lambda i: (start <= i <= end) != negate, self._queryset_idxs
+                )
 
             else:
                 # Any other field lookup is not supported, e.g. date, year, month,
@@ -730,6 +772,7 @@ class QuerySetSequence:
         return clone
 
     if django.VERSION > (3, 2):
+
         def alias(self, *args, **kwargs):
             raise NotImplementedError()
 
@@ -752,7 +795,7 @@ class QuerySetSequence:
 
     def distinct(self, *fields):
         if len({qs.model for qs in self._querysets}) != len(self._querysets):
-            raise NotImplementedError('Multiple QS of same model unsupported')
+            raise NotImplementedError("Multiple QS of same model unsupported")
         clone = self._clone()
         clone._querysets = [qs.distinct() for qs in clone._querysets]
         return clone
@@ -761,7 +804,9 @@ class QuerySetSequence:
         _, std_fields = self._separate_fields(*fields)
 
         clone = self._clone()
-        clone._querysets = [qs.values(*std_fields, **expressions) for qs in self._querysets]
+        clone._querysets = [
+            qs.values(*std_fields, **expressions) for qs in self._querysets
+        ]
         clone._fields = list(fields) + list(expressions.keys())
         clone._iterable_class = ValuesIterable
 
@@ -771,31 +816,41 @@ class QuerySetSequence:
         if flat and named:
             raise TypeError("'flat' and 'named' can't be used together.")
         if flat and len(fields) > 1:
-            raise TypeError("'flat' is not valid when values_list is called with more than one field.")
+            raise TypeError(
+                "'flat' is not valid when values_list is called with more than one field."
+            )
 
         _, std_fields = self._separate_fields(*fields)
 
         clone = self._clone()
         # Note that we always process the flat-ness ourself.
-        clone._querysets = [qs.values_list(*std_fields, flat=False, named=named) for qs in self._querysets]
+        clone._querysets = [
+            qs.values_list(*std_fields, flat=False, named=named)
+            for qs in self._querysets
+        ]
         clone._fields = list(fields)
         clone._iterable_class = (
-            NamedValuesListIterable if named
-            else FlatValuesListIterable if flat
+            NamedValuesListIterable
+            if named
+            else FlatValuesListIterable
+            if flat
             else ValuesListIterable
         )
 
         return clone
 
-    def dates(self, field, kind, order='ASC'):
+    def dates(self, field, kind, order="ASC"):
         raise NotImplementedError()
 
     # Django 3.1 added an additional parameter.
     if django.VERSION < (3, 1):
-        def datetimes(self, field_name, kind, order='ASC', tzinfo=None):
+
+        def datetimes(self, field_name, kind, order="ASC", tzinfo=None):
             raise NotImplementedError()
+
     else:
-        def datetimes(self, field_name, kind, order='ASC', tzinfo=None, is_dst=None):
+
+        def datetimes(self, field_name, kind, order="ASC", tzinfo=None, is_dst=None):
             raise NotImplementedError()
 
     def none(self):
@@ -827,9 +882,27 @@ class QuerySetSequence:
         clone._querysets = [qs.prefetch_related(*lookups) for qs in self._querysets]
         return clone
 
-    def extra(self, select=None, where=None, params=None, tables=None, order_by=None, select_params=None):
+    def extra(
+        self,
+        select=None,
+        where=None,
+        params=None,
+        tables=None,
+        order_by=None,
+        select_params=None,
+    ):
         clone = self._clone()
-        clone._querysets = [qs.extra(select=select, where=where, params=params, tables=tables, order_by=order_by, select_params=select_params) for qs in self._querysets]
+        clone._querysets = [
+            qs.extra(
+                select=select,
+                where=where,
+                params=params,
+                tables=tables,
+                order_by=order_by,
+                select_params=select_params,
+            )
+            for qs in self._querysets
+        ]
         return clone
 
     def defer(self, *fields):
@@ -895,7 +968,7 @@ class QuerySetSequence:
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
 
-    def in_bulk(self, id_list=None, *, field_name='pk'):
+    def in_bulk(self, id_list=None, *, field_name="pk"):
         raise NotImplementedError()
 
     def iterator(self):
@@ -906,20 +979,24 @@ class QuerySetSequence:
     def _get_latest_by(self):
         """Process get_latest_by Meta on each QuerySet and return the value."""
         # Get each QuerySet's get_latest_by (ignore unset values).
-        get_latest_by = map(lambda qs: getattr(qs.model._meta, 'get_latest_by'), self._querysets)
+        get_latest_by = map(
+            lambda qs: getattr(qs.model._meta, "get_latest_by"), self._querysets
+        )
         get_latest_by = set(get_latest_by)
 
         # Ensure all of them are identical.
         if len(get_latest_by) > 1:
             raise ValueError(
                 "earliest() and latest() require 'get_latest_by' in each "
-                "model's Meta to be identical.")
+                "model's Meta to be identical."
+            )
 
         # If all the values are None, get_latest_by was not set.
         if not get_latest_by:
             raise ValueError(
                 "earliest() and latest() require either fields as positional "
-                "arguments or 'get_latest_by' in the model's Meta.")
+                "arguments or 'get_latest_by' in the model's Meta."
+            )
 
         # Cast to a list and return the value.
         return list(get_latest_by)
@@ -984,7 +1061,8 @@ class QuerySetSequence:
         else:
             # Get each first item for each and compare them, return the "first".
             return self._get_first_or_last(
-                [qs.first() for qs in self._querysets], self._order_by, False)
+                [qs.first() for qs in self._querysets], self._order_by, False
+            )
 
     def last(self):
         # See the comments for first().
@@ -997,7 +1075,8 @@ class QuerySetSequence:
         else:
             # Get each last item for each and compare them, return the "last".
             return self._get_first_or_last(
-                [qs.last() for qs in self._querysets], self._order_by, True)
+                [qs.last() for qs in self._querysets], self._order_by, True
+            )
 
     def aggregate(self, *args, **kwargs):
         raise NotImplementedError()
@@ -1030,7 +1109,7 @@ class QuerySetSequence:
         raise NotImplementedError()
 
     def explain(self, format=None, **options):
-        return '\n'.join(qs.explain(format=format, **options) for qs in self._querysets)
+        return "\n".join(qs.explain(format=format, **options) for qs in self._querysets)
 
     # Public attributes
     @property
