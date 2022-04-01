@@ -5,7 +5,7 @@ class Author(models.Model):
     name = models.CharField(max_length=50)
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -26,17 +26,19 @@ class OnlinePublisher(models.Model):
     name = models.CharField(max_length=50)
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
 
 class Article(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-    publisher = models.ForeignKey(PeriodicalPublisher, related_name='published', on_delete=models.CASCADE)
+    publisher = models.ForeignKey(
+        PeriodicalPublisher, related_name="published", on_delete=models.CASCADE
+    )
     release = models.DateField()
 
     class Meta:
-        get_latest_by = 'release'
+        get_latest_by = "release"
 
     def __str__(self):
         return "%s by %s" % (self.title, self.author)
@@ -45,18 +47,20 @@ class Article(models.Model):
 class BlogPost(models.Model):
     title = models.CharField(max_length=100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-    publisher = models.ForeignKey(OnlinePublisher, related_name='published', on_delete=models.CASCADE)
+    publisher = models.ForeignKey(
+        OnlinePublisher, related_name="published", on_delete=models.CASCADE
+    )
 
 
 class Book(models.Model):
     title = models.CharField(max_length=50)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-    publishers = models.ManyToManyField(Publisher, related_name='published')
+    publishers = models.ManyToManyField(Publisher, related_name="published")
     release = models.DateField()
     pages = models.PositiveSmallIntegerField()
 
     class Meta:
-        get_latest_by = 'release'
+        get_latest_by = "release"
 
     def __str__(self):
         return "%s by %s" % (self.title, self.author)

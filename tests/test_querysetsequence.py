@@ -4,29 +4,38 @@ from unittest.mock import patch
 
 import django
 from django import forms
-from django.core.exceptions import (FieldDoesNotExist,
-                                    FieldError,
-                                    MultipleObjectsReturned,
-                                    ObjectDoesNotExist)
+from django.core.exceptions import (
+    FieldDoesNotExist,
+    FieldError,
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+)
 from django.db.models import Count, Q
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
 
-from tests.models import (Article, Author, BlogPost, Book, OnlinePublisher,
-                          PeriodicalPublisher, Publisher)
+from tests.models import (
+    Article,
+    Author,
+    BlogPost,
+    Book,
+    OnlinePublisher,
+    PeriodicalPublisher,
+    Publisher,
+)
 
 
 class TestBase(TestCase):
     # The title of each Book, followed by each Article; each ordered by primary
     # key. This matches all without any transforms applied.
     TITLES_BY_PK = [
-        'Fiction',
-        'Biography',
-        'Django Rocks',
-        'Alice in Django-land',
-        'Some Article',
+        "Fiction",
+        "Biography",
+        "Django Rocks",
+        "Alice in Django-land",
+        "Some Article",
     ]
 
     def setUp(self):
@@ -39,27 +48,39 @@ class TestBase(TestCase):
         mad_magazine = PeriodicalPublisher.objects.create(name="Mad Magazine")
         # This publisher is unused, just takes up a PK in the database.
         Publisher.objects.create(name="Unused Publisher")
-        big_books = Publisher.objects.create(name="Big Books",
-                                             address="123 Street")
+        big_books = Publisher.objects.create(name="Big Books", address="123 Street")
         wacky_website = OnlinePublisher.objects.create(name="Wacky Website")
 
         # Alice wrote some articles.
-        Article.objects.create(title="Django Rocks", author=alice,
-                               publisher=mad_magazine, release=date(1980, 4, 21))
-        Article.objects.create(title="Alice in Django-land", author=alice,
-                               publisher=mad_magazine, release=date(1990, 8, 14))
+        Article.objects.create(
+            title="Django Rocks",
+            author=alice,
+            publisher=mad_magazine,
+            release=date(1980, 4, 21),
+        )
+        Article.objects.create(
+            title="Alice in Django-land",
+            author=alice,
+            publisher=mad_magazine,
+            release=date(1990, 8, 14),
+        )
 
         # Bob wrote a couple of books, an article, and a blog post.
-        book = Book.objects.create(title="Fiction", author=bob,
-                                   pages=10, release=date(2001, 6, 12))
+        book = Book.objects.create(
+            title="Fiction", author=bob, pages=10, release=date(2001, 6, 12)
+        )
         book.publishers.set([big_books])
-        book = Book.objects.create(title="Biography", author=bob,
-                                   pages=20, release=date(2002, 12, 24))
+        book = Book.objects.create(
+            title="Biography", author=bob, pages=20, release=date(2002, 12, 24)
+        )
         book.publishers.set([big_books])
-        Article.objects.create(title="Some Article", author=bob,
-                               publisher=mad_magazine, release=date(1979, 1, 1))
-        BlogPost.objects.create(title="Post", author=bob,
-                                publisher=wacky_website)
+        Article.objects.create(
+            title="Some Article",
+            author=bob,
+            publisher=mad_magazine,
+            release=date(1979, 1, 1),
+        )
+        BlogPost.objects.create(title="Post", author=bob, publisher=wacky_website)
 
         # Save the authors and publishers for later.
         self.alice = alice
@@ -120,6 +141,7 @@ class TestLength(TestBase):
 
 class TestIterator(TestBase):
     """Test the iterator when no ordering is set."""
+
     def test_iterator(self):
         """Ensure that an iterator queries for the results."""
         # Ensure that calling iterator twice re-evaluates the query.
@@ -159,11 +181,13 @@ class TestIterator(TestBase):
 
     def test_empty_subqueryset(self):
         """Iterating an empty set should work."""
-        qss = QuerySetSequence(Book.objects.all(), Article.objects.none()).order_by('title')
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.none()).order_by(
+            "title"
+        )
 
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
-        self.assertEqual(data, ['Biography', 'Fiction'])
+        self.assertEqual(data, ["Biography", "Fiction"])
 
 
 class TestOperators(TestBase):
@@ -188,7 +212,7 @@ class TestOperators(TestBase):
         self.assertEqual(len(combined._querysets), 1)
         with self.assertNumQueries(1):
             data = [it.title for it in combined.iterator()]
-        self.assertEqual(data, ['Fiction'])
+        self.assertEqual(data, ["Fiction"])
 
     def test_empty_and(self):
         """An empty QuerySetSequence can be ANDed with a QuerySet, but returns an EmptyQuerySet."""
@@ -216,7 +240,7 @@ class TestOperators(TestBase):
 
         with self.assertNumQueries(3):
             data = [it.title for it in combined.iterator()]
-        self.assertEqual(data, self.TITLES_BY_PK + ['Post'])
+        self.assertEqual(data, self.TITLES_BY_PK + ["Post"])
 
     def test_or_querysetsequence(self):
         """ORing with a QuerySetSequence should combine the lists of QuerySets."""
@@ -227,7 +251,7 @@ class TestOperators(TestBase):
 
         with self.assertNumQueries(3):
             data = [it.title for it in combined.iterator()]
-        self.assertEqual(data, self.TITLES_BY_PK + ['Post'])
+        self.assertEqual(data, self.TITLES_BY_PK + ["Post"])
 
     def test_empty_or(self):
         """An empty QuerySetSequence can be ORed with a QuerySet, but returns an EmptyQuerySet."""
@@ -237,7 +261,7 @@ class TestOperators(TestBase):
 
         with self.assertNumQueries(1):
             data = [it.title for it in combined.iterator()]
-        self.assertEqual(data, ['Post'])
+        self.assertEqual(data, ["Post"])
 
     def test_empty_or_querysetsequence(self):
         combined = self.empty | QuerySetSequence(BlogPost.objects.all())
@@ -246,7 +270,7 @@ class TestOperators(TestBase):
 
         with self.assertNumQueries(1):
             data = [it.title for it in combined.iterator()]
-        self.assertEqual(data, ['Post'])
+        self.assertEqual(data, ["Post"])
 
 
 class TestNone(TestBase):
@@ -265,7 +289,7 @@ class TestNone(TestBase):
         # Should have no data.
         self.assertEqual(data, [])
 
-    @skip('Currently not working.')
+    @skip("Currently not working.")
     def test_empty(self):
         qss = self.empty.none()
 
@@ -301,6 +325,7 @@ class TestAll(TestBase):
 
 class TestRelated(TestBase):
     """Tests for select_related and prefetch_related."""
+
     # Bob, Bob, Alice, Alice, Bob.
     EXPECTED_ORDER = [2, 2, 1, 1, 2]
 
@@ -315,7 +340,7 @@ class TestRelated(TestBase):
     def test_select_related(self):
         """Select related removes subsequent queries to get ForeignKeys."""
         with self.assertNumQueries(2):
-            books = list(self.all.select_related('author'))
+            books = list(self.all.select_related("author"))
         with self.assertNumQueries(0):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
@@ -326,19 +351,19 @@ class TestRelated(TestBase):
         """Clearing select related causes all the database queries to occur again."""
         # Ensure there is a database query.
         with self.assertNumQueries(2):
-            books = list(self.all.select_related('author').select_related(None))
+            books = list(self.all.select_related("author").select_related(None))
         with self.assertNumQueries(5):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_select_related(self):
         """Calling select_related on an empty QuerySetSequence doesn't error."""
-        self.empty.select_related('author')
+        self.empty.select_related("author")
 
     def test_prefetch_related(self):
         """Now ensure one database query for all authors, per QuerySet."""
         with self.assertNumQueries(4):
-            books = list(self.all.prefetch_related('author'))
+            books = list(self.all.prefetch_related("author"))
         with self.assertNumQueries(0):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
@@ -348,28 +373,32 @@ class TestRelated(TestBase):
     def test_clear_prefetch_related(self):
         """Ensure the original behavior is restored if prefetch related is cleared."""
         with self.assertNumQueries(2):
-            books = list(self.all.prefetch_related('author').prefetch_related(None))
+            books = list(self.all.prefetch_related("author").prefetch_related(None))
         with self.assertNumQueries(5):
             authors = [b.author.id for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_prefetch_related(self):
         """Calling prefetch_related on an empty QuerySetSequence doesn't error."""
-        self.empty.prefetch_related('author')
+        self.empty.prefetch_related("author")
 
     def test_model_choice_iterator(self):
         """Ensure that ModelChoiceField works for QuerySetSequence."""
         f = forms.ModelChoiceField(self.all)
-        self.assertEqual(list(f.choices), [
-            ('', '---------'),
-        ] + [(it.pk, str(it)) for it in self.all])
+        self.assertEqual(
+            list(f.choices),
+            [
+                ("", "---------"),
+            ]
+            + [(it.pk, str(it)) for it in self.all],
+        )
 
 
 class TestDeferOnly(TestBase):
     def test_defer(self):
         """A deferred field will be loaded on access."""
         with self.assertNumQueries(2):
-            books = list(self.all.defer('title'))
+            books = list(self.all.defer("title"))
         with self.assertNumQueries(5):
             titles = [b.title for b in books]
         self.assertEqual(titles, self.TITLES_BY_PK)
@@ -377,19 +406,19 @@ class TestDeferOnly(TestBase):
     def test_clear_defer(self):
         """Ensure the original behavior is restored if defer is cleared."""
         with self.assertNumQueries(2):
-            books = list(self.all.defer('title').defer(None))
+            books = list(self.all.defer("title").defer(None))
         with self.assertNumQueries(0):
             titles = [b.title for b in books]
         self.assertEqual(titles, self.TITLES_BY_PK)
 
     def test_empty_defer(self):
         """Calling defer on an empty QuerySetSequence doesn't error."""
-        self.empty.defer('title')
+        self.empty.defer("title")
 
     def test_only(self):
         """Only causes other fields to load on access (opposite of defer)."""
         with self.assertNumQueries(2):
-            books = list(self.all.only('author'))
+            books = list(self.all.only("author"))
         with self.assertNumQueries(5):
             titles = [b.title for b in books]
         self.assertEqual(titles, self.TITLES_BY_PK)
@@ -401,7 +430,7 @@ class TestDeferOnly(TestBase):
         # Additional queries are due to the field needing to be pulled
         # individually during sorting.
         with self.assertNumQueries(7):
-            books = list(self.all.only('author').order_by('title'))
+            books = list(self.all.only("author").order_by("title"))
         # No additional queries are necessary since the titles were used in
         # sorting.
         with self.assertNumQueries(0):
@@ -410,14 +439,14 @@ class TestDeferOnly(TestBase):
 
     def test_empty_only(self):
         """Calling only on an empty QuerySetSequence doesn't error."""
-        self.empty.only('publisher')
+        self.empty.only("publisher")
 
 
 class TestUsing(TestBase):
     def test_using(self):
         """Using should be passed through to each QuerySet."""
         with self.assertNumQueries(2):
-            titles = [b.title for b in self.all.using('default')]
+            titles = [b.title for b in self.all.using("default")]
         self.assertEqual(titles, self.TITLES_BY_PK)
 
 
@@ -433,7 +462,9 @@ class TestDistinct(TestBase):
 
         # Make a QuerySetSequence that would include non-distinct items.
         big_books = Book.objects.filter(publishers__name__startswith="Big")
-        qss = QuerySetSequence(big_books, Article.objects.filter(publisher__name__startswith="Big"))
+        qss = QuerySetSequence(
+            big_books, Article.objects.filter(publisher__name__startswith="Big")
+        )
 
         # There should be more items than unique items.
         titles = [b.title for b in qss]
@@ -497,7 +528,7 @@ class TestFilter(TestBase):
         """
         # Filter to nothing.
         with self.assertNumQueries(0):
-            qss = self.all.filter(title='')
+            qss = self.all.filter(title="")
         self.assertIsInstance(qss, QuerySetSequence)
         with self.assertNumQueries(2):
             self.assertEqual(qss.count(), 0)
@@ -508,13 +539,13 @@ class TestFilter(TestBase):
 
     def _get_qss(self):
         """Returns a QuerySetSequence with 3 QuerySets."""
-        return QuerySetSequence(Book.objects.all(),
-                                Article.objects.all(),
-                                BlogPost.objects.all())
+        return QuerySetSequence(
+            Book.objects.all(), Article.objects.all(), BlogPost.objects.all()
+        )
 
     def test_queryset(self):
         """Test filtering the QuerySets by exact lookups."""
-        for key in ['#', '#__exact', '#__iexact']:
+        for key in ["#", "#__exact", "#__iexact"]:
             with self.assertNumQueries(0):
                 qss = self._get_qss().filter(**{key: 1})
 
@@ -522,31 +553,31 @@ class TestFilter(TestBase):
                 data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
-                'Django Rocks',
-                'Alice in Django-land',
-                'Some Article',
+                "Django Rocks",
+                "Alice in Django-land",
+                "Some Article",
             ]
             self.assertEqual(data, expected)
 
     def test_queryset_gt(self):
         """Test filtering the QuerySets by > lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__gt': 0})
+            qss = self._get_qss().filter(**{"#__gt": 0})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
-            'Post',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+            "Post",
         ]
         self.assertEqual(data, expected)
 
         # Additionally this should cast a string input to an int.
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__gt': '0'})
+            qss = self._get_qss().filter(**{"#__gt": "0"})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
@@ -555,23 +586,23 @@ class TestFilter(TestBase):
     def test_queryset_gte(self):
         """Test filtering the QuerySets by >= lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__gte': 1})
+            qss = self._get_qss().filter(**{"#__gte": 1})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
-            'Post',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+            "Post",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_lt(self):
         """Test filtering the QuerySets by < lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__lt': 2})
+            qss = self._get_qss().filter(**{"#__lt": 2})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
@@ -581,7 +612,7 @@ class TestFilter(TestBase):
     def test_queryset_lte(self):
         """Test filtering the QuerySets by <= lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__lte': 1})
+            qss = self._get_qss().filter(**{"#__lte": 1})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
@@ -591,21 +622,28 @@ class TestFilter(TestBase):
     def test_queryset_in(self):
         """Filter the QuerySets with the in lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__in': [1]})
+            qss = self._get_qss().filter(**{"#__in": [1]})
 
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         expected = [
             # Just the Articles.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_str(self):
         """Try filtering the QuerySets by various string lookups."""
-        for key in ['#__contains', '#__icontains', '#__startswith', '#__istartswith', '#__endswith', '#__iendswith']:
+        for key in [
+            "#__contains",
+            "#__icontains",
+            "#__startswith",
+            "#__istartswith",
+            "#__endswith",
+            "#__iendswith",
+        ]:
             with self.assertNumQueries(0):
                 qss = self._get_qss().filter(**{key: 1})
 
@@ -613,32 +651,32 @@ class TestFilter(TestBase):
                 data = [it.title for it in qss]
             expected = [
                 # Just the Articles.
-                'Django Rocks',
-                'Alice in Django-land',
-                'Some Article',
+                "Django Rocks",
+                "Alice in Django-land",
+                "Some Article",
             ]
             self.assertEqual(data, expected)
 
     def test_queryset_range(self):
         """Try filtering the QuerySets by the range lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__range': [1, 2]})
+            qss = self._get_qss().filter(**{"#__range": [1, 2]})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
-            'Post',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+            "Post",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_unsupported(self):
         """Try filtering the QuerySets by a lookup that doesn't make sense."""
         with self.assertRaises(ValueError):
-            self._get_qss().filter(**{'#__year': 1})
+            self._get_qss().filter(**{"#__year": 1})
 
     def test_queryset_multiple(self):
         """
@@ -646,20 +684,20 @@ class TestFilter(TestBase):
         this works when filtering by QuerySet.
         """
         with self.assertNumQueries(0):
-            qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Django Rocks'})
+            qss = self._get_qss().filter(**{"#__gt": 0, "title__gt": "Django Rocks"})
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
             # Some of the Articles and the BlogPosts.
-            'Some Article',
-            'Post',
+            "Some Article",
+            "Post",
         ]
         self.assertEqual(data, expected)
 
         # This would only look at Articles and BlogPosts, but neither of those
         # have a title > "Some Article."
-        qss = self._get_qss().filter(**{'#__gt': 0, 'title__gt': 'Some Article'})
+        qss = self._get_qss().filter(**{"#__gt": 0, "title__gt": "Some Article"})
 
         # Only the articles are here because it's the second queryset.
         data = [it.title for it in qss]
@@ -667,7 +705,7 @@ class TestFilter(TestBase):
 
     def test_empty(self):
         """Calling filter on an empty QuerySetSequence doesn't error."""
-        self.empty.filter(title='')
+        self.empty.filter(title="")
 
 
 class TestExclude(TestBase):
@@ -716,13 +754,13 @@ class TestExclude(TestBase):
 
     def _get_qss(self):
         """Returns a QuerySetSequence with 3 QuerySets."""
-        return QuerySetSequence(Book.objects.all(),
-                                Article.objects.all(),
-                                BlogPost.objects.all())
+        return QuerySetSequence(
+            Book.objects.all(), Article.objects.all(), BlogPost.objects.all()
+        )
 
     def test_queryset(self):
         """Test excluding the QuerySets by exact lookups."""
-        for key in ['#', '#__exact', '#__iexact']:
+        for key in ["#", "#__exact", "#__iexact"]:
             with self.assertNumQueries(0):
                 qss = self._get_qss().exclude(**{key: 0})
 
@@ -732,17 +770,17 @@ class TestExclude(TestBase):
                 data = [it.title for it in qss]
             expected = [
                 # The Articles and BlogPosts.
-                'Django Rocks',
-                'Alice in Django-land',
-                'Some Article',
-                'Post',
+                "Django Rocks",
+                "Alice in Django-land",
+                "Some Article",
+                "Post",
             ]
             self.assertEqual(data, expected)
 
     def test_queryset_gt(self):
         """Test excluding the QuerySets by > lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__gt': 1})
+            qss = self._get_qss().exclude(**{"#__gt": 1})
 
         # The books and articles are here.
         with self.assertNumQueries(2):
@@ -753,68 +791,75 @@ class TestExclude(TestBase):
     def test_queryset_gte(self):
         """Test excluding the QuerySets by >= lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__gte': 1})
+            qss = self._get_qss().exclude(**{"#__gte": 1})
 
         # Only the blogposts are here because it's the last queryset.
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         expected = [
             # Just the Books.
-            'Fiction',
-            'Biography',
+            "Fiction",
+            "Biography",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_lt(self):
         """Test excluding the QuerySets by < lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__lt': 1})
+            qss = self._get_qss().exclude(**{"#__lt": 1})
 
         # The articles and blogposts are here.
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
             # The Articles and BlogPosts.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
-            'Post',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
+            "Post",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_lte(self):
         """Test excluding the QuerySets by <= lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__lte': 1})
+            qss = self._get_qss().exclude(**{"#__lte": 1})
 
         # Only the blogposts are here because it's the last queryset.
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         expected = [
             # The BlogPosts.
-            'Post',
+            "Post",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_in(self):
         """exclude the QuerySets with the in lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__in': [0, 2]})
+            qss = self._get_qss().exclude(**{"#__in": [0, 2]})
 
         # Only the articles are here because it's the second queryset.
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         expected = [
             # The Articles.
-            'Django Rocks',
-            'Alice in Django-land',
-            'Some Article',
+            "Django Rocks",
+            "Alice in Django-land",
+            "Some Article",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_str(self):
         """Try excluding the QuerySets by various string lookups."""
-        for key in ['#__contains', '#__icontains', '#__startswith', '#__istartswith', '#__endswith', '#__iendswith']:
+        for key in [
+            "#__contains",
+            "#__icontains",
+            "#__startswith",
+            "#__istartswith",
+            "#__endswith",
+            "#__iendswith",
+        ]:
             with self.assertNumQueries(0):
                 qss = self._get_qss().exclude(**{key: 1})
 
@@ -823,35 +868,35 @@ class TestExclude(TestBase):
                 data = [it.title for it in qss]
             expected = [
                 # The Books and BlogPosts.
-                'Fiction',
-                'Biography',
-                'Post',
+                "Fiction",
+                "Biography",
+                "Post",
             ]
             self.assertEqual(data, expected)
 
     def test_queryset_range(self):
         """Try excluding the QuerySets by the range lookup."""
         with self.assertNumQueries(0):
-            qss = self._get_qss().exclude(**{'#__range': [1, 2]})
+            qss = self._get_qss().exclude(**{"#__range": [1, 2]})
 
         # Only the books are here as it is the first queryset.
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         expected = [
             # Just the Articles.
-            'Fiction',
-            'Biography',
+            "Fiction",
+            "Biography",
         ]
         self.assertEqual(data, expected)
 
     def test_queryset_unsupported(self):
         """Try excluding the QuerySets by a lookup that doesn't make sense."""
         with self.assertRaises(ValueError):
-            self._get_qss().exclude(**{'#__year': 1})
+            self._get_qss().exclude(**{"#__year": 1})
 
     def test_empty(self):
         """Calling exclude on an empty QuerySetSequence doesn't error."""
-        self.empty.exclude(title='')
+        self.empty.exclude(title="")
 
 
 class TestExtraAnnotate(TestBase):
@@ -865,8 +910,10 @@ class TestExtraAnnotate(TestBase):
 
     def test_annotate(self):
         """Annotating should get applied to each QuerySet."""
-        qss = QuerySetSequence(Publisher.objects.all(), PeriodicalPublisher.objects.all())
-        qss = qss.annotate(published_count=Count('published'))
+        qss = QuerySetSequence(
+            Publisher.objects.all(), PeriodicalPublisher.objects.all()
+        )
+        qss = qss.annotate(published_count=Count("published"))
 
         # Each Published gets the count of things in it added.
         with self.assertNumQueries(2):
@@ -879,7 +926,7 @@ class TestOrderBy(TestBase):
         """Ensure that order_by() propagates to QuerySets and iteration."""
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('title')
+            qss = self.all.order_by("title")
 
         # Check the titles are properly ordered.
         with self.assertNumQueries(2):
@@ -890,7 +937,7 @@ class TestOrderBy(TestBase):
         """Ordering by a non-existent field raises an exception upon evaluation."""
         with self.assertRaises(FieldError):
             with self.assertNumQueries(0):
-                qss = self.all.order_by('pages')
+                qss = self.all.order_by("pages")
             # Note that starting in Django 3.1 the exception is raised when the
             # QuerySet is created, not when it is evaluated.
             list(qss)
@@ -898,45 +945,49 @@ class TestOrderBy(TestBase):
     def test_order_by_multi(self):
         """Test ordering by multiple fields."""
         # Add another object with the same title, but a later release date.
-        Book.objects.create(title="Fiction", author=self.alice,
-                            pages=1, release=date(2018, 10, 3))
+        Book.objects.create(
+            title="Fiction", author=self.alice, pages=1, release=date(2018, 10, 3)
+        )
 
         with self.assertNumQueries(0):
-            qss = self.all.order_by('title', '-release')
+            qss = self.all.order_by("title", "-release")
 
         # Check the titles are properly ordered.
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
         expected = [
-            'Alice in Django-land',
-            'Biography',
-            'Django Rocks',
-            'Fiction',
-            'Fiction',
-            'Some Article',
+            "Alice in Django-land",
+            "Biography",
+            "Django Rocks",
+            "Fiction",
+            "Fiction",
+            "Some Article",
         ]
         self.assertEqual(data, expected)
 
     def test_order_by_multi_2(self):
         """Test ordering by multiple fields, where # is not first."""
         # Add another object with the same title, but in a different QuerySet.
-        Article.objects.create(title="Fiction", author=self.alice,
-                               publisher=self.mad_magazine,
-                               release=date(2018, 10, 3))
+        Article.objects.create(
+            title="Fiction",
+            author=self.alice,
+            publisher=self.mad_magazine,
+            release=date(2018, 10, 3),
+        )
 
         with self.assertNumQueries(0):
-            qss = self.all.order_by('title', '-#')
+            qss = self.all.order_by("title", "-#")
 
         # Check the titles are properly ordered.
         with self.assertNumQueries(2):
             data = [(it.title, it.__class__.__name__) for it in qss]
         expected = [
-            ('Alice in Django-land', 'Article'),
-            ('Biography', 'Book'),
-            ('Django Rocks', 'Article'),
-            ('Fiction', 'Article'),
-            ('Fiction', 'Book'),
-            ('Some Article', 'Article'),
+            ("Alice in Django-land", "Article"),
+            ("Biography", "Book"),
+            ("Django Rocks", "Article"),
+            ("Fiction", "Article"),
+            ("Fiction", "Book"),
+            ("Some Article", "Article"),
         ]
         self.assertEqual(data, expected)
 
@@ -946,7 +997,7 @@ class TestOrderBy(TestBase):
         """
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('author_id')
+            qss = self.all.order_by("author_id")
 
         # The first two should be Alice, followed by three from Bob.
         with self.assertNumQueries(2):
@@ -960,7 +1011,7 @@ class TestOrderBy(TestBase):
         """
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('author')
+            qss = self.all.order_by("author")
 
         # Ensure that the test has any hope of passing.
         self.assertLess(self.alice.pk, self.bob.pk)
@@ -982,7 +1033,7 @@ class TestOrderBy(TestBase):
         """
         # Order by author and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('author')
+            qss = self.all.order_by("author")
 
         # The first two should be Alice, followed by three from Bob.
         # Note that the QuerySetSequence itself needs the author objects to
@@ -1002,7 +1053,7 @@ class TestOrderBy(TestBase):
 
         # Order by publisher and ensure it takes.
         with self.assertNumQueries(0):
-            qss = all.order_by('publisher')
+            qss = all.order_by("publisher")
 
         with self.assertRaises(FieldError):
             list(qss)
@@ -1011,7 +1062,7 @@ class TestOrderBy(TestBase):
         """Apply order_by() with a field through a model relationship."""
         # Order by author name and ensure it takes.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('author__name')
+            qss = self.all.order_by("author__name")
 
         # The first two should be Alice, followed by three from Bob.
         # Note that the QuerySetSequence itself needs the author objects to
@@ -1024,21 +1075,23 @@ class TestOrderBy(TestBase):
         """Ensure we can order by QuerySet and then other fields."""
         # Order by title, but don't interleave each QuerySet.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('#', 'title')
+            qss = self.all.order_by("#", "title")
 
         # Ensure that _ordered_iterator isn't called.
-        with patch('queryset_sequence.BaseIterable._ordered_iterator',
-                   side_effect=AssertionError('_ordered_iterator should not be called')):
+        with patch(
+            "queryset_sequence.BaseIterable._ordered_iterator",
+            side_effect=AssertionError("_ordered_iterator should not be called"),
+        ):
             # Check the titles are properly ordered.
             data = [it.title for it in qss]
             expected = [
                 # First the Books, in order.
-                'Biography',
-                'Fiction',
+                "Biography",
+                "Fiction",
                 # Then the Articles, in order.
-                'Alice in Django-land',
-                'Django Rocks',
-                'Some Article',
+                "Alice in Django-land",
+                "Django Rocks",
+                "Some Article",
             ]
             self.assertEqual(data, expected)
 
@@ -1052,27 +1105,29 @@ class TestOrderBy(TestBase):
         # Order by title, but don't interleave each QuerySet. And reverse
         # QuerySets.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('-#', 'title')
+            qss = self.all.order_by("-#", "title")
 
         # Ensure that _ordered_iterator isn't called.
-        with patch('queryset_sequence.BaseIterable._ordered_iterator',
-                   side_effect=AssertionError('_ordered_iterator should not be called')):
+        with patch(
+            "queryset_sequence.BaseIterable._ordered_iterator",
+            side_effect=AssertionError("_ordered_iterator should not be called"),
+        ):
             # Check the titles are properly ordered.
             data = [it.title for it in qss]
             expected = [
                 # The articles, in order.
-                'Alice in Django-land',
-                'Django Rocks',
-                'Some Article',
+                "Alice in Django-land",
+                "Django Rocks",
+                "Some Article",
                 # Then the Books, in order.
-                'Biography',
-                'Fiction',
+                "Biography",
+                "Fiction",
             ]
             self.assertEqual(data, expected)
 
     def test_empty(self):
         """Calling order_by on an empty QuerySetSequence doesn't error."""
-        self.empty.order_by('author')
+        self.empty.order_by("author")
 
 
 class TestReverse(TestBase):
@@ -1088,7 +1143,6 @@ class TestReverse(TestBase):
             "Django Rocks",
             "Alice in Django-land",
             "Some Article",
-
             "Fiction",
             "Biography",
         ]
@@ -1109,7 +1163,7 @@ class TestReverse(TestBase):
     def test_reverse_ordered(self):
         """Reversing an ordered QuerySet should reverse the ordering too."""
         with self.assertNumQueries(0):
-            qss = self.all.order_by('title').reverse()
+            qss = self.all.order_by("title").reverse()
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
@@ -1118,7 +1172,7 @@ class TestReverse(TestBase):
     def test_reverse_twice_ordered(self):
         """Calling reverse() twice is negated, but then order by title."""
         with self.assertNumQueries(0):
-            qss = self.all.reverse().order_by('title').reverse()
+            qss = self.all.reverse().order_by("title").reverse()
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
@@ -1139,7 +1193,7 @@ class TestSlicing(TestBase):
         # 2 counts + evaluating one QuerySet.
         with self.assertNumQueries(3):
             result = self.all[0]
-        self.assertEqual(result.title, 'Fiction')
+        self.assertEqual(result.title, "Fiction")
         self.assertIsInstance(result, Book)
 
     def test_one_QuerySet(self):
@@ -1150,7 +1204,7 @@ class TestSlicing(TestBase):
         # 2 counts + evaluating one QuerySet.
         with self.assertNumQueries(3):
             data = [it.title for it in qss]
-        self.assertEqual(['Fiction', 'Biography'], data)
+        self.assertEqual(["Fiction", "Biography"], data)
 
     def test_cast_list(self):
         """Test slicing and casting to a list."""
@@ -1161,7 +1215,7 @@ class TestSlicing(TestBase):
         with self.assertNumQueries(3):
             result = list(qss)
             data = [it.title for it in result]
-        self.assertEqual(['Fiction', 'Biography'], data)
+        self.assertEqual(["Fiction", "Biography"], data)
 
     def test_multiple_QuerySets(self):
         """Test slicing across elements from multiple QuerySets."""
@@ -1172,7 +1226,7 @@ class TestSlicing(TestBase):
         # 2 counts + evaluating two QuerySets.
         with self.assertNumQueries(4):
             data = [it.title for it in qss]
-        self.assertEqual(['Biography', 'Django Rocks'], data)
+        self.assertEqual(["Biography", "Django Rocks"], data)
 
     def test_multiple_slices(self):
         """Test multiple slices taken."""
@@ -1182,7 +1236,7 @@ class TestSlicing(TestBase):
         # Evaluate the QuerySet.
         with self.assertNumQueries(3):
             article = result[1]
-        self.assertEqual(article.title, 'Django Rocks')
+        self.assertEqual(article.title, "Django Rocks")
 
     def test_multiple_slices_complex(self):
         """Test taking slices multiple times."""
@@ -1196,7 +1250,7 @@ class TestSlicing(TestBase):
         # Evaluate the QuerySet.
         with self.assertNumQueries(3):
             data = [it.title for it in qss]
-        self.assertEqual(data, ['Django Rocks'])
+        self.assertEqual(data, ["Django Rocks"])
 
     def test_step(self):
         """Test behavior when a step is provided to the slice."""
@@ -1205,7 +1259,7 @@ class TestSlicing(TestBase):
             data = [it.title for it in qss]
         self.assertIsInstance(qss, list)
 
-        self.assertEqual(['Fiction', 'Django Rocks'], data)
+        self.assertEqual(["Fiction", "Django Rocks"], data)
 
     def test_all(self):
         """Test slicing to all elements."""
@@ -1222,13 +1276,13 @@ class TestSlicing(TestBase):
         """Test slicing when order_by has already been called."""
         # Order by author and take a slice.
         with self.assertNumQueries(0):
-            qss = self.all.order_by('title')[1:3]
+            qss = self.all.order_by("title")[1:3]
         self.assertIsInstance(qss, QuerySetSequence)
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
-        self.assertEqual(data[0], 'Biography')
-        self.assertEqual(data[1], 'Django Rocks')
+        self.assertEqual(data[0], "Biography")
+        self.assertEqual(data[1], "Django Rocks")
 
     def test_open_slice(self):
         """Test slicing without an end."""
@@ -1236,19 +1290,22 @@ class TestSlicing(TestBase):
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
-        self.assertEqual(['Alice in Django-land', 'Some Article'], data)
+        self.assertEqual(["Alice in Django-land", "Some Article"], data)
 
     def test_closed_slice_single_qs(self):
         """Test slicing if the start and end are within the same QuerySet."""
-        Article.objects.create(title='Another Article', author=self.bob,
-                               publisher=self.mad_magazine,
-                               release=date(2018, 10, 3))
+        Article.objects.create(
+            title="Another Article",
+            author=self.bob,
+            publisher=self.mad_magazine,
+            release=date(2018, 10, 3),
+        )
 
         qss = QuerySetSequence(Article.objects.all())[1:3]
 
         with self.assertNumQueries(2):
             data = [it.title for it in qss]
-        self.assertEqual(['Alice in Django-land', 'Some Article'], data)
+        self.assertEqual(["Alice in Django-land", "Some Article"], data)
 
     def test_empty(self):
         """Slicing an empty QuerySetSequence doesn't error."""
@@ -1262,15 +1319,15 @@ class TestGet(TestBase):
         """
         # Get a particular item.
         with self.assertNumQueries(2):
-            book = self.all.get(title='Biography')
-        self.assertEqual(book.title, 'Biography')
+            book = self.all.get(title="Biography")
+        self.assertEqual(book.title, "Biography")
         self.assertIsInstance(book, Book)
 
     def test_not_found(self):
         # An exception is raised if get() is called and nothing is found.
         with self.assertNumQueries(2):
             with self.assertRaises(ObjectDoesNotExist):
-                self.all.get(title='')
+                self.all.get(title="")
 
     def test_multi_found(self):
         """Test multiple found in the same QuerySet."""
@@ -1284,20 +1341,20 @@ class TestGet(TestBase):
         # ...or if get() is called and multiple objects are found.
         with self.assertNumQueries(2):
             with self.assertRaises(MultipleObjectsReturned):
-                self.all.get(title__contains='A')
+                self.all.get(title__contains="A")
 
     def test_related_model(self):
         qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
         with self.assertNumQueries(2):
             post = qss.get(publisher__name="Wacky Website")
-        self.assertEqual(post.title, 'Post')
+        self.assertEqual(post.title, "Post")
         self.assertIsInstance(post, BlogPost)
 
     def test_queryset_lookup(self):
         """Test using the special QuerySet lookup."""
         with self.assertNumQueries(1):
-            article = self.all.get(**{'#': 1, 'author': self.bob})
-        self.assertEqual(article.title, 'Some Article')
+            article = self.all.get(**{"#": 1, "author": self.bob})
+        self.assertEqual(article.title, "Some Article")
         self.assertIsInstance(article, Article)
 
     def test_empty(self):
@@ -1308,20 +1365,21 @@ class TestGet(TestBase):
 
 class TestBoolean(TestBase):
     """Tests related to casting the QuerySetSequence to a boolean."""
+
     def test_exists(self):
         """Ensure that it casts to True if the item is found."""
         with self.assertNumQueries(2):
-            self.assertTrue(self.all.filter(title='Biography'))
+            self.assertTrue(self.all.filter(title="Biography"))
 
     def test_exists_second(self):
         """Ensure that it casts to True if the item is found in a subsequent QuerySet."""
         with self.assertNumQueries(2):
-            self.assertTrue(self.all.filter(title='Alice in Django-land'))
+            self.assertTrue(self.all.filter(title="Alice in Django-land"))
 
     def test_not_found(self):
         """Ensure that exists() returns False if the item is not found."""
         with self.assertNumQueries(2):
-            self.assertFalse(self.all.filter(title=''))
+            self.assertFalse(self.all.filter(title=""))
 
     def test_multi_found(self):
         """Ensure that it casts to True if multiple items are found."""
@@ -1337,32 +1395,32 @@ class TestEarliestLatest(TestBase):
     def test_earliest(self):
         """The earliest release overall should be returned."""
         with self.assertNumQueries(2):
-            earliest = self.all.earliest('release')
-        self.assertEqual(earliest.title, 'Some Article')
+            earliest = self.all.earliest("release")
+        self.assertEqual(earliest.title, "Some Article")
 
     def test_latest(self):
         """The latest release overall should be returned."""
         with self.assertNumQueries(2):
-            latest = self.all.latest('release')
-        self.assertEqual(latest.title, 'Biography')
+            latest = self.all.latest("release")
+        self.assertEqual(latest.title, "Biography")
 
     def test_earliest_reverse(self):
         """The earliest release overall reversed is the latest."""
         with self.assertNumQueries(2):
-            earliest = self.all.earliest('-release')
-        self.assertEqual(earliest.title, 'Biography')
+            earliest = self.all.earliest("-release")
+        self.assertEqual(earliest.title, "Biography")
 
     def test_latest_reverse(self):
         """The latest release overall reversed is the earliest."""
         with self.assertNumQueries(2):
-            latest = self.all.latest('-release')
-        self.assertEqual(latest.title, 'Some Article')
+            latest = self.all.latest("-release")
+        self.assertEqual(latest.title, "Some Article")
 
     def test_earliest_get_latest_by(self):
         """Not providing fields causes the get_latest_by field to be used."""
         with self.assertNumQueries(2):
             latest = self.all.earliest()
-        self.assertEqual(latest.title, 'Some Article')
+        self.assertEqual(latest.title, "Some Article")
 
     def test_earliest_get_latest_by_error(self):
         """When get_latest_by is used, they must all be the same."""
@@ -1373,7 +1431,7 @@ class TestEarliestLatest(TestBase):
         """Not providing fields causes the get_latest_by field to be used."""
         with self.assertNumQueries(2):
             latest = self.all.latest()
-        self.assertEqual(latest.title, 'Biography')
+        self.assertEqual(latest.title, "Biography")
 
     def test_latest_get_latest_by_error(self):
         """When get_latest_by is used, they must all be the same."""
@@ -1393,12 +1451,12 @@ class TestFirstLast(TestBase):
     def test_first_unordered(self):
         """Should return the first element of the first QuerySet."""
         with self.assertNumQueries(1):
-            self.assertEqual(self.all.first().title, 'Fiction')
+            self.assertEqual(self.all.first().title, "Fiction")
 
     def test_last_unordered(self):
         """Should return the last element of the last QuerySet."""
         with self.assertNumQueries(1):
-            self.assertEqual(self.all.last().title, 'Some Article')
+            self.assertEqual(self.all.last().title, "Some Article")
 
     def test_empty(self):
         """Empty QuerySetSequence should work."""
@@ -1409,36 +1467,40 @@ class TestFirstLast(TestBase):
         """When ordering, the items of each QuerySet must be compared."""
         # Order by author and ensure it takes.
         with self.assertNumQueries(2):
-            self.assertEqual(self.all.order_by('title').first().title, 'Alice in Django-land')
+            self.assertEqual(
+                self.all.order_by("title").first().title, "Alice in Django-land"
+            )
 
         with self.assertNumQueries(2):
-            self.assertEqual(self.all.order_by('-title').first().title, 'Some Article')
+            self.assertEqual(self.all.order_by("-title").first().title, "Some Article")
 
     def test_last_ordered(self):
         """When ordering, the items of each QuerySet must be compared."""
         # Order by author and ensure it takes.
         with self.assertNumQueries(2):
-            self.assertEqual(self.all.order_by('-title').last().title, 'Alice in Django-land')
+            self.assertEqual(
+                self.all.order_by("-title").last().title, "Alice in Django-land"
+            )
 
         with self.assertNumQueries(2):
-            self.assertEqual(self.all.order_by('title').last().title, 'Some Article')
+            self.assertEqual(self.all.order_by("title").last().title, "Some Article")
 
 
 class TestExists(TestBase):
     def test_exists(self):
         """Ensure that exists() returns True if the item is found in the first QuerySet."""
         with self.assertNumQueries(1):
-            self.assertTrue(self.all.filter(title='Biography').exists())
+            self.assertTrue(self.all.filter(title="Biography").exists())
 
     def test_exists_second(self):
         """Ensure that exists() returns True if the item is found in a subsequent QuerySet."""
         with self.assertNumQueries(2):
-            self.assertTrue(self.all.filter(title='Alice in Django-land').exists())
+            self.assertTrue(self.all.filter(title="Alice in Django-land").exists())
 
     def test_not_found(self):
         """Ensure that exists() returns False if the item is not found."""
         with self.assertNumQueries(2):
-            self.assertFalse(self.all.filter(title='').exists())
+            self.assertFalse(self.all.filter(title="").exists())
 
     def test_multi_found(self):
         """Ensure that exists() returns True if multiple items are found."""
@@ -1488,12 +1550,12 @@ class TestUpdate(TestBase):
         # The queries are: creating a save point, the two updates, releasing the
         # save point.
         with self.assertNumQueries(4):
-            result = self.all.update(title='A New Title')
+            result = self.all.update(title="A New Title")
         self.assertEqual(result, 5)
 
         with self.assertNumQueries(2):
             data = [it.title for it in self.all]
-        self.assertEqual(data, ['A New Title'] * 5)
+        self.assertEqual(data, ["A New Title"] * 5)
 
     def test_error(self):
         """If an error occurs on one of the QuerySets, no changes should occur."""
@@ -1522,7 +1584,9 @@ class TestDelete(TestBase):
         with self.assertNumQueries(4):
             result = self.all.delete()
         self.assertEqual(result[0], 7)
-        self.assertEqual(result[1], {'tests.Article': 3, 'tests.Book': 2, 'tests.Book_publishers': 2})
+        self.assertEqual(
+            result[1], {"tests.Article": 3, "tests.Book": 2, "tests.Book_publishers": 2}
+        )
 
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 0)
@@ -1532,7 +1596,7 @@ class TestDelete(TestBase):
         with self.assertNumQueries(2):
             result = self.all.filter(author=self.alice).delete()
         self.assertEqual(result[0], 2)
-        expected = {'tests.Article': 2}
+        expected = {"tests.Article": 2}
         self.assertEqual(result[1], expected)
 
         with self.assertNumQueries(2):
@@ -1551,11 +1615,12 @@ class TestExplain(TestBase):
         with self.assertNumQueries(2):
             explanation = self.all.explain()
         # The output of explain is not guaranteed, so do some rough checks.
-        self.assertEqual(len(explanation.split('\n')), 2)
+        self.assertEqual(len(explanation.split("\n")), 2)
 
 
 class TestGetQueryset(TestBase):
     """Tests related to retrieving QuerySets from the sequence."""
+
     def test_get_querysets(self):
         """Ensure the correct QuerySet objects are returned."""
         querysets = [Book.objects.all(), Article.objects.all()]
@@ -1566,6 +1631,7 @@ class TestGetQueryset(TestBase):
 
 class TestCannotImplement(TestCase):
     """The following methods cannot be implemented in QuerySetSequence."""
+
     def setUp(self):
         self.all = QuerySetSequence()
 
@@ -1596,6 +1662,7 @@ class TestCannotImplement(TestCase):
 
 class TestNotImplemented(TestCase):
     """The following methods have not been implemented in QuerySetSequence."""
+
     def setUp(self):
         self.all = QuerySetSequence()
 
