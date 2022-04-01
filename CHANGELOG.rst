@@ -3,11 +3,11 @@
 Changelog
 #########
 
-next
-====
+0.16 (2022-04-01)
+=================
 
-Bugfixes
---------
+Improvements
+------------
 
 * Fix ``QuerySetSequence``'s support with Django REST Framework's ``DjangoFilterBackend``
   by accepting a ``model`` parameter. If one is not provided, a dummy model is
