@@ -15,7 +15,6 @@ from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 
 from queryset_sequence import QuerySetSequence
-
 from tests.models import (
     Article,
     Author,

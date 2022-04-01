@@ -1,5 +1,5 @@
-from datetime import date
 import unittest
+from datetime import date
 
 from django.test import TestCase
 
@@ -17,7 +17,6 @@ except ImportError:
     SequenceCursorPagination = object
 
 from queryset_sequence import QuerySetSequence
-
 from tests.models import Author, Book, Publisher
 
 

@@ -16,10 +16,10 @@ from queryset_sequence import QuerySetSequence
 try:
     from rest_framework.exceptions import NotFound
     from rest_framework.pagination import (
-        _positive_int,
-        _reverse_ordering,
         Cursor,
         CursorPagination,
+        _positive_int,
+        _reverse_ordering,
     )
 except ImportError:
     # This requires Django REST Framework to be installed.

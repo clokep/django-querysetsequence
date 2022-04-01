@@ -1,12 +1,13 @@
 import unittest
 
 from django.test import TestCase
+
 from queryset_sequence import QuerySetSequence
 from tests.models import AbtractModel, Author
 
 # In-case someone doesn't have Django REST Framework installed, guard tests.
 try:
-    from rest_framework import filters, serializers, generics
+    from rest_framework import filters, generics, serializers
     from rest_framework.test import APIRequestFactory
 
     factory = APIRequestFactory()

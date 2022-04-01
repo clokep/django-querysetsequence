@@ -1,5 +1,5 @@
-from collections import defaultdict
 import functools
+from collections import defaultdict
 from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
 
