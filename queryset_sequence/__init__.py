@@ -817,7 +817,8 @@ class QuerySetSequence:
             raise TypeError("'flat' and 'named' can't be used together.")
         if flat and len(fields) > 1:
             raise TypeError(
-                "'flat' is not valid when values_list is called with more than one field."
+                "'flat' is not valid when values_list is called with more than "
+                "one field."
             )
 
         _, std_fields = self._separate_fields(*fields)
