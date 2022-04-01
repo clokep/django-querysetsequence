@@ -39,7 +39,9 @@ class TestValues(TestBase):
         self.assertEqual(data, {"author__name": "Bob"})
 
     def test_qss_field(self):
-        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        """
+        Should be able to include the ordering of the QuerySet in the returned fields.
+        """
         with self.assertNumQueries(2):
             data = list(self.all.values("#", "author__name"))[0]
         self.assertEqual(data, {"#": 0, "author__name": "Bob"})
@@ -124,7 +126,9 @@ class TestValuesList(TestBase):
         self.assertEqual(data, ("Bob",))
 
     def test_qss_field(self):
-        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        """
+        Should be able to include the ordering of the QuerySet in the returned fields.
+        """
         with self.assertNumQueries(2):
             data = list(self.all.values_list("#", "author__name"))[0]
         self.assertEqual(data, (0, "Bob"))
@@ -204,7 +208,9 @@ class TestFlatValuesList(TestBase):
         self.assertEqual(data, "Bob")
 
     def test_qss_field(self):
-        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        """
+        Should be able to include the ordering of the QuerySet in the returned fields.
+        """
         with self.assertNumQueries(2):
             data = list(self.all.values_list("#", flat=True))[0]
         self.assertEqual(data, 0)
@@ -291,7 +297,9 @@ class TestNamedValuesList(TestBase):
         self.assertEqual(data, ("Bob",))
 
     def test_qss_field(self):
-        """Should be able to include the ordering of the QuerySet in the returned fields."""
+        """
+        Should be able to include the ordering of the QuerySet in the returned fields.
+        """
         with self.assertNumQueries(2):
             data = list(self.all.values_list("#", "author__name", named=True))[0]
         self.assertEqual(data, (0, "Bob"))

@@ -197,7 +197,10 @@ class TestOperators(TestBase):
         self.assertIsInstance(combined, EmptyQuerySet)
 
     def test_and(self):
-        """ANDing with a QuerySet applies the and to each QuerySet and removes ones of differing types."""
+        """
+        ANDing with a QuerySet applies the and to each QuerySet and removes ones
+        of differing types.
+        """
         # ANDing with a different type of QuerySet ends up with an EmptyQuerySet.
         with self.assertNumQueries(0):
             combined = self.all & BlogPost.objects.all()
@@ -214,7 +217,10 @@ class TestOperators(TestBase):
         self.assertEqual(data, ["Fiction"])
 
     def test_empty_and(self):
-        """An empty QuerySetSequence can be ANDed with a QuerySet, but returns an EmptyQuerySet."""
+        """
+        An empty QuerySetSequence can be ANDed with a QuerySet, but returns an
+        EmptyQuerySet.
+        """
         combined = self.empty & BlogPost.objects.all()
         self.assertIsInstance(combined, EmptyQuerySet)
         self.assertEqual(list(combined), [])
@@ -253,7 +259,10 @@ class TestOperators(TestBase):
         self.assertEqual(data, self.TITLES_BY_PK + ["Post"])
 
     def test_empty_or(self):
-        """An empty QuerySetSequence can be ORed with a QuerySet, but returns an EmptyQuerySet."""
+        """
+        An empty QuerySetSequence can be ORed with a QuerySet and returns an
+        the original QuerySet.
+        """
         combined = self.empty | BlogPost.objects.all()
         self.assertIsInstance(combined, QuerySetSequence)
         self.assertEqual(len(combined._querysets), 1)
@@ -1371,7 +1380,9 @@ class TestBoolean(TestBase):
             self.assertTrue(self.all.filter(title="Biography"))
 
     def test_exists_second(self):
-        """Ensure that it casts to True if the item is found in a subsequent QuerySet."""
+        """
+        Ensure that it casts to True if the item is found in a subsequent QuerySet.
+        """
         with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(title="Alice in Django-land"))
 
@@ -1487,12 +1498,16 @@ class TestFirstLast(TestBase):
 
 class TestExists(TestBase):
     def test_exists(self):
-        """Ensure that exists() returns True if the item is found in the first QuerySet."""
+        """
+        Ensure that exists() returns True if the item is found in the first QuerySet.
+        """
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(title="Biography").exists())
 
     def test_exists_second(self):
-        """Ensure that exists() returns True if the item is found in a subsequent QuerySet."""
+        """
+        Ensure that exists() returns True if the item is found in a subsequent QuerySet.
+        """
         with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(title="Alice in Django-land").exists())
 
@@ -1514,13 +1529,18 @@ class TestExists(TestBase):
 @skipIf(django.VERSION < (4, 0), "Not supported in Django < 4.0.")
 class TestContains(TestBase):
     def test_contains(self):
-        """Ensure that contains() returns True if the item is found in the first QuerySet."""
+        """
+        Ensure that contains() returns True if the item is found in the first QuerySet.
+        """
         obj = self.all.get_querysets()[0].first()
         with self.assertNumQueries(1):
             self.assertTrue(self.all.contains(obj))
 
     def test_contains_second(self):
-        """Ensure that contains() returns True if the item is found in a subsequent QuerySet."""
+        """
+        Ensure that contains() returns True if the item is found in a subsequent
+        QuerySet.
+        """
         obj = self.all.get_querysets()[1].first()
         with self.assertNumQueries(1):
             self.assertTrue(self.all.contains(obj))
