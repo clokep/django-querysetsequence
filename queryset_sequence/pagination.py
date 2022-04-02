@@ -161,7 +161,7 @@ class SequenceCursorPagination(CursorPagination):
 
     def get_ordering(self, *args, **kwargs):
         """Take whatever the expected ordering is and then first order by QuerySet."""
-        result = super(SequenceCursorPagination, self).get_ordering(*args, **kwargs)
+        result = super().get_ordering(*args, **kwargs)
 
         # Because paginate_queryset sets self.ordering after reading it...we
         # need to only modify it sometimes. (This allows re-use of the
@@ -183,9 +183,7 @@ class SequenceCursorPagination(CursorPagination):
         qs_order = getattr(instance, "#")
 
         # Strip the '#' and call the standard _get_position_from_instance.
-        result = super(SequenceCursorPagination, self)._get_position_from_instance(
-            instance, ordering[1:]
-        )
+        result = super()._get_position_from_instance(instance, ordering[1:])
 
         # Return a tuple of these two elements.
         return (qs_order, result)
