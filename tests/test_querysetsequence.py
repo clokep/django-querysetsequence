@@ -912,7 +912,7 @@ class TestExtraAnnotate(TestBase):
         """Calling extra() gets applied to each QuerySet."""
         # Filter to just Bob's work.
         with self.assertNumQueries(0):
-            bob_qss = self.all.extra(where=["author_id = '{}'".format(self.bob.id)])
+            bob_qss = self.all.extra(where=[f"author_id = '{self.bob.id}'"])
         with self.assertNumQueries(2):
             self.assertEqual(bob_qss.count(), 3)
 

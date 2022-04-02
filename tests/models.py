@@ -41,7 +41,7 @@ class Article(models.Model):
         get_latest_by = "release"
 
     def __str__(self):
-        return "%s by %s" % (self.title, self.author)
+        return f"{self.title} by {self.author}"
 
 
 class BlogPost(models.Model):
@@ -63,7 +63,7 @@ class Book(models.Model):
         get_latest_by = "release"
 
     def __str__(self):
-        return "%s by %s" % (self.title, self.author)
+        return f"{self.title} by {self.author}"
 
 
 class AbtractModel(models.Model):

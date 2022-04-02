@@ -22,7 +22,9 @@ Maintenance
 * Support django-rest-framework 3.13. (`#86 <https://github.com/clokep/django-querysetsequence/pull/86>`_)
 * Improve package metadata. (`#89 <https://github.com/clokep/django-querysetsequence/pull/89>`_)
 * Run `black <https://black.readthedocs.io/>`_, `isort <https://pycqa.github.io/isort/>`_,
-  and `flake8 <https://flake8.pycqa.org>`_. (`#90 <https://github.com/clokep/django-querysetsequence/pull/90>`_)
+  and `flake8 <https://flake8.pycqa.org>`_, and `pyupgrade <https://github.com/asottile/pyupgrade>`_.
+  (`#90 <https://github.com/clokep/django-querysetsequence/pull/90>`_,
+  `#91 <https://github.com/clokep/django-querysetsequence/pull/91>`_)
 
 
 0.15 (2021-12-10)
