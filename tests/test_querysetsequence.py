@@ -71,7 +71,11 @@ class TestBase(TestCase):
         )
         book.publishers.set([big_books])
         book = Book.objects.create(
-            title="Biography", author=bob, pages=20, release=date(2002, 12, 24), additional_info='Biography'
+            title="Biography",
+            author=bob,
+            pages=20,
+            release=date(2002, 12, 24),
+            additional_info='Biography'
         )
         book.publishers.set([big_books])
         Article.objects.create(
@@ -951,7 +955,14 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        self.assertEqual(data, [None, None, 'Alice in Django-land', 'Biography', 'Some Article'])
+        expected = [
+            None,
+            None,
+            "Alice in Django-land",
+            "Biography",
+            "Some Article"
+        ]
+        self.assertEqual(data, expected)
 
     def test_reverse_order_by_possible_none_field(self):
         """Test reverse ordering by possible none value fields."""
@@ -961,7 +972,14 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        self.assertEqual(data, ['Some Article', 'Biography', 'Alice in Django-land', None, None])
+        expected = [
+            'Some Article',
+            'Biography',
+            'Alice in Django-land',
+            None,
+            None
+        ]
+        self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
         """Ordering by a non-existent field raises an exception upon evaluation."""
