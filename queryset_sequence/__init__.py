@@ -23,7 +23,14 @@ __all__ = ["QuerySetSequence"]
 
 def cmp(a, b):
     """Python 3 version of cmp built-in."""
-    return (a > b) - (a < b)
+    if a is None and b is None:
+        return 0
+    elif a is None:
+        return -1
+    elif b is None:
+        return 1
+    else:
+        return (a > b) - (a < b)
 
 
 def multiply_iterables(it1, it2):
