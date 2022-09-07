@@ -62,7 +62,7 @@ class TestBase(TestCase):
             author=alice,
             publisher=mad_magazine,
             release=date(1990, 8, 14),
-            additional_info='Alice in Django-land'
+            additional_info="Alice in Django-land",
         )
 
         # Bob wrote a couple of books, an article, and a blog post.
@@ -75,7 +75,7 @@ class TestBase(TestCase):
             author=bob,
             pages=20,
             release=date(2002, 12, 24),
-            additional_info='Biography'
+            additional_info="Biography",
         )
         book.publishers.set([big_books])
         Article.objects.create(
@@ -83,7 +83,7 @@ class TestBase(TestCase):
             author=bob,
             publisher=mad_magazine,
             release=date(1979, 1, 1),
-            additional_info='Some Article'
+            additional_info="Some Article",
         )
         BlogPost.objects.create(title="Post", author=bob, publisher=wacky_website)
 
@@ -955,13 +955,7 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        expected = [
-            None,
-            None,
-            "Alice in Django-land",
-            "Biography",
-            "Some Article"
-        ]
+        expected = [None, None, "Alice in Django-land", "Biography", "Some Article"]
         self.assertEqual(data, expected)
 
     def test_reverse_order_by_possible_none_field(self):
@@ -972,13 +966,7 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        expected = [
-            'Some Article',
-            'Biography',
-            'Alice in Django-land',
-            None,
-            None
-        ]
+        expected = ["Some Article", "Biography", "Alice in Django-land", None, None]
         self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
