@@ -945,10 +945,7 @@ class TestOrderBy(TestBase):
         """Ordering by a non-existent field raises an exception upon evaluation."""
         with self.assertRaises(FieldError):
             with self.assertNumQueries(0):
-                qss = self.all.order_by("pages")
-            # Note that starting in Django 3.1 the exception is raised when the
-            # QuerySet is created, not when it is evaluated.
-            list(qss)
+                self.all.order_by("pages")
 
     def test_order_by_multi(self):
         """Test ordering by multiple fields."""

@@ -843,16 +843,8 @@ class QuerySetSequence:
     def dates(self, field, kind, order="ASC"):
         raise NotImplementedError()
 
-    # Django 3.1 added an additional parameter.
-    if django.VERSION < (3, 1):
-
-        def datetimes(self, field_name, kind, order="ASC", tzinfo=None):
-            raise NotImplementedError()
-
-    else:
-
-        def datetimes(self, field_name, kind, order="ASC", tzinfo=None, is_dst=None):
-            raise NotImplementedError()
+    def datetimes(self, field_name, kind, order="ASC", tzinfo=None, is_dst=None):
+        raise NotImplementedError()
 
     def none(self):
         # This is a bit odd, but use the first QuerySet to properly return an
