@@ -3,6 +3,15 @@
 Changelog
 #########
 
+next
+====
+
+Maintenance
+-----------
+
+* Drop support for Django 2.2 and 3.1. (`#98 <https://github.com/clokep/django-querysetsequence/pull/98>`_)
+* Drop support for Django REST Framework < 3.11. (`#98 <https://github.com/clokep/django-querysetsequence/pull/98>`_)
+
 0.16 (2022-04-01)
 =================
 
