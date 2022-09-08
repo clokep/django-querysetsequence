@@ -6,6 +6,13 @@ Changelog
 next
 ====
 
+Improvements
+------------
+
+* Initial support for `asynchronous queries`_. (`#99 <https://github.com/clokep/django-querysetsequence/pull/99>`_)
+
+.. _asynchronous queries: https://docs.djangoproject.com/en/4.1/topics/db/queries/#async-queries
+
 Maintenance
 -----------
 
