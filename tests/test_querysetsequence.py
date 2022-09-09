@@ -340,14 +340,14 @@ class TestRelated(TestBase):
     """Tests for select_related and prefetch_related."""
 
     # Bob, Bob, Alice, Alice, Bob.
-    EXPECTED_ORDER = [2, 2, 1, 1, 2]
+    EXPECTED_ORDER = ["Bob", "Bob", "Alice", "Alice", "Bob"]
 
     def test_no_related(self):
         """Check the behavior to ensure that iterating causes additional queries."""
         with self.assertNumQueries(2):
             books = list(self.all)
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_select_related(self):
@@ -355,7 +355,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.select_related("author"))
         with self.assertNumQueries(0):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for select_related that follows multiple ForeignKeys.
@@ -366,7 +366,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.select_related("author").select_related(None))
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_select_related(self):
@@ -378,7 +378,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(4):
             books = list(self.all.prefetch_related("author"))
         with self.assertNumQueries(0):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for prefetch_related that follows multiple ForeignKeys.
@@ -388,7 +388,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.prefetch_related("author").prefetch_related(None))
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_prefetch_related(self):
@@ -926,7 +926,9 @@ class TestExtraAnnotate(TestBase):
         qss = QuerySetSequence(
             Publisher.objects.all(), PeriodicalPublisher.objects.all()
         )
-        qss = qss.annotate(published_count=Count("published"))
+        qss = qss.annotate(published_count=Count("published")).order_by(
+            "published_count"
+        )
 
         # Each Published gets the count of things in it added.
         with self.assertNumQueries(2):
