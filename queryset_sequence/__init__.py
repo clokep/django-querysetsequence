@@ -26,9 +26,9 @@ def cmp(a, b):
     if a is None and b is None:
         return 0
     elif a is None:
-        return -1
-    elif b is None:
         return 1
+    elif b is None:
+        return -1
     else:
         return (a > b) - (a < b)
 

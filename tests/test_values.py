@@ -14,7 +14,8 @@ class TestValues(TestBase):
         self.assertEqual(titles, self.TITLES_BY_PK)
         self.assertEqual(authors, [2, 2, 1, 1, 2])
         self.assertCountEqual(
-            values[0].keys(), ["#", "id", "author_id", "pages", "release", "title"]
+            values[0].keys(),
+            ["#", "id", "author_id", "pages", "release", "title", "additional_info"],
         )
 
     def test_fields(self):

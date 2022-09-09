@@ -1,3 +1,4 @@
+import datetime
 from datetime import date
 from unittest import skip, skipIf
 from unittest.mock import patch
@@ -955,7 +956,7 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        expected = [None, None, "Alice in Django-land", "Biography", "Some Article"]
+        expected = ["Alice in Django-land", "Biography", "Some Article", None, None]
         self.assertEqual(data, expected)
 
     def test_reverse_order_by_possible_none_field(self):
@@ -966,7 +967,7 @@ class TestOrderBy(TestBase):
         # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
             data = [it.additional_info for it in qss]
-        expected = ["Some Article", "Biography", "Alice in Django-land", None, None]
+        expected = [None, None, "Some Article", "Biography", "Alice in Django-land"]
         self.assertEqual(data, expected)
 
     def test_order_by_non_existent_field(self):
