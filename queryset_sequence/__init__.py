@@ -943,31 +943,90 @@ class QuerySetSequence:
         # Return the only result found.
         return result
 
+    if django.VERSION >= (4, 1):
+
+        async def aget(self, **kwargs):
+            raise NotImplementedError()
+
     def create(self, **kwargs):
         raise NotImplementedError()
+
+    if django.VERSION >= (4, 1):
+
+        async def acreate(self, **kwargs):
+            raise NotImplementedError()
 
     def get_or_create(self, defaults=None, **kwargs):
         raise NotImplementedError()
 
+    if django.VERSION >= (4, 1):
+
+        async def aget_or_create(self, defaults=None, **kwargs):
+            raise NotImplementedError()
+
     def update_or_create(self, defaults=None, **kwargs):
         raise NotImplementedError()
 
-    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
-        raise NotImplementedError()
+    if django.VERSION >= (4, 1):
+
+        async def aupdate_or_create(self, defaults=None, **kwargs):
+            raise NotImplementedError()
+
+    # Django 4.1 added additional parameters.
+    if django.VERSION >= (4, 1):
+
+        def bulk_create(
+            self,
+            objs,
+            batch_size=None,
+            ignore_conflicts=False,
+            update_conflicts=False,
+            update_fields=None,
+            unique_fields=None,
+        ):
+            raise NotImplementedError()
+
+        async def abulk_create(self, objs, batch_size=None, ignore_conflicts=False):
+            raise NotImplementedError()
+
+    else:
+
+        def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
+            raise NotImplementedError()
 
     def bulk_update(self, objs, fields, batch_size=None):
         raise NotImplementedError()
 
+    if django.VERSION >= (4, 1):
+
+        async def abulk_update(self, objs, fields, batch_size=None):
+            raise NotImplementedError()
+
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
 
+    if django.VERSION >= (4, 1):
+
+        async def acount(self):
+            raise NotImplementedError()
+
     def in_bulk(self, id_list=None, *, field_name="pk"):
         raise NotImplementedError()
+
+    if django.VERSION >= (4, 1):
+
+        async def ain_bulk(self, id_list=None, *, field_name="pk"):
+            raise NotImplementedError()
 
     def iterator(self):
         clone = self._clone()
         clone._querysets = [qs.iterator() for qs in self._querysets]
         return clone
+
+    if django.VERSION >= (4, 1):
+
+        async def aiterator(self):
+            raise NotImplementedError()
 
     def _get_latest_by(self):
         """Process get_latest_by Meta on each QuerySet and return the value."""
@@ -1022,6 +1081,11 @@ class QuerySetSequence:
         # Return the latest.
         return self._get_first_or_last(objs, fields, True)
 
+    if django.VERSION >= (4, 1):
+
+        async def alatest(self, *fields):
+            raise NotImplementedError()
+
     def earliest(self, *fields):
         # If fields are given, fallback to get_latest_by.
         if not fields:
@@ -1041,6 +1105,11 @@ class QuerySetSequence:
         # Return the latest.
         return self._get_first_or_last(objs, fields, False)
 
+    if django.VERSION >= (4, 1):
+
+        async def aearliest(self, *fields):
+            raise NotImplementedError()
+
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
         # use the first item of first QuerySet. If ordered, compare the first
@@ -1057,6 +1126,11 @@ class QuerySetSequence:
                 [qs.first() for qs in self._querysets], self._order_by, False
             )
 
+    if django.VERSION >= (4, 1):
+
+        async def afirst(self):
+            raise NotImplementedError()
+
     def last(self):
         # See the comments for first().
         if not self._querysets:
@@ -1071,18 +1145,43 @@ class QuerySetSequence:
                 [qs.last() for qs in self._querysets], self._order_by, True
             )
 
+    if django.VERSION >= (4, 1):
+
+        async def alast(self):
+            raise NotImplementedError()
+
     def aggregate(self, *args, **kwargs):
         raise NotImplementedError()
+
+    if django.VERSION >= (4, 1):
+
+        async def aaggregate(self, *args, **kwargs):
+            raise NotImplementedError()
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
 
+    if django.VERSION >= (4, 1):
+
+        async def aexists(self):
+            raise NotImplementedError()
+
     def contains(self, obj):
         return any(qs.contains(obj) for qs in self._querysets)
+
+    if django.VERSION >= (4, 1):
+
+        async def acontains(self):
+            raise NotImplementedError()
 
     def update(self, **kwargs):
         with transaction.atomic():
             return sum(qs.update(**kwargs) for qs in self._querysets)
+
+    if django.VERSION >= (4, 1):
+
+        async def aupdate(self, **kwargs):
+            raise NotImplementedError()
 
     def delete(self):
         deleted_count = 0
@@ -1098,11 +1197,21 @@ class QuerySetSequence:
 
         return deleted_count, dict(deleted_objects)
 
+    if django.VERSION >= (4, 1):
+
+        async def adelete(self):
+            raise NotImplementedError()
+
     def as_manager(self):
         raise NotImplementedError()
 
     def explain(self, format=None, **options):
         return "\n".join(qs.explain(format=format, **options) for qs in self._querysets)
+
+    if django.VERSION >= (4, 1):
+
+        async def aexplain(self, format=None, **options):
+            raise NotImplementedError()
 
     # Public attributes
     @property
