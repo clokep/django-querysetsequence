@@ -4,9 +4,6 @@ SECRET_KEY = "not_empty"
 SITE_ID = 1
 
 if "POSTGRES_HOST" in environ:
-    # Run against Docker:
-    #
-    # docker run --rm -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=qss -p 5432:5432 postgres:12
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
