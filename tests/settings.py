@@ -1,12 +1,29 @@
+from os import environ
+
 SECRET_KEY = "not_empty"
 SITE_ID = 1
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+if "POSTGRES_HOST" in environ:
+    # Run against Docker:
+    #
+    # docker run --rm -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=qss -p 5432:5432 postgres:12
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": environ["POSTGRES_DATABASE"],
+            "USER": environ["POSTGRES_USER"],
+            "PASSWORD": environ["POSTGRES_PASSWORD"],
+            "HOST": environ["POSTGRES_HOST"],
+            "PORT": "5432",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 
 TEMPLATES = [
     {
