@@ -1,12 +1,26 @@
+from os import environ
+
 SECRET_KEY = "not_empty"
 SITE_ID = 1
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+if "POSTGRES_HOST" in environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": environ["POSTGRES_DATABASE"],
+            "USER": environ["POSTGRES_USER"],
+            "PASSWORD": environ["POSTGRES_PASSWORD"],
+            "HOST": environ["POSTGRES_HOST"],
+            "PORT": "5432",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 
 TEMPLATES = [
     {
