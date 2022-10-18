@@ -16,7 +16,7 @@ class TestValues(TestBase):
         self.assertEqual(authors, ["Bob", "Bob", "Alice", "Alice", "Bob"])
         self.assertCountEqual(
             values[0].keys(),
-            ["#", "id", "author_id", "pages", "release", "title", "additional_info"],
+            ["#", "id", "author_id", "pages", "release", "title"],
         )
 
     def test_fields(self):
@@ -58,6 +58,37 @@ class TestValues(TestBase):
         with self.assertNumQueries(2):
             data = [it["title"] for it in self.all.values("title").order_by("-title")]
         self.assertEqual(data, sorted(self.TITLES_BY_PK, reverse=True))
+
+    def test_order_by_nulls(self):
+        """Test ordering by none values."""
+        # Set the first item of each QuerySet to not have a release date.
+        for qs in self.all.get_querysets():
+            instance = qs.first()
+            instance.release = None
+            instance.save()
+
+        # Check the nulls are properly ordered.
+        with self.assertNumQueries(0):
+            qss = self.all.values("title", "release").order_by("release")
+
+        with self.assertNumQueries(2):
+            data = [(it["title"], it["release"] is None) for it in qss]
+        expected = [
+            ("Fiction", True),
+            ("Django Rocks", True),
+            ("Some Article", False),
+            ("Alice in Django-land", False),
+            ("Biography", False),
+        ]
+        self.assertEqual(data, expected)
+
+        # Check ordering by reverse.
+        with self.assertNumQueries(0):
+            qss = self.all.values("title", "release").order_by("-release")
+
+        with self.assertNumQueries(2):
+            data = [(it["title"], it["release"] is None) for it in qss]
+        self.assertEqual(data, list(reversed(expected)))
 
     def test_order_by_other_field(self):
         """Ordering by a field that isn't included in the responses should work."""

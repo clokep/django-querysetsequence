@@ -1,4 +1,3 @@
-import datetime
 from datetime import date
 from unittest import skip, skipIf
 from unittest.mock import patch
@@ -68,7 +67,6 @@ class TestBase(TestCase):
             author=alice,
             publisher=mad_magazine,
             release=date(1990, 8, 14),
-            additional_info="Alice in Django-land",
         )
 
         # Bob wrote a couple of books, an article, and a blog post.
@@ -81,7 +79,6 @@ class TestBase(TestCase):
             author=bob,
             pages=20,
             release=date(2002, 12, 24),
-            additional_info="Biography",
         )
         book.publishers.set([big_books])
         Article.objects.create(
@@ -89,7 +86,6 @@ class TestBase(TestCase):
             author=bob,
             publisher=mad_magazine,
             release=date(1979, 1, 1),
-            additional_info="Some Article",
         )
         BlogPost.objects.create(title="Post", author=bob, publisher=wacky_website)
 
@@ -955,27 +951,36 @@ class TestOrderBy(TestBase):
             data = [it.title for it in qss]
         self.assertEqual(data, sorted(self.TITLES_BY_PK))
 
-    def test_order_by_possible_none_field(self):
-        """Test ordering by possible none value fields."""
-        with self.assertNumQueries(0):
-            qss = self.all.order_by("additional_info")
+    def test_order_by_nulls(self):
+        """Test ordering by none values."""
+        # Set the first item of each QuerySet to not have a release date.
+        for qs in self.all.get_querysets():
+            instance = qs.first()
+            instance.release = None
+            instance.save()
 
-        # Check the additional_info are properly ordered.
+        # Check the nulls are properly ordered.
+        with self.assertNumQueries(0):
+            qss = self.all.order_by("release")
+
         with self.assertNumQueries(2):
-            data = [it.additional_info for it in qss]
-        expected = ["Alice in Django-land", "Biography", "Some Article", None, None]
+            data = [(it.title, it.release is None) for it in qss]
+        expected = [
+            ("Fiction", True),
+            ("Django Rocks", True),
+            ("Some Article", False),
+            ("Alice in Django-land", False),
+            ("Biography", False),
+        ]
         self.assertEqual(data, expected)
 
-    def test_reverse_order_by_possible_none_field(self):
-        """Test reverse ordering by possible none value fields."""
+        # Check ordering by reverse.
         with self.assertNumQueries(0):
-            qss = self.all.order_by("-additional_info")
+            qss = self.all.order_by("-release")
 
-        # Check the additional_info are properly ordered.
         with self.assertNumQueries(2):
-            data = [it.additional_info for it in qss]
-        expected = [None, None, "Some Article", "Biography", "Alice in Django-land"]
-        self.assertEqual(data, expected)
+            data = [(it.title, it.release is None) for it in qss]
+        self.assertEqual(data, list(reversed(expected)))
 
     def test_order_by_non_existent_field(self):
         """Ordering by a non-existent field raises an exception upon evaluation."""
