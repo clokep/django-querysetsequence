@@ -26,6 +26,11 @@ from tests.models import (
     Publisher,
 )
 
+if django.VERSION >= (4, 1):
+    ImplementedIn41 = NotImplementedError
+else:
+    ImplementedIn41 = AttributeError
+
 
 class TestBase(TestCase):
     # The title of each Book, followed by each Article; each ordered by primary
@@ -342,14 +347,14 @@ class TestRelated(TestBase):
     """Tests for select_related and prefetch_related."""
 
     # Bob, Bob, Alice, Alice, Bob.
-    EXPECTED_ORDER = [2, 2, 1, 1, 2]
+    EXPECTED_ORDER = ["Bob", "Bob", "Alice", "Alice", "Bob"]
 
     def test_no_related(self):
         """Check the behavior to ensure that iterating causes additional queries."""
         with self.assertNumQueries(2):
             books = list(self.all)
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_select_related(self):
@@ -357,7 +362,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.select_related("author"))
         with self.assertNumQueries(0):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for select_related that follows multiple ForeignKeys.
@@ -368,7 +373,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.select_related("author").select_related(None))
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_select_related(self):
@@ -380,7 +385,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(4):
             books = list(self.all.prefetch_related("author"))
         with self.assertNumQueries(0):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     # TODO Add a test for prefetch_related that follows multiple ForeignKeys.
@@ -390,7 +395,7 @@ class TestRelated(TestBase):
         with self.assertNumQueries(2):
             books = list(self.all.prefetch_related("author").prefetch_related(None))
         with self.assertNumQueries(5):
-            authors = [b.author.id for b in books]
+            authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
     def test_empty_prefetch_related(self):
@@ -928,7 +933,9 @@ class TestExtraAnnotate(TestBase):
         qss = QuerySetSequence(
             Publisher.objects.all(), PeriodicalPublisher.objects.all()
         )
-        qss = qss.annotate(published_count=Count("published"))
+        qss = qss.annotate(published_count=Count("published")).order_by(
+            "published_count"
+        )
 
         # Each Published gets the count of things in it added.
         with self.assertNumQueries(2):
@@ -974,10 +981,7 @@ class TestOrderBy(TestBase):
         """Ordering by a non-existent field raises an exception upon evaluation."""
         with self.assertRaises(FieldError):
             with self.assertNumQueries(0):
-                qss = self.all.order_by("pages")
-            # Note that starting in Django 3.1 the exception is raised when the
-            # QuerySet is created, not when it is evaluated.
-            list(qss)
+                self.all.order_by("pages")
 
     def test_order_by_multi(self):
         """Test ordering by multiple fields."""
@@ -1687,25 +1691,49 @@ class TestCannotImplement(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.create()
 
+    async def test_acreate(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.acreate()
+
     def test_get_or_create(self):
         with self.assertRaises(NotImplementedError):
             self.all.get_or_create()
+
+    async def test_aget_or_create(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aget_or_create()
 
     def test_update_or_create(self):
         with self.assertRaises(NotImplementedError):
             self.all.update_or_create()
 
+    async def test_aupdate_or_create(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aupdate_or_create()
+
     def test_bulk_create(self):
         with self.assertRaises(NotImplementedError):
             self.all.bulk_create([])
+
+    async def test_abulk_create(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.abulk_create([])
 
     def test_bulk_update(self):
         with self.assertRaises(NotImplementedError):
             self.all.bulk_update([], [])
 
+    async def test_abulk_update(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.abulk_update([], [])
+
     def test_in_bulk(self):
         with self.assertRaises(NotImplementedError):
             self.all.in_bulk()
+
+    async def test_ain_bulk(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.ain_bulk()
 
 
 class TestNotImplemented(TestCase):
@@ -1742,9 +1770,61 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.raw("")
 
+    async def test_aget(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aget()
+
+    async def test_acount(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.acount()
+
+    async def test_aiterator(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aiterator()
+
+    async def test_alatest(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.alatest()
+
+    async def test_aearliest(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aearliest()
+
+    async def test_afirst(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.afirst()
+
+    async def test_alast(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.alast()
+
     def test_aggregate(self):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate()
+
+    async def test_aaggregate(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aaggregate()
+
+    async def test_aexists(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aexists()
+
+    async def test_acontains(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.acontains()
+
+    async def test_aupdate(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aupdate()
+
+    async def test_adelete(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.adelete()
+
+    async def test_aexplain(self):
+        with self.assertRaises(ImplementedIn41):
+            await self.all.aexplain()
 
     def test_alias(self):
         if django.VERSION > (3, 2):

@@ -1,5 +1,6 @@
 import datetime
 
+from tests.models import Author, Book
 from tests.test_querysetsequence import TestBase
 
 
@@ -10,9 +11,9 @@ class TestValues(TestBase):
             values = list(self.all.values())
         titles = [it["title"] for it in values]
         # Foreign keys are kept as IDs.
-        authors = [it["author_id"] for it in values]
+        authors = [Author.objects.get(id=it["author_id"]).name for it in values]
         self.assertEqual(titles, self.TITLES_BY_PK)
-        self.assertEqual(authors, [2, 2, 1, 1, 2])
+        self.assertEqual(authors, ["Bob", "Bob", "Alice", "Alice", "Bob"])
         self.assertCountEqual(
             values[0].keys(),
             ["#", "id", "author_id", "pages", "release", "title", "additional_info"],
@@ -31,7 +32,7 @@ class TestValues(TestBase):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
             data = list(self.all.values("author"))[0]
-        self.assertEqual(data, {"author": 2})
+        self.assertEqual(Author.objects.get(id=data["author"]).name, "Bob")
 
     def test_join(self):
         """Including a field across a foreign key join should work."""
@@ -104,7 +105,9 @@ class TestValuesList(TestBase):
         """Ensure the values conversion works as expected."""
         with self.assertNumQueries(2):
             values = list(self.all.values_list())
-        self.assertEqual(values[0], (1, "Fiction", 2, datetime.date(2001, 6, 12), 10))
+        # Don't check any ID since they could vary.
+        self.assertEqual(values[0][1], "Fiction")
+        self.assertEqual(values[0][3:], (datetime.date(2001, 6, 12), 10))
 
     def test_fields(self):
         """Ensure the proper fields are returned."""
@@ -119,7 +122,7 @@ class TestValuesList(TestBase):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
             data = list(self.all.values_list("author"))[0]
-        self.assertEqual(data, (2,))
+        self.assertEqual(Author.objects.get(id=data[0]).name, "Bob")
 
     def test_join(self):
         with self.assertNumQueries(2):
@@ -189,7 +192,7 @@ class TestFlatValuesList(TestBase):
         """Ensure the values conversion works as expected."""
         with self.assertNumQueries(2):
             values = list(self.all.values_list(flat=True))
-        self.assertEqual(values[0], 1)
+        self.assertEqual(values[0], Book.objects.first().id)
 
     def test_fields(self):
         """Ensure the proper fields are returned."""
@@ -201,7 +204,7 @@ class TestFlatValuesList(TestBase):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
             data = list(self.all.values_list("author", flat=True))[0]
-        self.assertEqual(data, 2)
+        self.assertEqual(Author.objects.get(id=data).name, "Bob")
 
     def test_join(self):
         with self.assertNumQueries(2):
@@ -269,7 +272,9 @@ class TestNamedValuesList(TestBase):
         """Ensure the values conversion works as expected."""
         with self.assertNumQueries(2):
             values = list(self.all.values_list(named=True))
-        self.assertEqual(values[0], (1, "Fiction", 2, datetime.date(2001, 6, 12), 10))
+        # Ignore IDs since those aren't stable.
+        self.assertEqual(values[0][1], "Fiction")
+        self.assertEqual(values[0][3:], (datetime.date(2001, 6, 12), 10))
         self.assertEqual(
             values[0]._fields, ("id", "title", "author_id", "release", "pages")
         )
@@ -290,7 +295,7 @@ class TestNamedValuesList(TestBase):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
             data = list(self.all.values_list("author", named=True))[0]
-        self.assertEqual(data, (2,))
+        self.assertEqual(Author.objects.get(id=data[0]).name, "Bob")
 
     def test_join(self):
         with self.assertNumQueries(2):

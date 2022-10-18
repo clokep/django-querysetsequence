@@ -124,66 +124,123 @@ Summary of Supported APIs
     * - |get|_
       - |check|
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
+    * - |aget|_
+      - |xmark|
+      -
     * - |create|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
+    * - |acreate|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |get_or_create|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
+    * - |aget_or_create|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |update_or_create|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
+    * - |aupdate_or_create|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |bulk_create|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
+    * - |abulk_create|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
     * - |bulk_update|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
+    * - |abulk_update|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |count|_
       - |check|
       -
+    * - |acount|_
+      - |xmark|
+      -
     * - |in_bulk|_
+      - |xmark|
+      - Cannot be implemented in ``QuerySetSequence``.
+    * - |ain_bulk|_
       - |xmark|
       - Cannot be implemented in ``QuerySetSequence``.
     * - |iterator|_
       - |check|
       -
+    * - |aiterator|_
+      - |xmark|
+      -
     * - |latest|_
       - |check|
       - If no fields are given, ``get_latest_by`` on each model is required to
         be identical.
+    * - |alatest|_
+      - |xmark|
+      -
     * - |earliest|_
       - |check|
       - See the docuemntation for ``latest()``.
+    * - |aearliest|_
+      - |xmark|
+      -
     * - |first|_
       - |check|
       - If no ordering is set this is essentially the same as calling
         ``first()`` on the first ``QuerySet``, if there is an ordering, the
         result of ``first()`` for each ``QuerySet`` is compared and the "first"
         value is returned.
+    * - |afirst|_
+      - |xmark|
+      -
     * - |last|_
       - |check|
       - See the documentation for ``first()``.
+    * - |alast|_
+      - |xmark|
+      -
     * - |aggregate|_
+      - |xmark|
+      -
+    * - |aaggregate|_
       - |xmark|
       -
     * - |exists|_
       - |check|
       -
+    * - |aexists|_
+      - |xmark|
+      -
     * - |contains|_
       - |check|
+      -
+    * - |acontains|_
+      - |xmark|
       -
     * - |update|_
       - |check|
       -
+    * - |aupdate|_
+      - |xmark|
+      -
     * - |delete|_
       - |check|
+      -
+    * - |adelete|_
+      - |xmark|
       -
     * - |as_manager|_
       - |check|
       -
     * - |explain|_
       - |check|
+      -
+    * - |aexplain|_
+      - |xmark|
       -
 
 .. list-table:: Additional methods specific to ``QuerySetSequence``
@@ -256,44 +313,82 @@ Summary of Supported APIs
 
 .. |get| replace:: ``get()``
 .. _get: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get
+.. |aget| replace:: ``aget()``
+.. _aget: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get
 .. |create| replace:: ``create()``
 .. _create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#create
+.. |acreate| replace:: ``acreate()``
+.. _acreate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#create
 .. |get_or_create| replace:: ``get_or_create()``
 .. _get_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get-or-create
+.. |aget_or_create| replace:: ``aget_or_create()``
+.. _aget_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#get-or-create
 .. |update_or_create| replace:: ``update_or_create()``
 .. _update_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create
+.. |aupdate_or_create| replace:: ``aupdate_or_create()``
+.. _aupdate_or_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create
 .. |bulk_create| replace:: ``bulk_create()``
 .. _bulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
+.. |abulk_create| replace:: ``abulk_create()``
+.. _abulk_create: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
 .. |bulk_update| replace:: ``bulk_update()``
 .. _bulk_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-update
+.. |abulk_update| replace:: ``abulk_update()``
+.. _abulk_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-update
 .. |count| replace:: ``count()``
 .. _count: https://docs.djangoproject.com/en/dev/ref/models/querysets/#count
+.. |acount| replace:: ``acount()``
+.. _acount: https://docs.djangoproject.com/en/dev/ref/models/querysets/#count
 .. |in_bulk| replace:: ``in_bulk()``
 .. _in_bulk: https://docs.djangoproject.com/en/dev/ref/models/querysets/#in_bulk
+.. |ain_bulk| replace:: ``ain_bulk()``
+.. _ain_bulk: https://docs.djangoproject.com/en/dev/ref/models/querysets/#in_bulk
 .. |iterator| replace:: ``iterator()``
 .. _iterator: https://docs.djangoproject.com/en/dev/ref/models/querysets/#iterator
+.. |aiterator| replace:: ``aiterator()``
+.. _aiterator: https://docs.djangoproject.com/en/dev/ref/models/querysets/#iterator
 .. |latest| replace:: ``latest()``
 .. _latest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#latest
+.. |alatest| replace:: ``alatest()``
+.. _alatest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#latest
 .. |earliest| replace:: ``earliest()``
 .. _earliest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#earliest
+.. |aearliest| replace:: ``aearliest()``
+.. _aearliest: https://docs.djangoproject.com/en/dev/ref/models/querysets/#earliest
 .. |first| replace:: ``first()``
 .. _first: https://docs.djangoproject.com/en/dev/ref/models/querysets/#first
+.. |afirst| replace:: ``afirst()``
+.. _afirst: https://docs.djangoproject.com/en/dev/ref/models/querysets/#first
 .. |last| replace:: ``last()``
 .. _last: https://docs.djangoproject.com/en/dev/ref/models/querysets/#last
+.. |alast| replace:: ``alast()``
+.. _alast: https://docs.djangoproject.com/en/dev/ref/models/querysets/#last
 .. |aggregate| replace:: ``aggregate()``
 .. _aggregate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#aggregate
+.. |aaggregate| replace:: ``aaggregate()``
+.. _aaggregate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#aggregate
 .. |exists| replace:: ``exists()``
 .. _exists: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
+.. |aexists| replace:: ``aexists()``
+.. _aexists: https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
 .. |contains| replace:: ``contains()``
 .. _contains: https://docs.djangoproject.com/en/dev/ref/models/querysets/#contains
+.. |acontains| replace:: ``acontains()``
+.. _acontains: https://docs.djangoproject.com/en/dev/ref/models/querysets/#contains
 .. |update| replace:: ``update()``
 .. _update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update
+.. |aupdate| replace:: ``aupdate()``
+.. _aupdate: https://docs.djangoproject.com/en/dev/ref/models/querysets/#update
 .. |delete| replace:: ``delete()``
 .. _delete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
+.. |adelete| replace:: ``adelete()``
+.. _adelete: https://docs.djangoproject.com/en/dev/ref/models/querysets/#delete
 .. |as_manager| replace:: ``as_manager()``
 .. _as_manager: https://docs.djangoproject.com/en/dev/ref/models/querysets/#as-manager
 .. |explain| replace:: ``explain()``
 .. _explain: https://docs.djangoproject.com/en/dev/ref/models/querysets/#explain
+.. |aexplain| replace:: ``aexplain()``
+.. _aexplain: https://docs.djangoproject.com/en/dev/ref/models/querysets/#explain
 
 .. |get_querysets| replace:: ``get_querysets()``
 

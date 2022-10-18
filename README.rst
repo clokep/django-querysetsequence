@@ -75,8 +75,8 @@ Project Information
 
 django-querysetsequence is released under the ISC license, its documentation lives
 on `Read the Docs`_, the code on `GitHub`_, and the latest release on `PyPI`_. It
-supports Python 3.7+, Django 2.2/3.1/3.2/4.0, and is optionally compatible with
-`Django REST Framework`_ 3.9+.
+supports Python 3.7+, Django 3.2/4.0/4.1, and is optionally compatible with
+`Django REST Framework`_ 3.11+.
 
 .. _Read the Docs: https://django-querysetsequence.readthedocs.io/
 .. _GitHub: https://github.com/clokep/django-querysetsequence
