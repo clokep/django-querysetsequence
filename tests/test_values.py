@@ -1,5 +1,7 @@
 import datetime
 
+from django.db import connection
+
 from tests.models import Author, Book
 from tests.test_querysetsequence import TestBase
 
@@ -73,18 +75,28 @@ class TestValues(TestBase):
 
         with self.assertNumQueries(2):
             data = [(it["title"], it["release"] is None) for it in qss]
-        expected = [
-            ("Fiction", True),
-            ("Django Rocks", True),
-            ("Some Article", False),
-            ("Alice in Django-land", False),
-            ("Biography", False),
-        ]
+        if connection.features.nulls_order_largest:
+            expected = [
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+                ("Fiction", True),
+                ("Django Rocks", True),
+            ]
+        else:
+            expected = [
+                ("Fiction", True),
+                ("Django Rocks", True),
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+            ]
         self.assertEqual(data, expected)
 
-        # Check ordering by reverse.
+        # Check ordering by reverse (fallback to the opposite QuerySet order to
+        # make it match to reverse the expected lists above).
         with self.assertNumQueries(0):
-            qss = self.all.values("title", "release").order_by("-release")
+            qss = self.all.values("title", "release").order_by("-release", "-#")
 
         with self.assertNumQueries(2):
             data = [(it["title"], it["release"] is None) for it in qss]

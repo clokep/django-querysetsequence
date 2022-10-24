@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import django
 from django import forms
+from django.db import connection
 from django.core.exceptions import (
     FieldDoesNotExist,
     FieldError,
@@ -965,18 +966,28 @@ class TestOrderBy(TestBase):
 
         with self.assertNumQueries(2):
             data = [(it.title, it.release is None) for it in qss]
-        expected = [
-            ("Fiction", True),
-            ("Django Rocks", True),
-            ("Some Article", False),
-            ("Alice in Django-land", False),
-            ("Biography", False),
-        ]
+        if connection.features.nulls_order_largest:
+            expected = [
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+                ("Fiction", True),
+                ("Django Rocks", True),
+            ]
+        else:
+            expected = [
+                ("Fiction", True),
+                ("Django Rocks", True),
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+            ]
         self.assertEqual(data, expected)
 
-        # Check ordering by reverse.
+        # Check ordering by reverse (fallback to the opposite QuerySet order to
+        # make it match to reverse the expected lists above).
         with self.assertNumQueries(0):
-            qss = self.all.order_by("-release")
+            qss = self.all.order_by("-release", "-#")
 
         with self.assertNumQueries(2):
             data = [(it.title, it.release is None) for it in qss]
