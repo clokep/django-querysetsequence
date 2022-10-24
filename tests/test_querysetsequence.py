@@ -4,13 +4,13 @@ from unittest.mock import patch
 
 import django
 from django import forms
-from django.db import connection
 from django.core.exceptions import (
     FieldDoesNotExist,
     FieldError,
     MultipleObjectsReturned,
     ObjectDoesNotExist,
 )
+from django.db import connection
 from django.db.models import Count, Q
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
