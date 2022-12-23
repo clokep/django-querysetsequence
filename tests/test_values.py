@@ -1,5 +1,7 @@
 import datetime
 
+from django.db import connection
+
 from tests.models import Author, Book
 from tests.test_querysetsequence import TestBase
 
@@ -15,7 +17,8 @@ class TestValues(TestBase):
         self.assertEqual(titles, self.TITLES_BY_PK)
         self.assertEqual(authors, ["Bob", "Bob", "Alice", "Alice", "Bob"])
         self.assertCountEqual(
-            values[0].keys(), ["#", "id", "author_id", "pages", "release", "title"]
+            values[0].keys(),
+            ["#", "id", "author_id", "pages", "release", "title"],
         )
 
     def test_fields(self):
@@ -57,6 +60,47 @@ class TestValues(TestBase):
         with self.assertNumQueries(2):
             data = [it["title"] for it in self.all.values("title").order_by("-title")]
         self.assertEqual(data, sorted(self.TITLES_BY_PK, reverse=True))
+
+    def test_order_by_nulls(self):
+        """Test ordering by none values."""
+        # Set the first item of each QuerySet to not have a release date.
+        for qs in self.all.get_querysets():
+            instance = qs.first()
+            instance.release = None
+            instance.save()
+
+        # Check the nulls are properly ordered.
+        with self.assertNumQueries(0):
+            qss = self.all.values("title", "release").order_by("release")
+
+        with self.assertNumQueries(2):
+            data = [(it["title"], it["release"] is None) for it in qss]
+        if connection.features.nulls_order_largest:
+            expected = [
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+                ("Fiction", True),
+                ("Django Rocks", True),
+            ]
+        else:
+            expected = [
+                ("Fiction", True),
+                ("Django Rocks", True),
+                ("Some Article", False),
+                ("Alice in Django-land", False),
+                ("Biography", False),
+            ]
+        self.assertEqual(data, expected)
+
+        # Check ordering by reverse (fallback to the opposite QuerySet order to
+        # make it match to reverse the expected lists above).
+        with self.assertNumQueries(0):
+            qss = self.all.values("title", "release").order_by("-release", "-#")
+
+        with self.assertNumQueries(2):
+            data = [(it["title"], it["release"] is None) for it in qss]
+        self.assertEqual(data, list(reversed(expected)))
 
     def test_order_by_other_field(self):
         """Ordering by a field that isn't included in the responses should work."""

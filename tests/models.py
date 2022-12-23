@@ -35,7 +35,7 @@ class Article(models.Model):
     publisher = models.ForeignKey(
         PeriodicalPublisher, related_name="published", on_delete=models.CASCADE
     )
-    release = models.DateField()
+    release = models.DateField(null=True)
 
     class Meta:
         get_latest_by = "release"
@@ -56,7 +56,7 @@ class Book(models.Model):
     title = models.CharField(max_length=50)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     publishers = models.ManyToManyField(Publisher, related_name="published")
-    release = models.DateField()
+    release = models.DateField(null=True)
     pages = models.PositiveSmallIntegerField()
 
     class Meta:

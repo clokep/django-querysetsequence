@@ -9,7 +9,7 @@ from django.core.exceptions import (
     MultipleObjectsReturned,
     ObjectDoesNotExist,
 )
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -22,7 +22,19 @@ __all__ = ["QuerySetSequence"]
 
 
 def cmp(a, b):
-    """Python 3 version of cmp built-in."""
+    """Compare two arbitrary values of the same type."""
+    if a is None and b is None:
+        return 0
+    elif a is None:
+        # TODO If different QuerySets pull from different databases then connection
+        # might be wrong and this might do weird things.
+        if connection.features.nulls_order_largest:
+            return 1
+        return -1
+    elif b is None:
+        if connection.features.nulls_order_largest:
+            return -1
+        return 1
     return (a > b) - (a < b)
 
 
