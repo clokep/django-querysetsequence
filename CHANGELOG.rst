@@ -6,6 +6,13 @@ Changelog
 next
 ====
 
+Bugfixes
+--------
+
+* ``None`` values are now appropriately sorted first or last (depending on database
+  support. Contributed by `@vuongdv-spinshell <https://github.com/vuongdv-spinshell>`_.
+  (`#97 <https://github.com/clokep/django-querysetsequence/pull/97>`_)
+
 Improvements
 ------------
 
