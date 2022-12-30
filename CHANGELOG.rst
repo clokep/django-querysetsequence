@@ -23,8 +23,9 @@ Improvements
 Maintenance
 -----------
 
+* Support Python 3.11. (`#101 <https://github.com/clokep/django-querysetsequence/pull/101>`_)
 * Support Django 4.0 and 4.1. (`#83 <https://github.com/clokep/django-querysetsequence/pull/83>`_)
-* Support Django REST Framework 4.14. (`#101 <https://github.com/clokep/django-querysetsequence/pull/101>`_)
+* Support Django REST Framework 3.14. (`#101 <https://github.com/clokep/django-querysetsequence/pull/101>`_)
 * Drop support for Django 2.2 and 3.1. (`#98 <https://github.com/clokep/django-querysetsequence/pull/98>`_)
 * Drop support for Django REST Framework < 3.11. (`#98 <https://github.com/clokep/django-querysetsequence/pull/98>`_)
 
