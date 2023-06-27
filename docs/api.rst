@@ -125,7 +125,7 @@ Summary of Supported APIs
       - |check|
       - See [1]_ for information on the ``QuerySet`` lookup: ``'#'``.
     * - |aget|_
-      - |xmark|
+      - |check|
       -
     * - |create|_
       - |xmark|
@@ -161,7 +161,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |acount|_
-      - |xmark|
+      - |check|
       -
     * - |in_bulk|_
       - |xmark|
@@ -213,7 +213,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |aexists|_
-      - |xmark|
+      - |check|
       -
     * - |contains|_
       - |check|

@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from collections import defaultdict
 from itertools import dropwhile
@@ -958,7 +959,35 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aget(self, **kwargs):
-            raise NotImplementedError()
+            clone = self.filter(**kwargs)
+
+            awaitables = []
+            for qs in clone._querysets:
+                awaitables.append(qs.aget())
+
+            result = None
+            results = await asyncio.gather(*awaitables, return_exceptions=True)
+            for obj in results:
+                # If the object doesn't exist, hopefully another QuerySet has it.
+                if isinstance(obj, ObjectDoesNotExist):
+                    continue
+
+                # Re-raise a MultipleObjectsReturned() exception.
+                if isinstance(obj, MultipleObjectsReturned):
+                    raise obj
+
+                # If a second object is found, raise an exception.
+                if result:
+                    raise MultipleObjectsReturned()
+
+                result = obj
+
+            # Checked all QuerySets and no object was found.
+            if result is None:
+                raise self.model.DoesNotExist()
+
+            # Return the only result found.
+            return result
 
     def create(self, **kwargs):
         raise NotImplementedError()
@@ -1020,7 +1049,8 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def acount(self):
-            raise NotImplementedError()
+            awaitables = [qs.acount() for qs in self._querysets]
+            return sum(await asyncio.gather(*awaitables)) - self._low_mark
 
     def in_bulk(self, id_list=None, *, field_name="pk"):
         raise NotImplementedError()
@@ -1176,7 +1206,8 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aexists(self):
-            raise NotImplementedError()
+            awaitables = [qs.aexists() for qs in self._querysets]
+            return any(await asyncio.gather(*awaitables, return_exceptions=True))
 
     def contains(self, obj):
         return any(qs.contains(obj) for qs in self._querysets)
