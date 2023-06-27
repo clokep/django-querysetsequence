@@ -1380,11 +1380,26 @@ class TestGet(TestBase):
         self.assertEqual(book.title, "Biography")
         self.assertIsInstance(book, Book)
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget(self):
+        """
+        Ensure that aget() returns the expected element or raises DoesNotExist.
+        """
+        # Get a particular item.
+        book = await self.all.aget(title="Biography")
+        self.assertEqual(book.title, "Biography")
+        self.assertIsInstance(book, Book)
+
     def test_not_found(self):
         # An exception is raised if get() is called and nothing is found.
         with self.assertNumQueries(2):
             with self.assertRaises(ObjectDoesNotExist):
                 self.all.get(title="")
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_not_found(self):
+        with self.assertRaises(ObjectDoesNotExist):
+            await self.all.aget(title="")
 
     def test_multi_found(self):
         """Test multiple found in the same QuerySet."""
@@ -1393,6 +1408,14 @@ class TestGet(TestBase):
             with self.assertRaises(MultipleObjectsReturned):
                 self.all.get(author=self.bob)
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_multi_found(self):
+        """Test multiple found in the same QuerySet."""
+        # ...or if aget() is called and multiple objects are found.
+        with self.assertRaises(MultipleObjectsReturned):
+            await self.all.aget(author=self.bob)
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     def test_multi_found_separate_querysets(self):
         """Test one found in each QuerySet."""
         # ...or if get() is called and multiple objects are found.
@@ -1400,10 +1423,24 @@ class TestGet(TestBase):
             with self.assertRaises(MultipleObjectsReturned):
                 self.all.get(title__contains="A")
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_multi_found_separate_querysets(self):
+        """Test one found in each QuerySet."""
+        # ...or if aget() is called and multiple objects are found.
+        with self.assertRaises(MultipleObjectsReturned):
+            await self.all.aget(title__contains="A")
+
     def test_related_model(self):
         qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
         with self.assertNumQueries(2):
             post = qss.get(publisher__name="Wacky Website")
+        self.assertEqual(post.title, "Post")
+        self.assertIsInstance(post, BlogPost)
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_related_model(self):
+        qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
+        post = await qss.aget(publisher__name="Wacky Website")
         self.assertEqual(post.title, "Post")
         self.assertIsInstance(post, BlogPost)
 
@@ -1414,10 +1451,23 @@ class TestGet(TestBase):
         self.assertEqual(article.title, "Some Article")
         self.assertIsInstance(article, Article)
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_queryset_lookup(self):
+        """Test using the special QuerySet lookup."""
+        article = await self.all.aget(**{"#": 1, "author": self.bob})
+        self.assertEqual(article.title, "Some Article")
+        self.assertIsInstance(article, Article)
+
     def test_empty(self):
         """Calling get on an empty QuerySetSequence raises ObjectDoesNotExist."""
         with self.assertRaises(ObjectDoesNotExist):
             self.empty.get(pk=1)
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aget_empty(self):
+        """Calling get on an empty QuerySetSequence raises ObjectDoesNotExist."""
+        with self.assertRaises(ObjectDoesNotExist):
+            await self.empty.get(pk=1)
 
 
 class TestBoolean(TestBase):
@@ -1786,8 +1836,9 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.raw("")
 
+    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
     async def test_aget(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.aget()
 
     async def test_acount(self):
