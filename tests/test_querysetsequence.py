@@ -1618,6 +1618,13 @@ class TestExists(TestBase):
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(title="Biography").exists())
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aexists(self):
+        """
+        Ensure that aexists() returns True if the item is found in the first QuerySet.
+        """
+        self.assertTrue(await self.all.filter(title="Biography").aexists())
+
     def test_exists_second(self):
         """
         Ensure that exists() returns True if the item is found in a subsequent QuerySet.
@@ -1625,19 +1632,41 @@ class TestExists(TestBase):
         with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(title="Alice in Django-land").exists())
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aexists_second(self):
+        """
+        Ensure that aexists() returns True if the item is found in a subsequent QuerySet.
+        """
+        self.assertTrue(await self.all.filter(title="Alice in Django-land").aexists())
+
     def test_not_found(self):
         """Ensure that exists() returns False if the item is not found."""
         with self.assertNumQueries(2):
             self.assertFalse(self.all.filter(title="").exists())
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aexists_not_found(self):
+        """Ensure that aexists() returns False if the item is not found."""
+        self.assertFalse(await self.all.filter(title="").aexists())
 
     def test_multi_found(self):
         """Ensure that exists() returns True if multiple items are found."""
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(author=self.bob).exists())
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aexists_multi_found(self):
+        """Ensure that aexists() returns True if multiple items are found."""
+        self.assertTrue(await self.all.filter(author=self.bob).aexists())
+
     def test_empty(self):
         """An empty QuerySetSequence should return False."""
         self.assertFalse(self.empty.exists())
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aexists_empty(self):
+        """An empty QuerySetSequence should return False."""
+        self.assertFalse(await self.empty.aexists())
 
 
 @skipIf(django.VERSION < (4, 0), "Not supported in Django < 4.0.")
@@ -1889,8 +1918,9 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(ImplementedIn41):
             await self.all.aaggregate()
 
+    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
     async def test_aexists(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.aexists()
 
     async def test_acontains(self):

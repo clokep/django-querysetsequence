@@ -1206,7 +1206,8 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aexists(self):
-            raise NotImplementedError()
+            awaitables = [qs.aexists() for qs in self._querysets]
+            return any(await asyncio.gather(*awaitables, return_exceptions=True))
 
     def contains(self, obj):
         return any(qs.contains(obj) for qs in self._querysets)

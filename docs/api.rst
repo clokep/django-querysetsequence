@@ -213,7 +213,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |aexists|_
-      - |xmark|
+      - |check|
       -
     * - |contains|_
       - |check|
