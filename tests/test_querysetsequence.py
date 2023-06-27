@@ -119,6 +119,11 @@ class TestLength(TestBase):
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 5)
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_acount(self):
+        # The proper length should be returned via database queries.
+        self.assertEqual(await self.all.acount(), 5)
+
     def test_len(self):
         # Calling len() evaluates the QuerySet.
         with self.assertNumQueries(2):
@@ -138,9 +143,19 @@ class TestLength(TestBase):
         with self.assertNumQueries(4):
             self.assertEqual(len(self.all[1:]), 4)
 
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_acount_slice(self):
+        """Ensure the proper length is calculated when a slice is taken."""
+        self.assertEqual(await self.all[1:].acount(), 4)
+
     def test_empty_count(self):
         """An empty QuerySetSequence has a count of 0."""
         self.assertEqual(self.empty.count(), 0)
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_acount_empty_count(self):
+        """An empty QuerySetSequence has a count of 0."""
+        self.assertEqual(await self.empty.acount(), 0)
 
     def test_empty_len(self):
         """An empty QuerySetSequence has a count of 0."""
@@ -1841,8 +1856,9 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(NotImplementedError):
             await self.all.aget()
 
+    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
     async def test_acount(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.acount()
 
     async def test_aiterator(self):

@@ -1049,7 +1049,8 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def acount(self):
-            raise NotImplementedError()
+            awaitables = [qs.acount() for qs in self._querysets]
+            return sum(await asyncio.gather(*awaitables)) - self._low_mark
 
     def in_bulk(self, id_list=None, *, field_name="pk"):
         raise NotImplementedError()

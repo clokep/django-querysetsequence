@@ -161,7 +161,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |acount|_
-      - |xmark|
+      - |check|
       -
     * - |in_bulk|_
       - |xmark|
