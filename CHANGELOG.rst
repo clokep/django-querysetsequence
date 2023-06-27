@@ -52,7 +52,7 @@ Maintenance
 * Drop support for Python 3.6. (`3fc1d0f <https://github.com/clokep/django-querysetsequence/commit/3fc1d0f8b1ad3727d54ef6c2d0761804455331e2>`_)
 * Improve package metadata. (`#89 <https://github.com/clokep/django-querysetsequence/pull/89>`_)
 * Run `black <https://black.readthedocs.io/>`_, `isort <https://pycqa.github.io/isort/>`_,
-  and `flake8 <https://flake8.pycqa.org>`_, and `pyupgrade <https://github.com/asottile/pyupgrade>`_.
+  `flake8 <https://flake8.pycqa.org>`_, and `pyupgrade <https://github.com/asottile/pyupgrade>`_.
   (`#90 <https://github.com/clokep/django-querysetsequence/pull/90>`_,
   `#91 <https://github.com/clokep/django-querysetsequence/pull/91>`_)
 

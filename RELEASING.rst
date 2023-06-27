@@ -10,3 +10,4 @@ Releasing django-querysetsequence
 6. Build the package via ``python -m build``.
 7. Run twine checks: ``twine check dist/*``
 8. Upload to PyPI: ``twine upload dist/*``
+9. Create a new release on GitHub: https://github.com/clokep/django-querysetsequence/releases/new
