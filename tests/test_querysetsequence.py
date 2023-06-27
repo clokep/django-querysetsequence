@@ -1883,12 +1883,12 @@ class TestNotImplemented(TestCase):
 
     @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
     async def test_aget(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             await self.all.aget()
 
-    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
+    @skipIf(django.VERSION >= (4, 1), "acount exists starting on Django 4.1.")
     async def test_acount(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             await self.all.acount()
 
     async def test_aiterator(self):
@@ -1919,9 +1919,9 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(ImplementedIn41):
             await self.all.aaggregate()
 
-    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
+    @skipIf(django.VERSION >= (4, 1), "aexists exists starting on Django 4.1.")
     async def test_aexists(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             await self.all.aexists()
 
     async def test_acontains(self):
