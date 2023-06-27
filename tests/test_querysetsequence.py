@@ -1635,7 +1635,8 @@ class TestExists(TestBase):
     @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists_second(self):
         """
-        Ensure that aexists() returns True if the item is found in a subsequent QuerySet.
+        Ensure that aexists() returns True if the item is found in a subsequent
+        QuerySet.
         """
         self.assertTrue(await self.all.filter(title="Alice in Django-land").aexists())
 
