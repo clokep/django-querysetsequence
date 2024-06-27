@@ -3,6 +3,19 @@
 Changelog
 #########
 
+next
+====
+
+Maintenance
+-----------
+
+* Support Python 3.12. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+* Support Django 5.0, 5.1, and 5.2. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+* Support Django REST Framework 3.15. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+* Drop support for Django 3.2, 4.0, and 4.1. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+* Drop support for Django REST Framework 3.11, 3.12 and 3.13. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+
+
 0.17 (2023-06-27)
 =================
 
