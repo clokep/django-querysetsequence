@@ -1265,6 +1265,21 @@ class QuerySetSequence:
         """
         return bool(self._order_by)
 
+    @property
+    def query(self):
+        """
+        Proxy query attribute.
+
+        This attribute is used to provide a `.query` interface used by some of
+        django admin views.
+        """
+        # The easiest way to create an empty object with arbitrary attributes.
+        query = lambda: None
+        query.order_by = self._order_by
+        query.select_related = self.select_related
+        query.prefetch_related = self.prefetch_related
+        return query
+
     # Methods specific to QuerySetSequence.
     def get_querysets(self):
         """Returns a list of the QuerySet objects which form the sequence."""
