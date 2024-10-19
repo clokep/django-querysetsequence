@@ -493,7 +493,11 @@ class ProxyModel:
             self.DoesNotExist = ObjectDoesNotExist
 
     def __getattr__(self, name):
-        return getattr(self._model, name)
+        if name == "_meta":
+            return getattr(self._model, name)
+        if hasattr(super(), "__getattr__"):
+            return super().__getattr__(name)
+        raise AttributeError(name)
 
 
 class QuerySetSequence:
@@ -846,9 +850,7 @@ class QuerySetSequence:
         clone._iterable_class = (
             NamedValuesListIterable
             if named
-            else FlatValuesListIterable
-            if flat
-            else ValuesListIterable
+            else FlatValuesListIterable if flat else ValuesListIterable
         )
 
         return clone
