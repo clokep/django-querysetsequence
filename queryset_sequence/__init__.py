@@ -850,7 +850,9 @@ class QuerySetSequence:
         clone._iterable_class = (
             NamedValuesListIterable
             if named
-            else FlatValuesListIterable if flat else ValuesListIterable
+            else FlatValuesListIterable
+            if flat
+            else ValuesListIterable
         )
 
         return clone
