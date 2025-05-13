@@ -9,10 +9,15 @@ next
 Maintenance
 -----------
 
-* Support Python 3.12. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
-* Support Django 5.0 and 5.1. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
-* Support Django REST Framework 3.15. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
-* Drop support for Django 3.2, 4.0, and 4.1. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
+* Support Python 3.12 and 3.13. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_,
+  `#106 <https://github.com/clokep/django-querysetsequence/pull/109>`_)
+* Support Django 5.1 and 5.2. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_,
+  `#109 <https://github.com/clokep/django-querysetsequence/pull/109>`_)
+* Support Django REST Framework 3.15 and 3.16. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_,
+  `#109 <https://github.com/clokep/django-querysetsequence/pull/109>`_)
+* Drop support for Python 3.8. (`#109 <https://github.com/clokep/django-querysetsequence/pull/109>`_)
+* Drop support for Django 3.2, 4.0, 4.1 and 5.0. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_,
+  `#109 <https://github.com/clokep/django-querysetsequence/pull/109>`_)
 * Drop support for Django REST Framework 3.11, 3.12 and 3.13. (`#106 <https://github.com/clokep/django-querysetsequence/pull/106>`_)
 
 
