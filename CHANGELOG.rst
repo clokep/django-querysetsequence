@@ -3,6 +3,16 @@
 Changelog
 #########
 
+next
+====
+
+Maintenance
+-----------
+
+* Support Django 6.0. (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
+* Support Python 3.14 (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
+* Drop support for Python 3.9 (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
+
 0.18 (2025-05-13)
 =================
 
