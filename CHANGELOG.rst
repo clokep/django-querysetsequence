@@ -9,9 +9,9 @@ next
 Maintenance
 -----------
 
-* Support Django 6.0. (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
-* Support Python 3.14 (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
-* Drop support for Python 3.9 (`#108 <https://github.com/clokep/django-querysetsequence/pull/108>`_)
+* Support Django 6.0. (`#110 <https://github.com/clokep/django-querysetsequence/pull/110>`_)
+* Support Python 3.14 (`#110 <https://github.com/clokep/django-querysetsequence/pull/110>`_)
+* Drop support for Python 3.9 (`#110 <https://github.com/clokep/django-querysetsequence/pull/110>`_)
 
 0.18 (2025-05-13)
 =================
