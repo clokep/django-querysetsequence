@@ -6,6 +6,17 @@ Changelog
 next
 ====
 
+Features
+--------
+
+* ``QuerySetSequence.ordered`` now also reports ``True`` when every
+  underlying ``QuerySet`` is itself ordered (via ``order_by()`` or
+  ``Meta.ordering``), in addition to the existing case where
+  ``order_by()`` has been called on the sequence. This silences
+  Django 5.2's paginator ``UnorderedObjectListWarning`` for sequences
+  whose sub-``QuerySets`` are individually ordered — a common pattern
+  when the sub-``QuerySets`` are sliced and can no longer be reordered.
+
 Maintenance
 -----------
 

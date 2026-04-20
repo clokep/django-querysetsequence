@@ -1202,6 +1202,62 @@ class TestOrderBy(TestBase):
         self.empty.order_by("author")
 
 
+class TestOrdered(TestBase):
+    """Tests for the ``ordered`` property."""
+
+    def test_order_by_on_sequence(self):
+        """order_by() on the sequence makes it ordered."""
+        qss = QuerySetSequence(
+            Book.objects.all(), Article.objects.all()
+        ).order_by("title")
+        self.assertTrue(qss.ordered)
+
+    def test_all_sub_querysets_ordered(self):
+        """If every sub-QuerySet is ordered, the sequence is ordered too."""
+        qss = QuerySetSequence(
+            Book.objects.order_by("title"),
+            Article.objects.order_by("title"),
+        )
+        self.assertTrue(qss.ordered)
+
+    def test_one_sub_queryset_unordered(self):
+        """If any sub-QuerySet is unordered, the sequence is unordered."""
+        qss = QuerySetSequence(
+            Book.objects.order_by("title"),
+            Article.objects.all(),
+        )
+        self.assertFalse(qss.ordered)
+
+    def test_all_sub_querysets_unordered(self):
+        """If no sub-QuerySet is ordered, the sequence is unordered."""
+        self.assertFalse(self.all.ordered)
+
+    def test_meta_ordering_counts_as_ordered(self):
+        """A model-level Meta.ordering makes a sub-QuerySet ordered."""
+        # Author has Meta.ordering = ["name"].
+        qss = QuerySetSequence(Author.objects.all())
+        self.assertTrue(qss.ordered)
+
+    def test_mixed_meta_and_order_by(self):
+        """Meta.ordering on one queryset plus order_by() on another."""
+        qss = QuerySetSequence(
+            Author.objects.all(),  # Has Meta.ordering.
+            Book.objects.order_by("title"),
+        )
+        self.assertTrue(qss.ordered)
+
+    def test_empty_sequence_is_ordered(self):
+        """An empty QuerySetSequence reports as ordered (vacuously true)."""
+        self.assertTrue(self.empty.ordered)
+
+    def test_sequence_order_by_overrides_unordered_sub(self):
+        """order_by() on the sequence wins even if sub-QuerySets are unordered."""
+        qss = QuerySetSequence(
+            Book.objects.all(), Article.objects.all()
+        ).order_by("title")
+        self.assertTrue(qss.ordered)
+
+
 class TestReverse(TestBase):
     def test_reverse(self):
         """Ensure calling reverse() returns elements in a reverse order."""

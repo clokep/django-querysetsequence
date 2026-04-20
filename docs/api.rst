@@ -243,6 +243,31 @@ Summary of Supported APIs
       - |xmark|
       -
 
+.. list-table:: Attributes
+    :widths: 15 10 30
+    :header-rows: 1
+
+    * - Attribute
+      - Implemented?
+      - Notes
+
+    * - |ordered|_
+      - |check|
+      - ``True`` if ``order_by()`` has been called on the
+        ``QuerySetSequence`` **or** if every underlying ``QuerySet`` is
+        itself ordered (via its own ``order_by()`` or the model's
+        ``Meta.ordering``). In that second case the sequence yields the
+        sub-``QuerySets`` in the order they were passed in, each
+        internally ordered — a deterministic ordering that cannot be
+        expressed as a single ``order_by()`` on the sequence when the
+        sub-``QuerySets`` are sliced (Django 4+ forbids reordering a
+        sliced ``QuerySet``). An empty ``QuerySetSequence`` is considered
+        ordered.
+
+        Reporting ``ordered=True`` in the second case silences Django's
+        paginator ``UnorderedObjectListWarning`` introduced in Django
+        5.2.
+
 .. list-table:: Additional methods specific to ``QuerySetSequence``
     :widths: 15 30
     :header-rows: 1
@@ -305,6 +330,9 @@ Summary of Supported APIs
 .. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-for-update
 .. |raw| replace:: ``raw()``
 .. _raw: https://docs.djangoproject.com/en/dev/ref/models/querysets/#raw
+
+.. |ordered| replace:: ``ordered``
+.. _ordered: https://docs.djangoproject.com/en/dev/ref/models/querysets/#ordered
 
 .. |AND (&)| replace:: AND (``&``)
 .. _AND (&): https://docs.djangoproject.com/en/dev/ref/models/querysets/#and

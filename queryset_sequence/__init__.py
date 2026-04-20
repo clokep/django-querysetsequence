@@ -1260,10 +1260,27 @@ class QuerySetSequence:
     @property
     def ordered(self):
         """
-        Returns True if the QuerySet is ordered -- i.e. has an order_by()
-        clause.
+        Returns True if the QuerySetSequence is ordered.
+
+        A QuerySetSequence is considered ordered when either:
+
+        * ``order_by()`` has been called on the sequence itself, or
+        * every sub-QuerySet is ordered (via its own ``order_by()`` clause
+          or a model ``Meta.ordering``). In that case the sequence yields
+          the sub-QuerySets in their declared order, each internally
+          ordered, which is a deterministic, well-defined ordering that
+          cannot be expressed as a single ``order_by()`` on the sequence
+          when sub-QuerySets are sliced (Django 4+ forbids reordering a
+          sliced QuerySet).
+
+        An empty QuerySetSequence (no sub-QuerySets) is considered ordered.
+
+        Reporting ``ordered=True`` in the second case silences Django's
+        paginator ``UnorderedObjectListWarning`` introduced in Django 5.2.
         """
-        return bool(self._order_by)
+        if bool(self._order_by):
+            return True
+        return all(qs.ordered for qs in self._querysets)
 
     # Methods specific to QuerySetSequence.
     def get_querysets(self):
