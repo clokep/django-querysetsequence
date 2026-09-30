@@ -205,13 +205,13 @@ Summary of Supported APIs
       - If no fields are given, ``get_latest_by`` on each model is required to
         be identical.
     * - |alatest|_
-      - |xmark|
+      - |check|
       -
     * - |earliest|_
       - |check|
       - See the docuemntation for ``latest()``.
     * - |aearliest|_
-      - |xmark|
+      - |check|
       -
     * - |first|_
       - |check|
@@ -220,13 +220,13 @@ Summary of Supported APIs
         result of ``first()`` for each ``QuerySet`` is compared and the "first"
         value is returned.
     * - |afirst|_
-      - |xmark|
+      - |check|
       -
     * - |last|_
       - |check|
       - See the documentation for ``first()``.
     * - |alast|_
-      - |xmark|
+      - |check|
       -
     * - |aggregate|_
       - |xmark|

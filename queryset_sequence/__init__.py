@@ -5,6 +5,7 @@ from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
 
 import django
+from asgiref.sync import sync_to_async
 from django.core.exceptions import (
     FieldError,
     MultipleObjectsReturned,
@@ -1191,7 +1192,18 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def alatest(self, *fields):
-            raise NotImplementedError()
+            if not fields:
+                fields = self._get_latest_by()
+
+            results = await asyncio.gather(
+                *[qs.alatest(*fields) for qs in self._querysets], return_exceptions=True
+            )
+            objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
+
+            if not objs:
+                raise self.model.DoesNotExist()
+
+            return self._get_first_or_last(objs, fields, True)
 
     def earliest(self, *fields):
         # If fields are given, fallback to get_latest_by.
@@ -1215,7 +1227,19 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aearliest(self, *fields):
-            raise NotImplementedError()
+            if not fields:
+                fields = self._get_latest_by()
+
+            results = await asyncio.gather(
+                *[qs.aearliest(*fields) for qs in self._querysets],
+                return_exceptions=True
+            )
+            objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
+
+            if not objs:
+                raise self.model.DoesNotExist()
+
+            return self._get_first_or_last(objs, fields, False)
 
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
@@ -1236,7 +1260,17 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def afirst(self):
-            raise NotImplementedError()
+            if not self._querysets:
+                return None
+
+            elif not self.ordered:
+                return await self._querysets[0].afirst()
+
+            else:
+                first_items = await asyncio.gather(
+                    *[qs.afirst() for qs in self._querysets]
+                )
+                return self._get_first_or_last(first_items, self._order_by, False)
 
     def last(self):
         # See the comments for first().
@@ -1255,7 +1289,17 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def alast(self):
-            raise NotImplementedError()
+            if not self._querysets:
+                return None
+
+            elif not self.ordered:
+                return await self._querysets[-1].alast()
+
+            else:
+                last_items = await asyncio.gather(
+                    *[qs.alast() for qs in self._querysets]
+                )
+                return self._get_first_or_last(last_items, self._order_by, True)
 
     def aggregate(self, *args, **kwargs):
         raise NotImplementedError()
@@ -1279,8 +1323,10 @@ class QuerySetSequence:
 
     if django.VERSION >= (4, 1):
 
-        async def acontains(self):
-            raise NotImplementedError()
+        async def acontains(self, obj):
+            return any(
+                await asyncio.gather(*[qs.acontains(obj) for qs in self._querysets])
+            )
 
     def update(self, **kwargs):
         with transaction.atomic():
@@ -1289,7 +1335,11 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aupdate(self, **kwargs):
-            raise NotImplementedError()
+            def _aupdate():
+                with transaction.atomic():
+                    return sum(qs.update(**kwargs) for qs in self._querysets)
+
+            return await sync_to_async(_aupdate)()
 
     def delete(self):
         deleted_count = 0
@@ -1308,7 +1358,18 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def adelete(self):
-            raise NotImplementedError()
+            def _adelete():
+                with transaction.atomic():
+                    deleted_count = 0
+                    deleted_objects = defaultdict(int)
+                    for qs in self._querysets:
+                        current_deleted_count, current_deleted_objects = qs.delete()
+                        deleted_count += current_deleted_count
+                        for obj, count in current_deleted_objects.items():
+                            deleted_objects[obj] += count
+                    return deleted_count, dict(deleted_objects)
+
+            return await sync_to_async(_adelete)()
 
     def as_manager(self):
         raise NotImplementedError()
@@ -1319,7 +1380,10 @@ class QuerySetSequence:
     if django.VERSION >= (4, 1):
 
         async def aexplain(self, format=None, **options):
-            raise NotImplementedError()
+            results = await asyncio.gather(
+                *[qs.aexplain(format=format, **options) for qs in self._querysets]
+            )
+            return "\n".join(results)
 
     # Public attributes
     @property
