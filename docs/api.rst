@@ -10,6 +10,24 @@ not fully compatible.
 Summary of Supported APIs
 -------------------------
 
+.. list-table:: ``QuerySet`` properties
+    :widths: 15 10 30
+    :header-rows: 1
+
+    * - Property
+      - Implemented?
+      - Notes
+
+    * - |ordered|_
+      - |check|
+      - True if all underlying ``QuerySets`` are ordered.
+    * - |totally_ordered|_
+      - |check|
+      - True if all underlying ``QuerySets`` are totally ordered.
+    * - |db|_
+      - |xmark|
+      -
+
 .. list-table:: Methods that return new ``QuerySets``
     :widths: 15 10 30
     :header-rows: 1
@@ -28,7 +46,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |alias|_
-      - |xmark|
+      - |check|
       -
     * - |order_by|_
       - |check|
@@ -69,6 +87,9 @@ Summary of Supported APIs
       -
     * - |difference|_
       - |xmark|
+      -
+    * - |fetch_mode|_
+      - |check|
       -
     * - |select_related|_
       - |check|
@@ -259,6 +280,13 @@ Summary of Supported APIs
         method will be similarly modified. The order of the ``QuerySet``
         objects within the list is not guaranteed.
 
+.. |ordered| replace:: ``ordered``
+.. _ordered: https://docs.djangoproject.com/en/dev/ref/models/querysets/#django.db.models.query.QuerySet.ordered
+.. |totally_ordered| replace:: ``totally_ordered``
+.. _totally_ordered: https://docs.djangoproject.com/en/dev/ref/models/querysets/#django.db.models.query.QuerySet.totally_ordered
+.. |db| replace:: ``db``
+.. _db: https://docs.djangoproject.com/en/dev/ref/models/querysets/#django.db.models.query.QuerySet.db
+
 .. |filter| replace:: ``filter()``
 .. _filter: https://docs.djangoproject.com/en/dev/ref/models/querysets/#filter
 .. |exclude| replace:: ``exclude()``
@@ -307,6 +335,8 @@ Summary of Supported APIs
 .. _select_for_update: https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-for-update
 .. |raw| replace:: ``raw()``
 .. _raw: https://docs.djangoproject.com/en/dev/ref/models/querysets/#raw
+.. |fetch_mode| replace:: ``fetch_mode()``
+.. _fetch_mode: https://docs.djangoproject.com/en/dev/ref/models/querysets/#fetch-mode
 
 .. |AND (&)| replace:: AND (``&``)
 .. _AND (&): https://docs.djangoproject.com/en/dev/ref/models/querysets/#and
