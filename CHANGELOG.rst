@@ -11,7 +11,17 @@ Improvements
 
 * Support the ``fetch_mode()`` and ``alias()`` methods and ``totally_ordered`` property.
   (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
+* Implement ``dates()`` and ``datetimes()``, ordering results across the whole
+  sequence rather than per-QuerySet.
 * Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
+
+Bugfixes
+--------
+
+* Remove the ``is_dst`` argument from ``datetimes()``. Django removed its own
+  support for it in 4.0.
+* Rename the first argument of ``dates()`` from ``field`` to ``field_name`` to
+  match Django.
 
 Maintenance
 -----------

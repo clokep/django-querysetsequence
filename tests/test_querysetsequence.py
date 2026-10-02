@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from unittest import skipIf
 from unittest.mock import patch
 
@@ -14,6 +14,7 @@ from django.db import connection
 from django.db.models import Count, Q
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
+from django.utils.timezone import make_aware
 
 from queryset_sequence import QuerySetSequence
 from tests.models import (
@@ -88,7 +89,12 @@ class TestBase(TestCase):
             publisher=mad_magazine,
             release=date(1979, 1, 1),
         )
-        BlogPost.objects.create(title="Post", author=bob, publisher=wacky_website)
+        BlogPost.objects.create(
+            title="Post",
+            author=bob,
+            publisher=wacky_website,
+            published=make_aware(datetime(2003, 5, 1, 12, 0)),
+        )
 
         # Save the authors and publishers for later.
         self.alice = alice
@@ -303,6 +309,201 @@ class TestOperators(TestBase):
         with self.assertNumQueries(1):
             data = [it.title for it in combined.iterator()]
         self.assertEqual(data, ["Post"])
+
+
+class TestDatesDatetimes(TestBase):
+    def setUp(self):
+        super().setUp()
+        # A second BlogPost, so that datetimes() has more than one value to
+        # interleave. Books and Articles share the "release" DateField and are
+        # already enough to exercise the interleaving.
+        BlogPost.objects.create(
+            title="Older Post",
+            author=self.bob,
+            publisher=self.wacky_website,
+            published=make_aware(datetime(1995, 2, 3, 8, 30)),
+        )
+
+    def test_dates(self):
+        """dates() interleaves truncated dates from every QuerySet."""
+        # Books sort after Articles even though the Books come first, so the
+        # results are ordered across the sequence rather than concatenated.
+        self.assertEqual(
+            list(self.all.dates("release", "year")),
+            [
+                date(1979, 1, 1),
+                date(1980, 1, 1),
+                date(1990, 1, 1),
+                date(2001, 1, 1),
+                date(2002, 1, 1),
+            ],
+        )
+
+    def test_dates_desc(self):
+        """dates() honors descending ordering."""
+        self.assertEqual(
+            list(self.all.dates("release", "year", order="DESC")),
+            [
+                date(2002, 1, 1),
+                date(2001, 1, 1),
+                date(1990, 1, 1),
+                date(1980, 1, 1),
+                date(1979, 1, 1),
+            ],
+        )
+
+    def test_dates_shared_across_querysets(self):
+        """A date shared by two models is returned once per QuerySet."""
+        # "Alice in Django-land" already has a 1990 release.
+        Book.objects.create(
+            title="Shared Release", author=self.bob, pages=30, release=date(1990, 1, 1)
+        )
+        self.assertEqual(
+            list(self.all.dates("release", "year")),
+            [
+                date(1979, 1, 1),
+                date(1980, 1, 1),
+                date(1990, 1, 1),
+                date(1990, 1, 1),
+                date(2001, 1, 1),
+                date(2002, 1, 1),
+            ],
+        )
+
+    def test_dates_slicing(self):
+        """dates() supports slicing across the whole sequence."""
+        qss = self.all.dates("release", "year")
+        self.assertEqual(list(qss[1:3]), [date(1980, 1, 1), date(1990, 1, 1)])
+
+    def test_dates_count(self):
+        """count() counts truncated dates across the whole sequence."""
+        self.assertEqual(self.all.dates("release", "year").count(), 5)
+
+    def test_dates_excludes_nulls(self):
+        """Django's dates() drops rows where the field is NULL."""
+        Book.objects.create(title="Undated", author=self.bob, pages=30)
+        self.assertEqual(
+            list(self.all.dates("release", "year")),
+            [
+                date(1979, 1, 1),
+                date(1980, 1, 1),
+                date(1990, 1, 1),
+                date(2001, 1, 1),
+                date(2002, 1, 1),
+            ],
+        )
+
+    def test_dates_empty(self):
+        """dates() over an empty QuerySetSequence returns nothing."""
+        self.assertEqual(list(self.empty.dates("release", "year")), [])
+
+    def test_dates_invalid_kind(self):
+        """Django rejects an unknown truncation."""
+        with self.assertRaises(ValueError):
+            list(self.all.dates("release", "century"))
+
+    def test_dates_invalid_order(self):
+        """Django rejects an unknown ordering."""
+        with self.assertRaises(ValueError):
+            list(self.all.dates("release", "year", order="SIDEWAYS"))
+
+    def test_dates_missing_field(self):
+        """A field missing from one QuerySet is an error."""
+        qss = QuerySetSequence(Book.objects.all(), Author.objects.all())
+        with self.assertRaises(FieldError):
+            list(qss.dates("release", "year"))
+
+    def test_datetimes(self):
+        """datetimes() truncates datetimes from every QuerySet."""
+        # Pass tzinfo explicitly so the results do not depend on TIME_ZONE.
+        self.assertEqual(
+            list(
+                QuerySetSequence(BlogPost.objects.all()).datetimes(
+                    "published", "year", tzinfo=timezone.utc
+                )
+            ),
+            [
+                datetime(1995, 1, 1, tzinfo=timezone.utc),
+                datetime(2003, 1, 1, tzinfo=timezone.utc),
+            ],
+        )
+
+    def test_datetimes_interleaved(self):
+        """datetimes() interleaves truncated datetimes from every QuerySet."""
+        # The 2003 posts come first but sort last.
+        qss = QuerySetSequence(
+            BlogPost.objects.filter(published__year=2003),
+            BlogPost.objects.filter(published__year=1995),
+        )
+        self.assertEqual(
+            list(qss.datetimes("published", "year", tzinfo=timezone.utc)),
+            [
+                datetime(1995, 1, 1, tzinfo=timezone.utc),
+                datetime(2003, 1, 1, tzinfo=timezone.utc),
+            ],
+        )
+
+    def test_datetimes_month(self):
+        """datetimes() truncates to the requested kind."""
+        self.assertEqual(
+            list(
+                QuerySetSequence(BlogPost.objects.all()).datetimes(
+                    "published", "month", tzinfo=timezone.utc
+                )
+            ),
+            [
+                datetime(1995, 2, 1, tzinfo=timezone.utc),
+                datetime(2003, 5, 1, tzinfo=timezone.utc),
+            ],
+        )
+
+    def test_datetimes_desc(self):
+        """datetimes() honors descending ordering."""
+        self.assertEqual(
+            list(
+                QuerySetSequence(BlogPost.objects.all()).datetimes(
+                    "published", "year", order="DESC", tzinfo=timezone.utc
+                )
+            ),
+            [
+                datetime(2003, 1, 1, tzinfo=timezone.utc),
+                datetime(1995, 1, 1, tzinfo=timezone.utc),
+            ],
+        )
+
+    def test_datetimes_excludes_nulls(self):
+        """Django's datetimes() drops rows where the field is NULL."""
+        BlogPost.objects.create(
+            title="Unscheduled", author=self.bob, publisher=self.wacky_website
+        )
+        self.assertEqual(
+            list(
+                QuerySetSequence(BlogPost.objects.all()).datetimes(
+                    "published", "year", tzinfo=timezone.utc
+                )
+            ),
+            [
+                datetime(1995, 1, 1, tzinfo=timezone.utc),
+                datetime(2003, 1, 1, tzinfo=timezone.utc),
+            ],
+        )
+
+    def test_datetimes_empty(self):
+        """datetimes() over an empty QuerySetSequence returns nothing."""
+        self.assertEqual(
+            list(self.empty.datetimes("published", "year", tzinfo=timezone.utc)), []
+        )
+
+    def test_datetimes_no_is_dst(self):
+        """is_dst was dropped along with Django's support for it."""
+        qss = QuerySetSequence(BlogPost.objects.all())
+        with self.assertRaises(TypeError):
+            qss.datetimes("published", "year", is_dst=True)
+
+    def test_datetimes_on_date_field(self):
+        """Django refuses to truncate a DateField to a DateTimeField."""
+        with self.assertRaises(ValueError):
+            list(self.all.datetimes("release", "year"))
 
 
 class TestNone(TestBase):
@@ -1879,14 +2080,6 @@ class TestNotImplemented(TestCase):
 
     def setUp(self):
         self.all = QuerySetSequence()
-
-    def test_dates(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.dates(None, None)
-
-    def test_datetimes(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.datetimes(None, None)
 
     def test_union(self):
         with self.assertRaises(NotImplementedError):

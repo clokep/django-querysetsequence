@@ -50,6 +50,7 @@ class BlogPost(models.Model):
     publisher = models.ForeignKey(
         OnlinePublisher, related_name="published", on_delete=models.CASCADE
     )
+    published = models.DateTimeField(null=True)
 
 
 class Book(models.Model):
