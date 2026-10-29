@@ -21,10 +21,10 @@ jobs:
           python-version: "3.11"
 
       - name: "Install dependencies"
-        run: python -m pip install pyupgrade==2.31.1 flake8==4.0.1 black==22.3.0 isort==5.10.1
+        run: python -m pip install pyupgrade==3.22.0 flake8==7.5.0 black==26.10.1 isort==9.0.2
 
       - name: "Run pyupgrade"
-        run: pyupgrade --py38-plus **/*.py
+        run: pyupgrade --py311-plus **/*.py
 
       - name: "Run flake8"
         run: flake8

@@ -143,21 +143,21 @@ class TestSequenceCursorPagination(TestCase):
     def test_cursor_pagination(self):
         """Ensure that the cursor properly flips through pages."""
         # Check the first page.
-        (previous, current, next, previous_url, next_url) = self.get_pages("/")
+        previous, current, next, previous_url, next_url = self.get_pages("/")
 
         self.assertIsNone(previous)
         self.assertEqual(current, self.PAGE_1)
         self.assertEqual(next, self.PAGE_2)
 
         # Check the second page.
-        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+        previous, current, next, previous_url, next_url = self.get_pages(next_url)
 
         self.assertEqual(previous, self.PAGE_1)
         self.assertEqual(current, self.PAGE_2)
         self.assertEqual(next, self.PAGE_3)
 
         # Check the third page.
-        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+        previous, current, next, previous_url, next_url = self.get_pages(next_url)
 
         self.assertEqual(previous, self.PAGE_2)
         self.assertEqual(current, self.PAGE_3)
@@ -169,7 +169,7 @@ class TestSequenceCursorPagination(TestCase):
         Pages should be independent, i.e. a cursor points to a particular
         domain, and shouldn't affect offsets.
         """
-        (previous, current, next, previous_url, next_url) = self.get_pages("/")
+        previous, current, next, previous_url, next_url = self.get_pages("/")
 
         # The first page is as normal.
         self.assertIsNone(previous)
@@ -180,7 +180,7 @@ class TestSequenceCursorPagination(TestCase):
         Book.objects.filter(pages__lte=3).delete()
         Book.objects.filter(pages__gte=13).delete()
 
-        (previous, current, next, _, old_next_url) = self.get_pages(next_url)
+        previous, current, next, _, old_next_url = self.get_pages(next_url)
 
         # Should be some missing items
         self.assertEqual(previous, [4, 5])
@@ -191,7 +191,7 @@ class TestSequenceCursorPagination(TestCase):
         # offset.
         Book.objects.get(pages=7).delete()
 
-        (previous, current, next, _, new_next_url) = self.get_pages(next_url)
+        previous, current, next, _, new_next_url = self.get_pages(next_url)
 
         # Should be some missing items
         self.assertEqual(previous, [4, 5])
@@ -227,19 +227,19 @@ class TestSequenceCursorPagination(TestCase):
 
         # Now perform pretty much the same test as test_cursor_pagination, but
         # the ordering will be different.
-        (previous, current, next, previous_url, next_url) = self.get_pages("/")
+        previous, current, next, previous_url, next_url = self.get_pages("/")
 
         self.assertIsNone(previous)
         self.assertEqual(current, PAGE_1)
         self.assertEqual(next, PAGE_2)
 
-        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+        previous, current, next, previous_url, next_url = self.get_pages(next_url)
 
         self.assertEqual(previous, PAGE_1)
         self.assertEqual(current, PAGE_2)
         self.assertEqual(next, PAGE_3)
 
-        (previous, current, next, previous_url, next_url) = self.get_pages(next_url)
+        previous, current, next, previous_url, next_url = self.get_pages(next_url)
 
         self.assertEqual(previous, PAGE_2)
         self.assertEqual(current, PAGE_3)

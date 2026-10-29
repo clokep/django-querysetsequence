@@ -8,6 +8,7 @@ QuerySetSequence over an API as they first order by the QuerySet number and then
 particular fields.
 
 """
+
 from base64 import b64decode
 from urllib import parse
 
@@ -57,9 +58,9 @@ class SequenceCursorPagination(CursorPagination):
 
         self.cursor = self.decode_cursor(request)
         if self.cursor is None:
-            (offset, reverse, current_position) = (0, False, None)
+            offset, reverse, current_position = (0, False, None)
         else:
-            (offset, reverse, current_position) = self.cursor
+            offset, reverse, current_position = self.cursor
 
         # Cursor pagination always enforces an ordering.
         if reverse:
