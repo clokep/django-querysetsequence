@@ -419,10 +419,7 @@ class TestRelated(TestBase):
         f = forms.ModelChoiceField(self.all)
         self.assertEqual(
             list(f.choices),
-            [
-                ("", "---------"),
-            ]
-            + [(it.pk, str(it)) for it in self.all],
+            [("", f.empty_label)] + [(it.pk, str(it)) for it in self.all],
         )
 
 
