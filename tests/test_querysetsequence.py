@@ -1,5 +1,5 @@
 from datetime import date
-from unittest import skip, skipIf
+from unittest import skipIf
 from unittest.mock import patch
 
 import django
@@ -321,9 +321,8 @@ class TestNone(TestBase):
         # Should have no data.
         self.assertEqual(data, [])
 
-    @skip("Currently not working.")
     def test_empty(self):
-        qss = self.empty.none()
+        qss = QuerySetSequence(model=Author).none()
 
         # This returns an EmptyQuerySet.
         self.assertIsInstance(qss, EmptyQuerySet)
@@ -377,7 +376,22 @@ class TestRelated(TestBase):
             authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
-    # TODO Add a test for select_related that follows multiple ForeignKeys.
+    def test_select_related_multiple_fks(self):
+        """Select related with multiple FKs on a single model."""
+        # Article has both 'author' and 'publisher' FKs
+        articles_qs = QuerySetSequence(Article.objects.all())
+        with self.assertNumQueries(1):
+            articles = list(articles_qs.select_related("author", "publisher"))
+        with self.assertNumQueries(0):
+            data = [(a.author.name, a.publisher.name) for a in articles]
+        self.assertEqual(
+            data,
+            [
+                ("Alice", "Mad Magazine"),
+                ("Alice", "Mad Magazine"),
+                ("Bob", "Mad Magazine"),
+            ],
+        )
 
     def test_clear_select_related(self):
         """Clearing select related causes all the database queries to occur again."""
@@ -400,7 +414,23 @@ class TestRelated(TestBase):
             authors = [b.author.name for b in books]
         self.assertEqual(authors, self.EXPECTED_ORDER)
 
-    # TODO Add a test for prefetch_related that follows multiple ForeignKeys.
+    def test_prefetch_related_multiple_fks(self):
+        """Prefetch related with multiple relations on a single model."""
+        # Book has 'author' FK and 'publishers' M2M
+        books_qs = QuerySetSequence(Book.objects.all())
+        with self.assertNumQueries(3):
+            books = list(books_qs.prefetch_related("author", "publishers"))
+        with self.assertNumQueries(0):
+            data = [
+                (b.author.name, [p.name for p in b.publishers.all()]) for b in books
+            ]
+        self.assertEqual(
+            data,
+            [
+                ("Bob", ["Big Books"]),
+                ("Bob", ["Big Books"]),
+            ],
+        )
 
     def test_clear_prefetch_related(self):
         """Ensure the original behavior is restored if prefetch related is cleared."""

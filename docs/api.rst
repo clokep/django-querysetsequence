@@ -39,7 +39,9 @@ Summary of Supported APIs
       -
     * - |distinct|_
       - |check|
-      - Does not support calling ``distinct()`` if there are multiple underlying
+      - Applies to each ``QuerySet`` individually rather than to the sequence as
+        a whole, so an object shared by two models is still returned twice. Does
+        not support calling ``distinct()`` if there are multiple underlying
         ``QuerySet`` instances of the same model.
     * - |values|_
       - |check|

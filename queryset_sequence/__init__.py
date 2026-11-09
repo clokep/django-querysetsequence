@@ -860,7 +860,17 @@ class QuerySetSequence:
     def none(self):
         # This is a bit odd, but use the first QuerySet to properly return an
         # that is an instance of EmptyQuerySet.
-        return self._querysets[0].none()
+        if self._querysets:
+            return self._querysets[0].none()
+        # For an empty QuerySetSequence, use the model parameter.
+        model = self.model._model
+        if model is None:
+            raise ValueError(
+                "Cannot call none() on an empty QuerySetSequence without a model. "
+                "Pass a model when creating the QuerySetSequence: "
+                "QuerySetSequence(model=MyModel)"
+            )
+        return model.objects.none()
 
     def all(self):
         clone = self._clone()
