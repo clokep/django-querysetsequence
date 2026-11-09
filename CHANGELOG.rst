@@ -6,9 +6,15 @@ Changelog
 next
 ====
 
+Improvements
+------------
+
+* Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
+
 Maintenance
 -----------
 
+* Add additional tests. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
 * Support Django 6.0 and 6.1. (`#110 <https://github.com/clokep/django-querysetsequence/pull/110>`_,
   `#112 <https://github.com/clokep/django-querysetsequence/pull/112>`_)
 * Support Python 3.14 and 3.15. (`#110 <https://github.com/clokep/django-querysetsequence/pull/110>`_,
