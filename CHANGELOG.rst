@@ -13,6 +13,7 @@ Improvements
   (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
 * Support the ``dates()`` and ``datetimes()`` methods, the dates/datetimes are distinct
   per-QuerySets. (`#115 <https://github.com/clokep/django-querysetsequence/pull/115>`_)
+* Support ``select_for_update()``.
 * Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
 
 Maintenance

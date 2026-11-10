@@ -10,7 +10,7 @@ from django.core.exceptions import (
     MultipleObjectsReturned,
     ObjectDoesNotExist,
 )
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
@@ -708,6 +708,53 @@ class TestUsing(TestBase):
         with self.assertNumQueries(2):
             titles = [b.title for b in self.all.using("default")]
         self.assertEqual(titles, self.TITLES_BY_PK)
+
+
+class TestSelectForUpdate(TestBase):
+    def test_select_for_update(self):
+        """select_for_update() locks the rows of every QuerySet."""
+        with transaction.atomic():
+            qss = self.all.select_for_update()
+            for qs in qss.get_querysets():
+                self.assertTrue(qs.query.select_for_update)
+            with self.assertNumQueries(2):
+                titles = [b.title for b in qss]
+        self.assertEqual(titles, self.TITLES_BY_PK)
+
+    def test_select_for_update_nowait(self):
+        """nowait is passed through to every QuerySet."""
+        qss = self.all.select_for_update(nowait=True)
+        for qs in qss.get_querysets():
+            self.assertTrue(qs.query.select_for_update_nowait)
+
+    def test_select_for_update_skip_locked(self):
+        """skip_locked is passed through to every QuerySet."""
+        qss = self.all.select_for_update(skip_locked=True)
+        for qs in qss.get_querysets():
+            self.assertTrue(qs.query.select_for_update_skip_locked)
+
+    def test_select_for_update_of(self):
+        """of is passed through to every QuerySet."""
+        qss = self.all.select_for_update(of=("self",))
+        for qs in qss.get_querysets():
+            self.assertEqual(qs.query.select_for_update_of, ("self",))
+
+    @skipIf(django.VERSION < (6, 0), "no_key was added in Django 6.0.")
+    def test_select_for_update_no_key(self):
+        """no_key is passed through to every QuerySet."""
+        qss = self.all.select_for_update(no_key=True)
+        for qs in qss.get_querysets():
+            self.assertTrue(qs.query.select_for_no_key_update)
+
+    def test_select_for_update_nowait_and_skip_locked(self):
+        """Django rejects combining nowait with skip_locked."""
+        with self.assertRaises(ValueError):
+            self.all.select_for_update(nowait=True, skip_locked=True)
+
+    def test_select_for_update_empty(self):
+        """An empty QuerySetSequence locks nothing."""
+        with transaction.atomic():
+            self.assertEqual(list(self.empty.select_for_update()), [])
 
 
 class TestDistinct(TestBase):
@@ -2092,10 +2139,6 @@ class TestNotImplemented(TestCase):
     def test_difference(self):
         with self.assertRaises(NotImplementedError):
             self.all.difference()
-
-    def test_select_for_update(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.select_for_update()
 
     def test_raw(self):
         with self.assertRaises(NotImplementedError):
