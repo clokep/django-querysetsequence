@@ -784,10 +784,12 @@ class QuerySetSequence:
         clone._querysets = [qs.annotate(*args, **kwargs) for qs in clone._querysets]
         return clone
 
-    if django.VERSION > (3, 2):
+    if django.VERSION >= (3, 2):
 
         def alias(self, *args, **kwargs):
-            raise NotImplementedError()
+            clone = self._clone()
+            clone._querysets = [qs.alias(*args, **kwargs) for qs in clone._querysets]
+            return clone
 
     def order_by(self, *fields):
         _, filtered_fields = self._separate_fields(*fields)
@@ -885,6 +887,13 @@ class QuerySetSequence:
 
     def difference(self, *other_qs, **kwargs):
         raise NotImplementedError()
+
+    if django.VERSION >= (6, 1):
+
+        def fetch_mode(self, mode):
+            clone = self._clone()
+            clone._querysets = [qs.fetch_mode(mode) for qs in self._querysets]
+            return clone
 
     def select_related(self, *fields):
         clone = self._clone()
@@ -1272,6 +1281,19 @@ class QuerySetSequence:
         clause.
         """
         return bool(self._order_by)
+
+    if django.VERSION >= (6, 1):
+
+        @property
+        def totally_ordered(self):
+            """
+            Returns True if the QuerySet is ordered and the ordering is
+            deterministic. This requires that the ordering includes a field (or
+            set of fields) that is unique and non-nullable.
+            """
+            if not self.ordered:
+                return False
+            return all(qs.totally_ordered for qs in self._querysets)
 
     # Methods specific to QuerySetSequence.
     def get_querysets(self):

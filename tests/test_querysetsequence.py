@@ -1967,15 +1967,71 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(ImplementedIn41):
             await self.all.aexplain()
 
+    @skipIf(django.VERSION >= (3, 2), "alias exists starting on Django 3.2.")
     def test_alias(self):
-        if django.VERSION > (3, 2):
-            with self.assertRaises(NotImplementedError):
-                self.all.alias()
-        else:
-            with self.assertRaises(AttributeError):
-                self.all.alias()
+        with self.assertRaises(AttributeError):
+            self.all.alias()
 
     @skipIf(django.VERSION >= (4, 0), "Contains exists starting on Django 4.0.")
     def test_contains(self):
         obj = 1
         self.all.contains(obj)
+
+    @skipIf(django.VERSION >= (6, 1), "fetch_mode exists starting on Django 6.1.")
+    def test_fetch_mode(self):
+        with self.assertRaises(AttributeError):
+            self.all.fetch_mode()
+
+    @skipIf(django.VERSION >= (6, 1), "totally_ordered exists starting on Django 6.1.")
+    def test_totally_ordered(self):
+        with self.assertRaises(AttributeError):
+            self.all.totally_ordered
+
+
+@skipIf(django.VERSION < (6, 1), "fetch_mode requires Django 6.1+")
+class TestFetchMode(TestBase):
+    def test_fetch_mode(self):
+        """fetch_mode() delegates to each underlying QuerySet."""
+        qss = self.all.fetch_mode("FETCH_PEERS")
+        self.assertIsInstance(qss, QuerySetSequence)
+        self.assertEqual(len(qss.get_querysets()), 2)
+
+    def test_empty(self):
+        """fetch_mode() works on empty QuerySetSequence."""
+        qss = self.empty.fetch_mode("FETCH_PEERS")
+        self.assertIsInstance(qss, QuerySetSequence)
+        self.assertEqual(len(qss.get_querysets()), 0)
+
+
+@skipIf(django.VERSION < (6, 1), "totally_ordered requires Django 6.1+")
+class TestTotallyOrdered(TestBase):
+    def test_totally_ordered_false_when_unordered(self):
+        """totally_ordered is False when no ordering is set."""
+        self.assertFalse(self.all.totally_ordered)
+
+    def test_totally_ordered_false_when_not_unique(self):
+        """totally_ordered is False when ordering is not unique."""
+        # Order by author (not unique)
+        qss = self.all.order_by("author")
+        self.assertTrue(qss.ordered)
+        # Since author is not unique, totally_ordered should be False
+        self.assertFalse(qss.totally_ordered)
+
+    def test_totally_ordered_empty(self):
+        """totally_ordered works on empty QuerySetSequence."""
+        self.assertFalse(self.empty.totally_ordered)
+
+
+class TestAlias(TestBase):
+    @skipIf(django.VERSION < (3, 2), "alias() requires Django 3.2+")
+    def test_alias(self):
+        """alias() delegates to each underlying QuerySet."""
+        qss = self.all.alias(entry_count=Count("pk"))
+        self.assertIsInstance(qss, QuerySetSequence)
+
+    @skipIf(django.VERSION < (3, 2), "alias() requires Django 3.2+")
+    def test_alias_empty(self):
+        """alias() works on empty QuerySetSequence."""
+        qss = self.empty.alias(test=Count("pk"))
+        self.assertIsInstance(qss, QuerySetSequence)
+        self.assertEqual(len(qss.get_querysets()), 0)
