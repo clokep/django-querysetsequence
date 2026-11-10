@@ -978,7 +978,21 @@ class QuerySetSequence:
         return clone
 
     def select_for_update(self, nowait=False, skip_locked=False, of=(), no_key=False):
-        raise NotImplementedError()
+        """Lock the selected rows of every QuerySet until the transaction ends.
+
+        Evaluating the result requires an open transaction, as in Django.
+        Backends without ``SELECT ... FOR UPDATE`` support, such as SQLite,
+        ignore the lock.
+        """
+        kwargs = {"nowait": nowait, "skip_locked": skip_locked, "of": of}
+        # no_key was added in Django 6.0; passing it to older versions is a
+        # TypeError rather than a no-op.
+        if django.VERSION >= (6, 0):
+            kwargs["no_key"] = no_key
+
+        clone = self._clone()
+        clone._querysets = [qs.select_for_update(**kwargs) for qs in self._querysets]
+        return clone
 
     def raw(self, raw_query, params=(), translations=None):
         raise NotImplementedError()

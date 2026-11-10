@@ -112,7 +112,7 @@ Summary of Supported APIs
       - |check|
       -
     * - |select_for_update|_
-      - |xmark|
+      - |check|
       -
     * - |raw|_
       - |xmark|
