@@ -9,6 +9,8 @@ next
 Improvements
 ------------
 
+* Support the ``fetch_mode()`` and ``alias()`` methods and ``totally_ordered`` property.
+  (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
 * Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
 
 Maintenance
