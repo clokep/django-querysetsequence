@@ -11,6 +11,7 @@ Improvements
 
 * Support more async methods: ``afirst()``, ``alast()``, ``alatest()``,
   ``aearliest()``, ``acontains()``, ``aexplain()``, ``aupdate()``, ``adelete()``.
+  (`#117 <https://github.com/clokep/django-querysetsequence/pull/117>`_)
 * Support the ``fetch_mode()`` and ``alias()`` methods and ``totally_ordered`` property.
   (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
 * Support the ``dates()`` and ``datetimes()`` methods, the dates/datetimes are distinct
