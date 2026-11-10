@@ -68,11 +68,13 @@ Summary of Supported APIs
       - |check|
       - See [1]_ for information on including the ``QuerySet`` index: ``'#'``.
     * - |dates|_
-      - |xmark|
-      -
+      - |check|
+      - A date shared by two models appears once per ``QuerySet``, matching
+        ``distinct()``.
     * - |datetimes|_
-      - |xmark|
-      -
+      - |check|
+      - A date shared by two models appears once per ``QuerySet``, matching
+        ``distinct()``.
     * - |none|_
       - |check|
       -

@@ -21,6 +21,11 @@ from django.db.models.query import EmptyQuerySet, QuerySet
 # considered implementation details.)
 __all__ = ["QuerySetSequence"]
 
+# Django's QuerySet.dates() and .datetimes() annotate the truncated value under
+# a fixed name and then order by that annotation, see django/db/models/query.py.
+_DATES_ANNOTATION = "datefield"
+_DATETIMES_ANNOTATION = "datetimefield"
+
 
 def cmp(a, b):
     """Compare two arbitrary values of the same type."""
@@ -853,11 +858,40 @@ class QuerySetSequence:
 
         return clone
 
-    def dates(self, field, kind, order="ASC"):
-        raise NotImplementedError()
+    def dates(self, field_name, kind, order="ASC"):
+        """Return the distinct dates from a DateField, ordered across QuerySets.
 
-    def datetimes(self, field_name, kind, order="ASC", tzinfo=None, is_dst=None):
-        raise NotImplementedError()
+        A date shared by more than one model appears once per QuerySet, which
+        matches how ``distinct()`` applies to each QuerySet on its own.
+        """
+        prefix = "-" if order == "DESC" else ""
+        clone = self._clone()
+        clone._querysets = [qs.dates(field_name, kind, order) for qs in self._querysets]
+        # Ordering the whole sequence by the annotation interleaves the results.
+        # ValuesListIterable rewrites these into indexes when it runs.
+        clone._order_by = [prefix + _DATES_ANNOTATION]
+        clone._fields = [_DATES_ANNOTATION]
+        clone._iterable_class = FlatValuesListIterable
+        return clone
+
+    def datetimes(self, field_name, kind, order="ASC", tzinfo=None):
+        """Return the distinct datetimes, ordered across QuerySets.
+
+        A datetime shared by more than one model appears once per QuerySet,
+        which matches how ``distinct()`` applies to each QuerySet on its own.
+        """
+        prefix = "-" if order == "DESC" else ""
+        clone = self._clone()
+        clone._querysets = [
+            qs.datetimes(field_name, kind, order, tzinfo=tzinfo)
+            for qs in self._querysets
+        ]
+        # Ordering the whole sequence by the annotation interleaves the results.
+        # ValuesListIterable rewrites these into indexes when it runs.
+        clone._order_by = [prefix + _DATETIMES_ANNOTATION]
+        clone._fields = [_DATETIMES_ANNOTATION]
+        clone._iterable_class = FlatValuesListIterable
+        return clone
 
     def none(self):
         # This is a bit odd, but use the first QuerySet to properly return an

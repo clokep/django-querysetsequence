@@ -11,6 +11,8 @@ Improvements
 
 * Support the ``fetch_mode()`` and ``alias()`` methods and ``totally_ordered`` property.
   (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
+* Support the ``dates()`` and ``datetimes()`` methods, the dates/datetimes are distinct
+  per-QuerySets. (`#115 <https://github.com/clokep/django-querysetsequence/pull/115>`_)
 * Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
 
 Maintenance
