@@ -13,7 +13,7 @@ from django.core.exceptions import (
 )
 from django.db import connection, transaction
 from django.db.models import Avg, Count, Max, Min, Q, StdDev, Sum, Variance
-from django.db.models.query import EmptyQuerySet
+from django.db.models.query import EmptyQuerySet, QuerySet
 from django.test import TestCase
 from django.utils.timezone import make_aware
 
@@ -199,6 +199,54 @@ class TestIterator(TestBase):
         with self.assertNumQueries(0):
             data = [it.title for it in self.all]
             self.assertEqual(data, TestIterator.TITLES_BY_PK)
+
+    def test_iterator_keeps_querysets(self):
+        """iterator() does not replace the QuerySets with generators."""
+        for qs in self.all.iterator().get_querysets():
+            self.assertIsInstance(qs, QuerySet)
+
+    def test_iterator_chunk_size(self):
+        """The chunk size is passed through to each QuerySet."""
+        queryset_iterator = QuerySet.iterator
+        calls = []
+
+        def spy(queryset, chunk_size=None):
+            calls.append(chunk_size)
+            return queryset_iterator(queryset, chunk_size)
+
+        with patch.object(QuerySet, "iterator", spy):
+            data = [it.title for it in self.all.iterator(chunk_size=1)]
+        self.assertEqual(data, self.TITLES_BY_PK)
+        self.assertEqual(calls, [1, 1])
+
+    def test_iterator_invalid_chunk_size(self):
+        """A non-positive chunk size is rejected, as in Django."""
+        with self.assertRaises(ValueError):
+            self.all.iterator(chunk_size=0)
+
+    def test_iterator_slice_before(self):
+        """Slicing before calling iterator() works."""
+        # 2 counts + evaluating two QuerySets.
+        with self.assertNumQueries(4):
+            data = [it.title for it in self.all[1:4].iterator()]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    def test_iterator_slice_after(self):
+        """Slicing an iterator() works."""
+        # 2 counts + evaluating two QuerySets.
+        with self.assertNumQueries(4):
+            data = [it.title for it in self.all.iterator()[1:4]]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    def test_iterator_ordered_slice(self):
+        """Slicing works with an explicit ordering."""
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all.order_by("title")[1:3].iterator()]
+        self.assertEqual(data, ["Biography", "Django Rocks"])
+
+        with self.assertNumQueries(2):
+            data = [it.title for it in self.all.order_by("title").iterator()[1:3]]
+        self.assertEqual(data, ["Biography", "Django Rocks"])
 
     def test_empty(self):
         """Test an empty iteration."""

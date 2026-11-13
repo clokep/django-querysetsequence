@@ -6,6 +6,12 @@ Changelog
 next
 ====
 
+Bugfixes
+--------
+
+* Fix various errors when slicing and calling ``iterator()`` and add the ``chunk_size``
+  argument to ``iterator()``. (`#119 <https://github.com/clokep/django-querysetsequence/pull/119>`_)
+
 Improvements
 ------------
 
