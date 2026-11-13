@@ -65,7 +65,7 @@ def cumsum(seq):
 
 
 class BaseIterable:
-    def __init__(self, querysetsequence):
+    def __init__(self, querysetsequence, chunk_size=None):
         # Create a clone so that subsequent calls to iterate are kept separate.
         self._querysets = querysetsequence._querysets
         self._queryset_idxs = querysetsequence._queryset_idxs
@@ -75,6 +75,7 @@ class BaseIterable:
         self._high_mark = querysetsequence._high_mark
         self._streaming = querysetsequence._streaming
         self._iterator_chunk_size = querysetsequence._iterator_chunk_size
+        self._chunk_size = chunk_size
 
     def _get_iterator(self, qs):
         """
@@ -93,6 +94,10 @@ class BaseIterable:
     def _add_queryset_index(self, obj, value):
         """Add the QuerySet index to the object and return the object."""
         raise NotImplementedError()
+
+    def _transform(self, item):
+        """Transform an item before it is returned to the caller."""
+        return item
 
     @classmethod
     def _get_field_names(cls, model):
@@ -236,7 +241,7 @@ class BaseIterable:
 
             # Return the next value if we're within the slice of interest.
             if self._low_mark <= index:
-                yield value
+                yield self._transform(value)
             index += 1
             # We've left the slice of interest, we're done.
             if index == self._high_mark:
@@ -259,7 +264,98 @@ class BaseIterable:
         """
         for i, qs in zip(self._queryset_idxs, self._querysets):
             for item in self._get_iterator(qs):
-                yield self._add_queryset_index(item, i)
+                yield self._transform(self._add_queryset_index(item, i))
+
+    def __aiter__(self):
+        return self._aiterator()
+
+    async def _async_ordered_iterator(self):
+        """
+        Asynchronously interleave the values of each QuerySet in order to
+        handle the requested ordering. Also adds the '#' property to each
+        returned item.
+        """
+
+        async def first_value(i, qs):
+            it = qs.aiterator(self._chunk_size)
+            try:
+                value = await anext(it)
+            except StopAsyncIteration:
+                return None
+            return it, i, self._add_queryset_index(value, i)
+
+        # Prime all the QuerySets concurrently.
+        iterables = [
+            item
+            for item in await asyncio.gather(
+                *[
+                    first_value(i, qs)
+                    for i, qs in zip(self._queryset_idxs, self._querysets)
+                ]
+            )
+            if item is not None
+        ]
+
+        # The offset of items returned.
+        index = 0
+
+        # Create a comparison function based on the requested ordering.
+        _comparator = self._generate_comparator(self._order_by)
+
+        def comparator(tuple_1, tuple_2):
+            # The last element in each tuple is the actual item to compare.
+            return _comparator(tuple_1[2], tuple_2[2])
+
+        comparator = functools.cmp_to_key(comparator)
+
+        # If in reverse mode, get the last value instead of the first value
+        # from ordered_values below.
+        if self._standard_ordering:
+            next_value_ind = 0
+        else:
+            next_value_ind = -1
+
+        # Continue until all iterables are empty.
+        while iterables:
+            # If there's only one iterator left, don't bother sorting.
+            if len(iterables) > 1:
+                # Sort the current values for each iterable.
+                iterables = sorted(iterables, key=comparator)
+
+                # The next ordering item is in the first position, unless
+                # we're in reverse mode.
+                it, i, value = iterables[next_value_ind]
+            else:
+                it, i, value = iterables[0]
+
+            # Return the next value if we're within the slice of interest.
+            if self._low_mark <= index:
+                yield self._transform(value)
+            index += 1
+            # We've left the slice of interest, we're done.
+            if index == self._high_mark:
+                return
+
+            # Iterate the iterable that just lost a value.
+            try:
+                value = await anext(it)
+            except StopAsyncIteration:
+                # This iterator is done, remove it.
+                del iterables[next_value_ind]
+            else:
+                # Set the QuerySet number so that the comparison works
+                # properly.
+                value = self._add_queryset_index(value, i)
+                iterables[next_value_ind] = it, i, value
+
+    async def _async_unordered_iterator(self):
+        """
+        Return the value of each QuerySet, but also add the '#' property to
+        each returned item.
+        """
+        for i, qs in zip(self._queryset_idxs, self._querysets):
+            async for item in qs.aiterator(self._chunk_size):
+                yield self._transform(self._add_queryset_index(item, i))
 
     def __iter__(self):
         # If there's no QuerySets, just return an empty iterator.
@@ -294,6 +390,47 @@ class BaseIterable:
 
         # For anything left, just iterate through each QuerySet.
         return self._unordered_iterator()
+
+    async def _aiterator(self):
+        # If there's no QuerySets, just return an empty iterator.
+        if not len(self._querysets):
+            return
+
+        # If order is necessary, evaluate and start feeding data back.
+        if self._order_by:
+            # If the first element of order_by is '#', this means first
+            # order by QuerySet. If it isn't this, then returned the
+            # interleaved iterator.
+            if self._order_by[0].lstrip("-") != "#":
+                async for item in self._async_ordered_iterator():
+                    yield item
+                return
+
+            # Otherwise, order by QuerySet first. Handle reversing the
+            # QuerySets, if necessary.
+            elif self._order_by[0].startswith("-"):
+                self._querysets = self._querysets[::-1]
+
+        # If there is no ordering, or the ordering is specific to each
+        # QuerySet, evaluation can be pushed off further.
+
+        # If there is no slicing, iterate through each QuerySet. This
+        # avoids calling count() on each QuerySet.
+        if self._low_mark == 0 and self._high_mark is None:
+            async for item in self._async_unordered_iterator():
+                yield item
+            return
+
+        # First trim any QuerySets based on the currently set limits!
+        counts = [0]
+        counts.extend(
+            cumsum(await asyncio.gather(*(qs.acount() for qs in self._querysets)))
+        )
+        self._trim_to_slice(counts)
+
+        # For anything left, just iterate through each QuerySet.
+        async for item in self._async_unordered_iterator():
+            yield item
 
     def _trim_to_slice(self, counts):
         """Trim the QuerySets to the requested slice.
@@ -360,8 +497,8 @@ class ModelIterable(BaseIterable):
 
 
 class ValuesIterable(BaseIterable):
-    def __init__(self, querysetsequence):
-        super().__init__(querysetsequence)
+    def __init__(self, querysetsequence, chunk_size=None):
+        super().__init__(querysetsequence, chunk_size)
 
         self._fields = querysetsequence._fields
         # If no fields are specified (or if '#' is explicitly specified) include
@@ -388,14 +525,12 @@ class ValuesIterable(BaseIterable):
             self._include_qs_index |= bool(qss_order_fields)
             self._remove_fields = bool(extra_fields) or bool(qss_fields)
 
-    def __iter__(self):
+    def _transform(self, item):
         if not self._remove_fields:
-            yield from super().__iter__()
-            return
+            return item
 
         # The extra fields added for ordering need to be removed.
-        for it in super().__iter__():
-            yield {k: it[k] for k in self._fields}
+        return {k: item[k] for k in self._fields}
 
     @staticmethod
     def _get_fields(obj, *field_names):
@@ -408,8 +543,8 @@ class ValuesIterable(BaseIterable):
 
 
 class ValuesListIterable(BaseIterable):
-    def __init__(self, querysetsequence):
-        super().__init__(querysetsequence)
+    def __init__(self, querysetsequence, chunk_size=None):
+        super().__init__(querysetsequence, chunk_size)
 
         fields = querysetsequence._fields
         # Only keep the values from fields.
@@ -467,15 +602,13 @@ class ValuesListIterable(BaseIterable):
                 )
             self._order_by = order_by_indexes
 
-    def __iter__(self):
+    def _transform(self, item):
         # If there's no particular ordering, do not rebuild the tuples.
         if not self._order_by:
-            yield from super().__iter__()
-            return
+            return item
 
         # Remove the fields only used for ordering from the result.
-        for row in super().__iter__():
-            yield row[: self._last_field]
+        return item[: self._last_field]
 
     @staticmethod
     def _get_fields(obj, *field_names):
@@ -492,10 +625,9 @@ class ValuesListIterable(BaseIterable):
 
 
 class FlatValuesListIterable(ValuesListIterable):
-    def __iter__(self):
+    def _transform(self, item):
         # Flat values lists can only have a single value in them, yield it.
-        for row in super().__iter__():
-            yield row[0]
+        return super()._transform(item)[0]
 
 
 class NamedValuesListIterable(ValuesListIterable):
@@ -593,6 +725,15 @@ class QuerySetSequence:
     def __iter__(self):
         self._fetch_all()
         return iter(self._result_cache)
+
+    def __aiter__(self):
+        # Mirror Django's QuerySet.__aiter__: fetch everything and cache.
+        async def generator():
+            await sync_to_async(self._fetch_all)()
+            for item in self._result_cache:
+                yield item
+
+        return generator()
 
     def __bool__(self):
         self._fetch_all()
@@ -1137,8 +1278,18 @@ class QuerySetSequence:
         clone._iterator_chunk_size = chunk_size
         return clone
 
-    async def aiterator(self):
-        raise NotImplementedError()
+    async def aiterator(self, chunk_size=2000):
+        """
+        An asynchronous iterator over the results which does not use this
+        QuerySetSequence's result cache.
+
+        Slicing (if any) is applied before the QuerySets are streamed.
+        """
+        if chunk_size <= 0:
+            raise ValueError("Chunk size must be strictly positive.")
+
+        async for item in self._iterable_class(self, chunk_size):
+            yield item
 
     def _get_latest_by(self):
         """Process get_latest_by Meta on each QuerySet and return the value."""
