@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import itertools
 from collections import defaultdict
 from itertools import dropwhile
 from operator import __not__, attrgetter, eq, ge, gt, itemgetter, le, lt, mul
@@ -12,6 +13,7 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
 )
 from django.db import connection, transaction
+from django.db.models.aggregates import Count, Max, Min, Sum
 from django.db.models.base import Model
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.query import EmptyQuerySet, QuerySet
@@ -1232,7 +1234,7 @@ class QuerySetSequence:
 
             results = await asyncio.gather(
                 *[qs.aearliest(*fields) for qs in self._querysets],
-                return_exceptions=True
+                return_exceptions=True,
             )
             objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
 
@@ -1302,12 +1304,42 @@ class QuerySetSequence:
                 return self._get_first_or_last(last_items, self._order_by, True)
 
     def aggregate(self, *args, **kwargs):
-        raise NotImplementedError()
+        """Return a dictionary of aggregations over all QuerySets.
+
+        Compatible aggregate types (Count, Sum, Min, Max) are combined across
+        all QuerySets.
+
+        Raises NotImplementedError for unsupported types.
+        """
+        for expr in args:
+            _validate_aggregate_type(expr)
+        for expr in kwargs.values():
+            _validate_aggregate_type(expr)
+
+        results = [qs.aggregate(*args, **kwargs) for qs in self._querysets]
+
+        return _combine_aggregates(results, args, kwargs)
 
     if django.VERSION >= (4, 1):
 
         async def aaggregate(self, *args, **kwargs):
-            raise NotImplementedError()
+            """Return a dictionary of aggregations over all QuerySets.
+
+            Compatible aggregate types (Count, Sum, Min, Max) are combined across
+            all QuerySets.
+
+            Raises NotImplementedError for unsupported types.
+            """
+            for expr in args:
+                _validate_aggregate_type(expr)
+            for expr in kwargs.values():
+                _validate_aggregate_type(expr)
+
+            results = await asyncio.gather(
+                *[qs.aaggregate(*args, **kwargs) for qs in self._querysets]
+            )
+
+            return _combine_aggregates(results, args, kwargs)
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
@@ -1411,3 +1443,57 @@ class QuerySetSequence:
     def get_querysets(self):
         """Returns a list of the QuerySet objects which form the sequence."""
         return self._querysets
+
+
+def _validate_aggregate_type(expr):
+    """Raise NotImplementedError if expr is an unsupported aggregate type."""
+    if not isinstance(expr, (Count, Sum, Min, Max)):
+        raise NotImplementedError(
+            f"Aggregate type '{type(expr).__name__}' is not supported. "
+            f"Use Count, Sum, Min, or Max instead."
+        )
+
+
+def _combine_aggregates(results, args, kwargs):
+    """Combine the per-QuerySet aggregates."""
+    if not results:
+        return {}
+
+    combined = {}
+    # The QuerySet(s) already checked there is a default alias for args.
+    for key, expr in itertools.chain(
+        map(lambda arg: (arg.default_alias, arg), args), kwargs.items()
+    ):
+        values = [r[key] for r in results if key in r]
+        combined[key] = _combine_aggregate_values(key, values, expr)
+
+    return combined
+
+
+def _combine_aggregate_values(key, values, expr):
+    """Combine per-QuerySet aggregate values based on the expression type."""
+
+    # We have a specific expression for this key — use its type
+    if isinstance(expr, Count):
+        # Count: sum all values
+        return sum(values)
+    elif isinstance(expr, Sum):
+        # Sum: add non-None values; if all None, return None
+        non_none = [v for v in values if v is not None]
+        if not non_none:
+            return None
+        return sum(non_none)
+    elif isinstance(expr, Min):
+        # Min: take minimum of non-None values
+        non_none = [v for v in values if v is not None]
+        if not non_none:
+            return None
+        return min(non_none)
+    elif isinstance(expr, Max):
+        # Max: take maximum of non-None values
+        non_none = [v for v in values if v is not None]
+        if not non_none:
+            return None
+        return max(non_none)
+
+    raise ValueError(f"Unknown aggregate type '{type(expr).__name__}'")

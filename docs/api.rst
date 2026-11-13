@@ -229,11 +229,17 @@ Summary of Supported APIs
       - |check|
       -
     * - |aggregate|_
-      - |xmark|
-      -
+      - |check|
+      - Combines aggregation results across all QuerySets in the sequence.
+        The combine rule is determined once from the aggregate expressions
+        (``Count`` → sum, ``Sum`` → add, ``Min`` → minimum, ``Max`` → maximum).
+        Raises ``NotImplementedError`` for unsupported expressions.
     * - |aaggregate|_
-      - |xmark|
-      -
+      - |check|
+      - Combines aggregation results across all QuerySets in the sequence.
+        The combine rule is determined once from the aggregate expressions
+        (``Count`` → sum, ``Sum`` → add, ``Min`` → minimum, ``Max`` → maximum).
+        Raises ``NotImplementedError`` for unsupported expressions.
     * - |exists|_
       - |check|
       -

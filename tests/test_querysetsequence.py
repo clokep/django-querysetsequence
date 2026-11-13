@@ -12,7 +12,7 @@ from django.core.exceptions import (
     ObjectDoesNotExist,
 )
 from django.db import connection, transaction
-from django.db.models import Count, Q
+from django.db.models import Avg, Count, Max, Min, Q, StdDev, Sum, Variance
 from django.db.models.query import EmptyQuerySet
 from django.test import TestCase
 from django.utils.timezone import make_aware
@@ -1230,6 +1230,92 @@ class TestExtraAnnotate(TestBase):
             data = [it.published_count for it in qss]
         self.assertEqual(data, [0, 2, 3])
 
+    def test_aggregate(self):
+        """aggregate() combines values across all QuerySets (Count sums)."""
+        # Count sums across all QuerySets: 2 Books + 3 Articles = 5.
+        self.assertEqual(self.all.aggregate(total=Count("pk")), {"total": 5})
+
+    def test_aggregate_args(self):
+        """aggregate() combines values across all QuerySets (Count sums)."""
+        # Count sums across all QuerySets: 2 Books + 3 Articles = 5.
+        self.assertEqual(self.all.aggregate(Count("pk")), {"pk__count": 5})
+
+    def test_aggregate_args_kwargs(self):
+        """aggregate() combines values across all QuerySets (Count sums)."""
+        qs = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        self.assertEqual(
+            qs.aggregate(Count("pk"), total=Sum("pages")), {"pk__count": 4, "total": 60}
+        )
+
+    def test_aggregate_empty(self):
+        """aggregate() over an empty QuerySetSequence returns an empty dictionary."""
+        self.assertEqual(self.empty.aggregate(total=Count("pk")), {})
+
+    def test_aggregate_sum_same_model(self):
+        """Sum combines across QuerySets of the same model."""
+        # Two Book QuerySets, each with 2 books having pages=10 and pages=20.
+        # Combined sum = (10 + 20) + (10 + 20) = 60.
+        qs = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        self.assertEqual(qs.aggregate(total=Sum("pages")), {"total": 60})
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate(self):
+        """aaggregate() combines values across all QuerySets (Count sums)."""
+        self.assertEqual(await self.all.aaggregate(total=Count("pk")), {"total": 5})
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate_empty(self):
+        """aaggregate() over an empty QuerySetSequence returns an empty dictionary."""
+        self.assertEqual(await self.empty.aaggregate(total=Count("pk")), {})
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate_sum_same_model(self):
+        """aaggregate() Sum combines across same-model QuerySets."""
+        qs = QuerySetSequence(Book.objects.all(), Book.objects.all())
+        self.assertEqual(await qs.aaggregate(total=Sum("pages")), {"total": 60})
+
+    def test_aggregate_min_max_cross_model(self):
+        """Min/Max combine across different models sharing the field."""
+        # release exists on both Book and Article; min is earliest article (1979-01-01),
+        # max is latest book (2002-12-24).
+        qs = QuerySetSequence(Book.objects.all(), Article.objects.all())
+        result = qs.aggregate(min_release=Min("release"), max_release=Max("release"))
+        self.assertEqual(result["min_release"].year, 1979)
+        self.assertEqual(result["max_release"].year, 2002)
+
+    def test_aggregate_avg_unsupported(self):
+        """aggregate() raises NotImplementedError for Avg."""
+        with self.assertRaises(NotImplementedError):
+            self.all.aggregate(average=Avg("release"))
+
+    def test_aggregate_stddev_unsupported(self):
+        """aggregate() raises NotImplementedError for StdDev."""
+        with self.assertRaises(NotImplementedError):
+            self.all.aggregate(stddev=StdDev("release"))
+
+    def test_aggregate_variance_unsupported(self):
+        """aggregate() raises NotImplementedError for Variance."""
+        with self.assertRaises(NotImplementedError):
+            self.all.aggregate(variance=Variance("release"))
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate_avg_unsupported(self):
+        """aaggregate() raises NotImplementedError for Avg."""
+        with self.assertRaises(NotImplementedError):
+            await self.all.aaggregate(average=Avg("release"))
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate_stddev_unsupported(self):
+        """aaggregate() raises NotImplementedError for StdDev."""
+        with self.assertRaises(NotImplementedError):
+            await self.all.aaggregate(stddev=StdDev("release"))
+
+    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
+    async def test_aaggregate_variance_unsupported(self):
+        """aaggregate() raises NotImplementedError for Variance."""
+        with self.assertRaises(NotImplementedError):
+            await self.all.aaggregate(variance=Variance("release"))
+
 
 class TestOrderBy(TestBase):
     def test_order_by(self):
@@ -2350,14 +2436,6 @@ class TestNotImplemented(TestCase):
     async def test_alast(self):
         with self.assertRaises(ImplementedIn41):
             await self.all.alast()
-
-    def test_aggregate(self):
-        with self.assertRaises(NotImplementedError):
-            self.all.aggregate()
-
-    async def test_aaggregate(self):
-        with self.assertRaises(ImplementedIn41):
-            await self.all.aaggregate()
 
     @skipIf(django.VERSION >= (4, 1), "aexists exists starting on Django 4.1.")
     async def test_aexists(self):
