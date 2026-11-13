@@ -13,7 +13,7 @@ Improvements
   ``aearliest()``, ``acontains()``, ``aexplain()``, ``aupdate()``, ``adelete()``.
   (`#117 <https://github.com/clokep/django-querysetsequence/pull/117>`_)
 * Support ``aggregate()`` and ``aaggregate()`` for some aggregate expressions
-  (``Count``, ``Sum``, ``Min``, ``Max``).
+  (``Count``, ``Sum``, ``Min``, ``Max``). (`#118 <https://github.com/clokep/django-querysetsequence/pull/118>`_)
 * Support the ``fetch_mode()`` and ``alias()`` methods and ``totally_ordered`` property.
   (`#114 <https://github.com/clokep/django-querysetsequence/pull/114>`_)
 * Support the ``dates()`` and ``datetimes()`` methods, the dates/datetimes are distinct
