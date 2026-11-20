@@ -3,11 +3,15 @@ version: 2
 formats: all
 
 build:
-  os: ubuntu-20.04
+  os: ubuntu-24.04
   tools:
-    python: "3.15"
+    python: "3.11"
+
+sphinx:
+  configuration: docs/conf.py
 
 python:
   install:
     - method: pip
       path: .
+    - requirements: requirements/docs.txt
