@@ -28,11 +28,6 @@ from tests.models import (
     Publisher,
 )
 
-if django.VERSION >= (4, 1):
-    ImplementedIn41 = NotImplementedError
-else:
-    ImplementedIn41 = AttributeError
-
 
 class TestBase(TestCase):
     # The title of each Book, followed by each Article; each ordered by primary
@@ -126,7 +121,6 @@ class TestLength(TestBase):
         with self.assertNumQueries(2):
             self.assertEqual(self.all.count(), 5)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acount(self):
         # The proper length should be returned via database queries.
         self.assertEqual(await self.all.acount(), 5)
@@ -150,7 +144,6 @@ class TestLength(TestBase):
         with self.assertNumQueries(4):
             self.assertEqual(len(self.all[1:]), 4)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acount_slice(self):
         """Ensure the proper length is calculated when a slice is taken."""
         self.assertEqual(await self.all[1:].acount(), 4)
@@ -159,7 +152,6 @@ class TestLength(TestBase):
         """An empty QuerySetSequence has a count of 0."""
         self.assertEqual(self.empty.count(), 0)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acount_empty_count(self):
         """An empty QuerySetSequence has a count of 0."""
         self.assertEqual(await self.empty.acount(), 0)
@@ -1306,17 +1298,14 @@ class TestExtraAnnotate(TestBase):
         qs = QuerySetSequence(Book.objects.all(), Book.objects.all())
         self.assertEqual(qs.aggregate(total=Sum("pages")), {"total": 60})
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate(self):
         """aaggregate() combines values across all QuerySets (Count sums)."""
         self.assertEqual(await self.all.aaggregate(total=Count("pk")), {"total": 5})
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate_empty(self):
         """aaggregate() over an empty QuerySetSequence returns an empty dictionary."""
         self.assertEqual(await self.empty.aaggregate(total=Count("pk")), {})
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate_sum_same_model(self):
         """aaggregate() Sum combines across same-model QuerySets."""
         qs = QuerySetSequence(Book.objects.all(), Book.objects.all())
@@ -1346,19 +1335,16 @@ class TestExtraAnnotate(TestBase):
         with self.assertRaises(NotImplementedError):
             self.all.aggregate(variance=Variance("release"))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate_avg_unsupported(self):
         """aaggregate() raises NotImplementedError for Avg."""
         with self.assertRaises(NotImplementedError):
             await self.all.aaggregate(average=Avg("release"))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate_stddev_unsupported(self):
         """aaggregate() raises NotImplementedError for StdDev."""
         with self.assertRaises(NotImplementedError):
             await self.all.aaggregate(stddev=StdDev("release"))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aaggregate_variance_unsupported(self):
         """aaggregate() raises NotImplementedError for Variance."""
         with self.assertRaises(NotImplementedError):
@@ -1805,7 +1791,6 @@ class TestGet(TestBase):
         self.assertEqual(book.title, "Biography")
         self.assertIsInstance(book, Book)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget(self):
         """
         Ensure that aget() returns the expected element or raises DoesNotExist.
@@ -1821,7 +1806,6 @@ class TestGet(TestBase):
             with self.assertRaises(ObjectDoesNotExist):
                 self.all.get(title="")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_not_found(self):
         with self.assertRaises(ObjectDoesNotExist):
             await self.all.aget(title="")
@@ -1833,14 +1817,12 @@ class TestGet(TestBase):
             with self.assertRaises(MultipleObjectsReturned):
                 self.all.get(author=self.bob)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_multi_found(self):
         """Test multiple found in the same QuerySet."""
         # ...or if aget() is called and multiple objects are found.
         with self.assertRaises(MultipleObjectsReturned):
             await self.all.aget(author=self.bob)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     def test_multi_found_separate_querysets(self):
         """Test one found in each QuerySet."""
         # ...or if get() is called and multiple objects are found.
@@ -1848,7 +1830,6 @@ class TestGet(TestBase):
             with self.assertRaises(MultipleObjectsReturned):
                 self.all.get(title__contains="A")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_multi_found_separate_querysets(self):
         """Test one found in each QuerySet."""
         # ...or if aget() is called and multiple objects are found.
@@ -1862,7 +1843,6 @@ class TestGet(TestBase):
         self.assertEqual(post.title, "Post")
         self.assertIsInstance(post, BlogPost)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_related_model(self):
         qss = QuerySetSequence(Article.objects.all(), BlogPost.objects.all())
         post = await qss.aget(publisher__name="Wacky Website")
@@ -1876,7 +1856,6 @@ class TestGet(TestBase):
         self.assertEqual(article.title, "Some Article")
         self.assertIsInstance(article, Article)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_queryset_lookup(self):
         """Test using the special QuerySet lookup."""
         article = await self.all.aget(**{"#": 1, "author": self.bob})
@@ -1888,7 +1867,6 @@ class TestGet(TestBase):
         with self.assertRaises(ObjectDoesNotExist):
             self.empty.get(pk=1)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aget_empty(self):
         """Calling get on an empty QuerySetSequence raises ObjectDoesNotExist."""
         with self.assertRaises(ObjectDoesNotExist):
@@ -1980,43 +1958,36 @@ class TestEarliestLatest(TestBase):
         with self.assertRaises(ValueError):
             self.empty.earliest()
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aearliest(self):
         """The earliest release overall should be returned."""
         earliest = await self.all.aearliest("release")
         self.assertEqual(earliest.title, "Some Article")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_alatest(self):
         """The latest release overall should be returned."""
         latest = await self.all.alatest("release")
         self.assertEqual(latest.title, "Biography")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aearliest_reverse(self):
         """The earliest release overall reversed is the latest."""
         earliest = await self.all.aearliest("-release")
         self.assertEqual(earliest.title, "Biography")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_alatest_reverse(self):
         """The latest release overall reversed is the earliest."""
         latest = await self.all.alatest("-release")
         self.assertEqual(latest.title, "Some Article")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aearliest_get_latest_by(self):
         """Not providing fields causes the get_latest_by field to be used."""
         earliest = await self.all.aearliest()
         self.assertEqual(earliest.title, "Some Article")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_alatest_get_latest_by(self):
         """Not providing fields causes the get_latest_by field to be used."""
         latest = await self.all.alatest()
         self.assertEqual(latest.title, "Biography")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aearliest_empty(self):
         """An empty QuerySetSequence raises a ValueError."""
         with self.assertRaises(ValueError):
@@ -2064,23 +2035,19 @@ class TestFirstLast(TestBase):
         with self.assertNumQueries(2):
             self.assertEqual(self.all.order_by("title").last().title, "Some Article")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_afirst_unordered(self):
         """Should return the first element of the first QuerySet."""
         self.assertEqual((await self.all.afirst()).title, "Fiction")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_alast_unordered(self):
         """Should return the last element of the last QuerySet."""
         self.assertEqual((await self.all.alast()).title, "Some Article")
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_afirst_empty(self):
         """Empty QuerySetSequence should work."""
         self.assertIsNone(await self.empty.afirst())
         self.assertIsNone(await self.empty.alast())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_afirst_ordered(self):
         """When ordering, the items of each QuerySet must be compared."""
         self.assertEqual(
@@ -2091,7 +2058,6 @@ class TestFirstLast(TestBase):
             (await self.all.order_by("-title").afirst()).title, "Some Article"
         )
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_alast_ordered(self):
         """When ordering, the items of each QuerySet must be compared."""
         self.assertEqual(
@@ -2111,7 +2077,6 @@ class TestExists(TestBase):
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(title="Biography").exists())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists(self):
         """
         Ensure that aexists() returns True if the item is found in the first QuerySet.
@@ -2125,7 +2090,6 @@ class TestExists(TestBase):
         with self.assertNumQueries(2):
             self.assertTrue(self.all.filter(title="Alice in Django-land").exists())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists_second(self):
         """
         Ensure that aexists() returns True if the item is found in a subsequent
@@ -2138,7 +2102,6 @@ class TestExists(TestBase):
         with self.assertNumQueries(2):
             self.assertFalse(self.all.filter(title="").exists())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists_not_found(self):
         """Ensure that aexists() returns False if the item is not found."""
         self.assertFalse(await self.all.filter(title="").aexists())
@@ -2148,7 +2111,6 @@ class TestExists(TestBase):
         with self.assertNumQueries(1):
             self.assertTrue(self.all.filter(author=self.bob).exists())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists_multi_found(self):
         """Ensure that aexists() returns True if multiple items are found."""
         self.assertTrue(await self.all.filter(author=self.bob).aexists())
@@ -2157,13 +2119,11 @@ class TestExists(TestBase):
         """An empty QuerySetSequence should return False."""
         self.assertFalse(self.empty.exists())
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aexists_empty(self):
         """An empty QuerySetSequence should return False."""
         self.assertFalse(await self.empty.aexists())
 
 
-@skipIf(django.VERSION < (4, 0), "Not supported in Django < 4.0.")
 class TestContains(TestBase):
     def test_contains(self):
         """
@@ -2199,7 +2159,6 @@ class TestContains(TestBase):
         obj = self.all.get_querysets()[0].first()
         self.assertFalse(self.empty.contains(obj))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acontains(self):
         """
         Ensure that acontains() returns True if the item is found in the first QuerySet.
@@ -2207,7 +2166,6 @@ class TestContains(TestBase):
         obj = await self.all.get_querysets()[0].afirst()
         self.assertTrue(await self.all.acontains(obj))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acontains_second(self):
         """
         Ensure that acontains() returns True if the item is found in a subsequent
@@ -2216,20 +2174,17 @@ class TestContains(TestBase):
         obj = await self.all.get_querysets()[1].afirst()
         self.assertTrue(await self.all.acontains(obj))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acontains_not_found(self):
         """Ensure that acontains() returns False if the item is not found."""
         obj = await self.all.get_querysets()[0].afirst()
         self.assertFalse(await self.all.exclude(pk=obj.pk).acontains(obj))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acontains_wrong_type(self):
         """Queries should not occur if the value is the wrong type."""
         obj = await self.all.get_querysets()[0].afirst()
         author = await sync_to_async(lambda: obj.author)()
         self.assertFalse(await self.all.acontains(author))
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_acontains_empty(self):
         """An empty QuerySetSequence should return False."""
         obj = await self.all.get_querysets()[0].afirst()
@@ -2267,7 +2222,6 @@ class TestUpdate(TestBase):
         result = self.empty.update()
         self.assertEqual(result, 0)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aupdate(self):
         """Update should apply across all QuerySets."""
         result = await self.all.aupdate(title="A New Title")
@@ -2276,7 +2230,6 @@ class TestUpdate(TestBase):
         data = await sync_to_async(lambda: [it.title for it in self.all])()
         self.assertEqual(data, ["A New Title"] * 5)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aupdate_error(self):
         """If an error occurs on one of the QuerySets, no changes should occur."""
         with self.assertRaises(FieldDoesNotExist):
@@ -2286,7 +2239,6 @@ class TestUpdate(TestBase):
         data = await sync_to_async(lambda: [it.pages for it in Book.objects.all()])()
         self.assertEqual(data, [10, 20])
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_aupdate_empty(self):
         """Calling update on an empty QuerySetSequence should work."""
         result = await self.empty.aupdate()
@@ -2325,7 +2277,6 @@ class TestDelete(TestBase):
         self.assertEqual(result[0], 0)
         self.assertEqual(result[1], {})
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_adelete_all(self):
         """Ensure that adelete() works properly."""
         result = await self.all.adelete()
@@ -2336,7 +2287,6 @@ class TestDelete(TestBase):
 
         self.assertEqual(await self.all.acount(), 0)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_adelete_filter(self):
         """Ensure that adelete() works properly when filtering."""
         result = await self.all.filter(author=self.alice).adelete()
@@ -2346,7 +2296,6 @@ class TestDelete(TestBase):
 
         self.assertEqual(await self.all.acount(), 3)
 
-    @skipIf(django.VERSION < (4, 1), "Not supported in Django < 4.1.")
     async def test_adelete_empty(self):
         """Calling delete on an empty QuerySetSequence should work."""
         result = await self.empty.adelete()
@@ -2385,7 +2334,7 @@ class TestCannotImplement(TestCase):
             self.all.create()
 
     async def test_acreate(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.acreate()
 
     def test_get_or_create(self):
@@ -2393,7 +2342,7 @@ class TestCannotImplement(TestCase):
             self.all.get_or_create()
 
     async def test_aget_or_create(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.aget_or_create()
 
     def test_update_or_create(self):
@@ -2401,7 +2350,7 @@ class TestCannotImplement(TestCase):
             self.all.update_or_create()
 
     async def test_aupdate_or_create(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.aupdate_or_create()
 
     def test_bulk_create(self):
@@ -2409,7 +2358,7 @@ class TestCannotImplement(TestCase):
             self.all.bulk_create([])
 
     async def test_abulk_create(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.abulk_create([])
 
     def test_bulk_update(self):
@@ -2417,7 +2366,7 @@ class TestCannotImplement(TestCase):
             self.all.bulk_update([], [])
 
     async def test_abulk_update(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.abulk_update([], [])
 
     def test_in_bulk(self):
@@ -2425,7 +2374,7 @@ class TestCannotImplement(TestCase):
             self.all.in_bulk()
 
     async def test_ain_bulk(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.ain_bulk()
 
 
@@ -2451,74 +2400,9 @@ class TestNotImplemented(TestCase):
         with self.assertRaises(NotImplementedError):
             self.all.raw("")
 
-    @skipIf(django.VERSION >= (4, 1), "aget exists starting on Django 4.1.")
-    async def test_aget(self):
-        with self.assertRaises(AttributeError):
-            await self.all.aget()
-
-    @skipIf(django.VERSION >= (4, 1), "acount exists starting on Django 4.1.")
-    async def test_acount(self):
-        with self.assertRaises(AttributeError):
-            await self.all.acount()
-
     async def test_aiterator(self):
-        with self.assertRaises(ImplementedIn41):
+        with self.assertRaises(NotImplementedError):
             await self.all.aiterator()
-
-    @skipIf(django.VERSION >= (4, 1), "alatest exists starting on Django 4.1.")
-    async def test_alatest(self):
-        with self.assertRaises(ImplementedIn41):
-            await self.all.alatest()
-
-    @skipIf(django.VERSION >= (4, 1), "aearliest exists starting on Django 4.1.")
-    async def test_aearliest(self):
-        with self.assertRaises(ImplementedIn41):
-            await self.all.aearliest()
-
-    @skipIf(django.VERSION >= (4, 1), "afirst exists starting on Django 4.1.")
-    async def test_afirst(self):
-        with self.assertRaises(ImplementedIn41):
-            await self.all.afirst()
-
-    @skipIf(django.VERSION >= (4, 1), "alast exists starting on Django 4.1.")
-    async def test_alast(self):
-        with self.assertRaises(ImplementedIn41):
-            await self.all.alast()
-
-    @skipIf(django.VERSION >= (4, 1), "aexists exists starting on Django 4.1.")
-    async def test_aexists(self):
-        with self.assertRaises(AttributeError):
-            await self.all.aexists()
-
-    @skipIf(django.VERSION >= (4, 1), "acontains exists starting on Django 4.1.")
-    async def test_acontains(self):
-        with self.assertRaises(AttributeError):
-            await self.all.acontains()
-
-    @skipIf(django.VERSION >= (4, 1), "aupdate exists starting on Django 4.1.")
-    async def test_aupdate(self):
-        with self.assertRaises(AttributeError):
-            await self.all.aupdate()
-
-    @skipIf(django.VERSION >= (4, 1), "adelete exists starting on Django 4.1.")
-    async def test_adelete(self):
-        with self.assertRaises(AttributeError):
-            await self.all.adelete()
-
-    @skipIf(django.VERSION >= (4, 1), "aexplain exists starting on Django 4.1.")
-    async def test_aexplain(self):
-        with self.assertRaises(AttributeError):
-            await self.all.aexplain()
-
-    @skipIf(django.VERSION >= (3, 2), "alias exists starting on Django 3.2.")
-    def test_alias(self):
-        with self.assertRaises(AttributeError):
-            self.all.alias()
-
-    @skipIf(django.VERSION >= (4, 0), "Contains exists starting on Django 4.0.")
-    def test_contains(self):
-        obj = 1
-        self.all.contains(obj)
 
     @skipIf(django.VERSION >= (6, 1), "fetch_mode exists starting on Django 6.1.")
     def test_fetch_mode(self):
@@ -2566,13 +2450,11 @@ class TestTotallyOrdered(TestBase):
 
 
 class TestAlias(TestBase):
-    @skipIf(django.VERSION < (3, 2), "alias() requires Django 3.2+")
     def test_alias(self):
         """alias() delegates to each underlying QuerySet."""
         qss = self.all.alias(entry_count=Count("pk"))
         self.assertIsInstance(qss, QuerySetSequence)
 
-    @skipIf(django.VERSION < (3, 2), "alias() requires Django 3.2+")
     def test_alias_empty(self):
         """alias() works on empty QuerySetSequence."""
         qss = self.empty.alias(test=Count("pk"))

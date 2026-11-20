@@ -816,12 +816,10 @@ class QuerySetSequence:
         clone._querysets = [qs.annotate(*args, **kwargs) for qs in clone._querysets]
         return clone
 
-    if django.VERSION >= (3, 2):
-
-        def alias(self, *args, **kwargs):
-            clone = self._clone()
-            clone._querysets = [qs.alias(*args, **kwargs) for qs in clone._querysets]
-            return clone
+    def alias(self, *args, **kwargs):
+        clone = self._clone()
+        clone._querysets = [qs.alias(*args, **kwargs) for qs in clone._querysets]
+        return clone
 
     def order_by(self, *fields):
         _, filtered_fields = self._separate_fields(*fields)
@@ -1048,109 +1046,87 @@ class QuerySetSequence:
         # Return the only result found.
         return result
 
-    if django.VERSION >= (4, 1):
+    async def aget(self, **kwargs):
+        clone = self.filter(**kwargs)
 
-        async def aget(self, **kwargs):
-            clone = self.filter(**kwargs)
+        awaitables = []
+        for qs in clone._querysets:
+            awaitables.append(qs.aget())
 
-            awaitables = []
-            for qs in clone._querysets:
-                awaitables.append(qs.aget())
+        result = None
+        results = await asyncio.gather(*awaitables, return_exceptions=True)
+        for obj in results:
+            # If the object doesn't exist, hopefully another QuerySet has it.
+            if isinstance(obj, ObjectDoesNotExist):
+                continue
 
-            result = None
-            results = await asyncio.gather(*awaitables, return_exceptions=True)
-            for obj in results:
-                # If the object doesn't exist, hopefully another QuerySet has it.
-                if isinstance(obj, ObjectDoesNotExist):
-                    continue
+            # Re-raise a MultipleObjectsReturned() exception.
+            if isinstance(obj, MultipleObjectsReturned):
+                raise obj
 
-                # Re-raise a MultipleObjectsReturned() exception.
-                if isinstance(obj, MultipleObjectsReturned):
-                    raise obj
+            # If a second object is found, raise an exception.
+            if result:
+                raise MultipleObjectsReturned()
 
-                # If a second object is found, raise an exception.
-                if result:
-                    raise MultipleObjectsReturned()
+            result = obj
 
-                result = obj
+        # Checked all QuerySets and no object was found.
+        if result is None:
+            raise self.model.DoesNotExist()
 
-            # Checked all QuerySets and no object was found.
-            if result is None:
-                raise self.model.DoesNotExist()
-
-            # Return the only result found.
-            return result
+        # Return the only result found.
+        return result
 
     def create(self, **kwargs):
         raise NotImplementedError()
 
-    if django.VERSION >= (4, 1):
-
-        async def acreate(self, **kwargs):
-            raise NotImplementedError()
+    async def acreate(self, **kwargs):
+        raise NotImplementedError()
 
     def get_or_create(self, defaults=None, **kwargs):
         raise NotImplementedError()
 
-    if django.VERSION >= (4, 1):
-
-        async def aget_or_create(self, defaults=None, **kwargs):
-            raise NotImplementedError()
+    async def aget_or_create(self, defaults=None, **kwargs):
+        raise NotImplementedError()
 
     def update_or_create(self, defaults=None, **kwargs):
         raise NotImplementedError()
 
-    if django.VERSION >= (4, 1):
+    async def aupdate_or_create(self, defaults=None, **kwargs):
+        raise NotImplementedError()
 
-        async def aupdate_or_create(self, defaults=None, **kwargs):
-            raise NotImplementedError()
+    def bulk_create(
+        self,
+        objs,
+        batch_size=None,
+        ignore_conflicts=False,
+        update_conflicts=False,
+        update_fields=None,
+        unique_fields=None,
+    ):
+        raise NotImplementedError()
 
-    # Django 4.1 added additional parameters.
-    if django.VERSION >= (4, 1):
-
-        def bulk_create(
-            self,
-            objs,
-            batch_size=None,
-            ignore_conflicts=False,
-            update_conflicts=False,
-            update_fields=None,
-            unique_fields=None,
-        ):
-            raise NotImplementedError()
-
-        async def abulk_create(self, objs, batch_size=None, ignore_conflicts=False):
-            raise NotImplementedError()
-
-    else:
-
-        def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
-            raise NotImplementedError()
+    async def abulk_create(self, objs, batch_size=None, ignore_conflicts=False):
+        raise NotImplementedError()
 
     def bulk_update(self, objs, fields, batch_size=None):
         raise NotImplementedError()
 
-    if django.VERSION >= (4, 1):
-
-        async def abulk_update(self, objs, fields, batch_size=None):
-            raise NotImplementedError()
+    async def abulk_update(self, objs, fields, batch_size=None):
+        raise NotImplementedError()
 
     def count(self):
         return sum(qs.count() for qs in self._querysets) - self._low_mark
 
-    if django.VERSION >= (4, 1):
-
-        async def acount(self):
-            awaitables = [qs.acount() for qs in self._querysets]
-            return sum(await asyncio.gather(*awaitables)) - self._low_mark
+    async def acount(self):
+        awaitables = [qs.acount() for qs in self._querysets]
+        return sum(await asyncio.gather(*awaitables)) - self._low_mark
 
     def in_bulk(self, id_list=None, *, field_name="pk"):
         raise NotImplementedError()
 
-    if django.VERSION >= (4, 1):
-
-        async def ain_bulk(self, id_list=None, *, field_name="pk"):
-            raise NotImplementedError()
+    async def ain_bulk(self, id_list=None, *, field_name="pk"):
+        raise NotImplementedError()
 
     def iterator(self, chunk_size=None):
         if chunk_size is not None and chunk_size <= 0:
@@ -1161,10 +1137,8 @@ class QuerySetSequence:
         clone._iterator_chunk_size = chunk_size
         return clone
 
-    if django.VERSION >= (4, 1):
-
-        async def aiterator(self):
-            raise NotImplementedError()
+    async def aiterator(self):
+        raise NotImplementedError()
 
     def _get_latest_by(self):
         """Process get_latest_by Meta on each QuerySet and return the value."""
@@ -1219,21 +1193,19 @@ class QuerySetSequence:
         # Return the latest.
         return self._get_first_or_last(objs, fields, True)
 
-    if django.VERSION >= (4, 1):
+    async def alatest(self, *fields):
+        if not fields:
+            fields = self._get_latest_by()
 
-        async def alatest(self, *fields):
-            if not fields:
-                fields = self._get_latest_by()
+        results = await asyncio.gather(
+            *[qs.alatest(*fields) for qs in self._querysets], return_exceptions=True
+        )
+        objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
 
-            results = await asyncio.gather(
-                *[qs.alatest(*fields) for qs in self._querysets], return_exceptions=True
-            )
-            objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
+        if not objs:
+            raise self.model.DoesNotExist()
 
-            if not objs:
-                raise self.model.DoesNotExist()
-
-            return self._get_first_or_last(objs, fields, True)
+        return self._get_first_or_last(objs, fields, True)
 
     def earliest(self, *fields):
         # If fields are given, fallback to get_latest_by.
@@ -1254,22 +1226,20 @@ class QuerySetSequence:
         # Return the latest.
         return self._get_first_or_last(objs, fields, False)
 
-    if django.VERSION >= (4, 1):
+    async def aearliest(self, *fields):
+        if not fields:
+            fields = self._get_latest_by()
 
-        async def aearliest(self, *fields):
-            if not fields:
-                fields = self._get_latest_by()
+        results = await asyncio.gather(
+            *[qs.aearliest(*fields) for qs in self._querysets],
+            return_exceptions=True,
+        )
+        objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
 
-            results = await asyncio.gather(
-                *[qs.aearliest(*fields) for qs in self._querysets],
-                return_exceptions=True,
-            )
-            objs = [obj for obj in results if not isinstance(obj, ObjectDoesNotExist)]
+        if not objs:
+            raise self.model.DoesNotExist()
 
-            if not objs:
-                raise self.model.DoesNotExist()
-
-            return self._get_first_or_last(objs, fields, False)
+        return self._get_first_or_last(objs, fields, False)
 
     def first(self):
         # If there's no QuerySets, return None. If the QuerySets are unordered,
@@ -1287,20 +1257,16 @@ class QuerySetSequence:
                 [qs.first() for qs in self._querysets], self._order_by, False
             )
 
-    if django.VERSION >= (4, 1):
+    async def afirst(self):
+        if not self._querysets:
+            return None
 
-        async def afirst(self):
-            if not self._querysets:
-                return None
+        elif not self.ordered:
+            return await self._querysets[0].afirst()
 
-            elif not self.ordered:
-                return await self._querysets[0].afirst()
-
-            else:
-                first_items = await asyncio.gather(
-                    *[qs.afirst() for qs in self._querysets]
-                )
-                return self._get_first_or_last(first_items, self._order_by, False)
+        else:
+            first_items = await asyncio.gather(*[qs.afirst() for qs in self._querysets])
+            return self._get_first_or_last(first_items, self._order_by, False)
 
     def last(self):
         # See the comments for first().
@@ -1316,20 +1282,16 @@ class QuerySetSequence:
                 [qs.last() for qs in self._querysets], self._order_by, True
             )
 
-    if django.VERSION >= (4, 1):
+    async def alast(self):
+        if not self._querysets:
+            return None
 
-        async def alast(self):
-            if not self._querysets:
-                return None
+        elif not self.ordered:
+            return await self._querysets[-1].alast()
 
-            elif not self.ordered:
-                return await self._querysets[-1].alast()
-
-            else:
-                last_items = await asyncio.gather(
-                    *[qs.alast() for qs in self._querysets]
-                )
-                return self._get_first_or_last(last_items, self._order_by, True)
+        else:
+            last_items = await asyncio.gather(*[qs.alast() for qs in self._querysets])
+            return self._get_first_or_last(last_items, self._order_by, True)
 
     def aggregate(self, *args, **kwargs):
         """Return a dictionary of aggregations over all QuerySets.
@@ -1348,58 +1310,48 @@ class QuerySetSequence:
 
         return _combine_aggregates(results, args, kwargs)
 
-    if django.VERSION >= (4, 1):
+    async def aaggregate(self, *args, **kwargs):
+        """Return a dictionary of aggregations over all QuerySets.
 
-        async def aaggregate(self, *args, **kwargs):
-            """Return a dictionary of aggregations over all QuerySets.
+        Compatible aggregate types (Count, Sum, Min, Max) are combined across
+        all QuerySets.
 
-            Compatible aggregate types (Count, Sum, Min, Max) are combined across
-            all QuerySets.
+        Raises NotImplementedError for unsupported types.
+        """
+        for expr in args:
+            _validate_aggregate_type(expr)
+        for expr in kwargs.values():
+            _validate_aggregate_type(expr)
 
-            Raises NotImplementedError for unsupported types.
-            """
-            for expr in args:
-                _validate_aggregate_type(expr)
-            for expr in kwargs.values():
-                _validate_aggregate_type(expr)
+        results = await asyncio.gather(
+            *[qs.aaggregate(*args, **kwargs) for qs in self._querysets]
+        )
 
-            results = await asyncio.gather(
-                *[qs.aaggregate(*args, **kwargs) for qs in self._querysets]
-            )
-
-            return _combine_aggregates(results, args, kwargs)
+        return _combine_aggregates(results, args, kwargs)
 
     def exists(self):
         return any(qs.exists() for qs in self._querysets)
 
-    if django.VERSION >= (4, 1):
-
-        async def aexists(self):
-            awaitables = [qs.aexists() for qs in self._querysets]
-            return any(await asyncio.gather(*awaitables, return_exceptions=True))
+    async def aexists(self):
+        awaitables = [qs.aexists() for qs in self._querysets]
+        return any(await asyncio.gather(*awaitables, return_exceptions=True))
 
     def contains(self, obj):
         return any(qs.contains(obj) for qs in self._querysets)
 
-    if django.VERSION >= (4, 1):
-
-        async def acontains(self, obj):
-            return any(
-                await asyncio.gather(*[qs.acontains(obj) for qs in self._querysets])
-            )
+    async def acontains(self, obj):
+        return any(await asyncio.gather(*[qs.acontains(obj) for qs in self._querysets]))
 
     def update(self, **kwargs):
         with transaction.atomic():
             return sum(qs.update(**kwargs) for qs in self._querysets)
 
-    if django.VERSION >= (4, 1):
+    async def aupdate(self, **kwargs):
+        def _aupdate():
+            with transaction.atomic():
+                return sum(qs.update(**kwargs) for qs in self._querysets)
 
-        async def aupdate(self, **kwargs):
-            def _aupdate():
-                with transaction.atomic():
-                    return sum(qs.update(**kwargs) for qs in self._querysets)
-
-            return await sync_to_async(_aupdate)()
+        return await sync_to_async(_aupdate)()
 
     def delete(self):
         deleted_count = 0
@@ -1415,21 +1367,19 @@ class QuerySetSequence:
 
         return deleted_count, dict(deleted_objects)
 
-    if django.VERSION >= (4, 1):
+    async def adelete(self):
+        def _adelete():
+            with transaction.atomic():
+                deleted_count = 0
+                deleted_objects = defaultdict(int)
+                for qs in self._querysets:
+                    current_deleted_count, current_deleted_objects = qs.delete()
+                    deleted_count += current_deleted_count
+                    for obj, count in current_deleted_objects.items():
+                        deleted_objects[obj] += count
+                return deleted_count, dict(deleted_objects)
 
-        async def adelete(self):
-            def _adelete():
-                with transaction.atomic():
-                    deleted_count = 0
-                    deleted_objects = defaultdict(int)
-                    for qs in self._querysets:
-                        current_deleted_count, current_deleted_objects = qs.delete()
-                        deleted_count += current_deleted_count
-                        for obj, count in current_deleted_objects.items():
-                            deleted_objects[obj] += count
-                    return deleted_count, dict(deleted_objects)
-
-            return await sync_to_async(_adelete)()
+        return await sync_to_async(_adelete)()
 
     def as_manager(self):
         raise NotImplementedError()
@@ -1437,13 +1387,11 @@ class QuerySetSequence:
     def explain(self, format=None, **options):
         return "\n".join(qs.explain(format=format, **options) for qs in self._querysets)
 
-    if django.VERSION >= (4, 1):
-
-        async def aexplain(self, format=None, **options):
-            results = await asyncio.gather(
-                *[qs.aexplain(format=format, **options) for qs in self._querysets]
-            )
-            return "\n".join(results)
+    async def aexplain(self, format=None, **options):
+        results = await asyncio.gather(
+            *[qs.aexplain(format=format, **options) for qs in self._querysets]
+        )
+        return "\n".join(results)
 
     # Public attributes
     @property
