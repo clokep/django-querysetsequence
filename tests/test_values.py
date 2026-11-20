@@ -67,6 +67,19 @@ class TestValues(TestBase):
             data = [it["title"] for it in self.all.values("title").order_by("-title")]
         self.assertEqual(data, sorted(self.TITLES_BY_PK, reverse=True))
 
+    def test_order_by_related_field(self):
+        expected = [
+            {"author__name": name} for name in ("Alice", "Alice", "Bob", "Bob", "Bob")
+        ]
+        for ordering, values in (
+            ("author__name", expected),
+            ("-author__name", expected[::-1]),
+        ):
+            with self.subTest(ordering=ordering):
+                with self.assertNumQueries(2):
+                    data = list(self.all.order_by(ordering).values("author__name"))
+                self.assertEqual(data, values)
+
     def test_order_by_nulls(self):
         """Test ordering by none values."""
         # Set the first item of each QuerySet to not have a release date.
