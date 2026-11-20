@@ -73,6 +73,17 @@ class BaseIterable:
         self._standard_ordering = querysetsequence._standard_ordering
         self._low_mark = querysetsequence._low_mark
         self._high_mark = querysetsequence._high_mark
+        self._streaming = querysetsequence._streaming
+        self._iterator_chunk_size = querysetsequence._iterator_chunk_size
+
+    def _get_iterator(self, qs):
+        """
+        Return the object to iterate a QuerySet from by calling iterator()
+        or just using the QuerySet.
+        """
+        if self._streaming:
+            return qs.iterator(self._iterator_chunk_size)
+        return qs
 
     @staticmethod
     def _get_fields(obj, *field_names):
@@ -181,7 +192,7 @@ class BaseIterable:
         # (Remember that each QuerySet is already sorted.)
         iterables = []
         for i, qs in zip(self._queryset_idxs, self._querysets):
-            it = iter(qs)
+            it = iter(self._get_iterator(qs))
             try:
                 value = next(it)
             except StopIteration:
@@ -247,7 +258,7 @@ class BaseIterable:
         return item.
         """
         for i, qs in zip(self._queryset_idxs, self._querysets):
-            for item in qs:
+            for item in self._get_iterator(qs):
                 yield self._add_queryset_index(item, i)
 
     def __iter__(self):
@@ -279,7 +290,17 @@ class BaseIterable:
         # First trim any QuerySets based on the currently set limits!
         counts = [0]
         counts.extend(cumsum([it.count() for it in self._querysets]))
+        self._trim_to_slice(counts)
 
+        # For anything left, just iterate through each QuerySet.
+        return self._unordered_iterator()
+
+    def _trim_to_slice(self, counts):
+        """Trim the QuerySets to the requested slice.
+
+        ``counts`` is a cumulative count of the number of items in each
+        QuerySet, starting with 0.
+        """
         # Trim the beginning of the QuerySets, if necessary.
         start_index = 0
         low_mark, high_mark = self._low_mark, self._high_mark
@@ -325,9 +346,6 @@ class BaseIterable:
         # in-case there's only a single QuerySet left).
         self._querysets[-1] = self._querysets[-1][:high_mark]
         self._querysets[0] = self._querysets[0][low_mark:]
-
-        # For anything left, just iterate through each QuerySet.
-        return self._unordered_iterator()
 
 
 class ModelIterable(BaseIterable):
@@ -519,6 +537,10 @@ class QuerySetSequence:
         self._standard_ordering = True
         self._low_mark, self._high_mark = 0, None
 
+        # Whether to stream via iterator().
+        self._streaming = False
+        self._iterator_chunk_size = None
+
         self._iterable_class = ModelIterable
         self._result_cache = None
 
@@ -537,6 +559,8 @@ class QuerySetSequence:
         clone._standard_ordering = self._standard_ordering
         clone._low_mark = self._low_mark
         clone._high_mark = self._high_mark
+        clone._streaming = self._streaming
+        clone._iterator_chunk_size = self._iterator_chunk_size
         clone._iterable_class = self._iterable_class
         clone.model = self.model
 
@@ -1128,9 +1152,13 @@ class QuerySetSequence:
         async def ain_bulk(self, id_list=None, *, field_name="pk"):
             raise NotImplementedError()
 
-    def iterator(self):
+    def iterator(self, chunk_size=None):
+        if chunk_size is not None and chunk_size <= 0:
+            raise ValueError("Chunk size must be strictly positive.")
+
         clone = self._clone()
-        clone._querysets = [qs.iterator() for qs in self._querysets]
+        clone._streaming = True
+        clone._iterator_chunk_size = chunk_size
         return clone
 
     if django.VERSION >= (4, 1):

@@ -30,6 +30,12 @@ class TestValues(TestBase):
             data = list(self.all.values("title"))[0]
         self.assertEqual(data, {"title": "Fiction"})
 
+    def test_iterator_slice(self):
+        """Slicing works with iterator()."""
+        with self.assertNumQueries(4):
+            data = [it["title"] for it in self.all.values("title")[1:4].iterator()]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
@@ -161,6 +167,12 @@ class TestValuesList(TestBase):
             data = list(self.all.values_list("title"))[0]
         self.assertEqual(data, ("Fiction",))
 
+    def test_iterator_slice(self):
+        """Slicing works with iterator()."""
+        with self.assertNumQueries(4):
+            data = [it[0] for it in self.all.values_list("title")[1:4].iterator()]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
@@ -242,6 +254,12 @@ class TestFlatValuesList(TestBase):
         with self.assertNumQueries(2):
             titles = list(self.all.values_list("title", flat=True))
         self.assertEqual(titles, self.TITLES_BY_PK)
+
+    def test_iterator_slice(self):
+        """Slicing works with iterator()."""
+        with self.assertNumQueries(4):
+            data = list(self.all.values_list("title", flat=True)[1:4].iterator())
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
 
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
