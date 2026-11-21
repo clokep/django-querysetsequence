@@ -155,8 +155,6 @@ class BaseIterable:
                 reverses[i] = -1
                 field_names[i] = field_name[1:]
 
-        field_names = [f.replace(LOOKUP_SEP, ".") for f in field_names]
-
         def comparator(i1, i2):
             # Get a tuple of values for comparison.
             v1 = cls._get_fields(i1, *field_names)
@@ -349,6 +347,13 @@ class BaseIterable:
 
 
 class ModelIterable(BaseIterable):
+    @classmethod
+    def _generate_comparator(cls, field_names):
+        # attrgetter follows related model attributes using dots.
+        return super()._generate_comparator(
+            field.replace(LOOKUP_SEP, ".") for field in field_names
+        )
+
     @staticmethod
     def _get_fields(obj, *field_names):
         return attrgetter(*field_names)(obj)
