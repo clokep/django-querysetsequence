@@ -45,8 +45,8 @@ class SequenceCursorPagination(CursorPagination):
         # This code only works with a QuerySetSequence.
         if not isinstance(queryset, QuerySetSequence):
             raise ValueError(
-                "%s can only be used with an instance of QuerySetSequence."
-                % self.__class__.__name__
+                f"{self.__class__.__name__} can only be used with an instance "
+                "of QuerySetSequence."
             )
 
         self.page_size = self.get_page_size(request)

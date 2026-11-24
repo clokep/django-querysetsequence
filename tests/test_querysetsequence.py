@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from unittest import skipIf
 from unittest.mock import patch
 
@@ -712,12 +712,12 @@ class TestDatesDatetimes(TestBase):
         self.assertEqual(
             list(
                 QuerySetSequence(BlogPost.objects.all()).datetimes(
-                    "published", "year", tzinfo=timezone.utc
+                    "published", "year", tzinfo=UTC
                 )
             ),
             [
-                datetime(1995, 1, 1, tzinfo=timezone.utc),
-                datetime(2003, 1, 1, tzinfo=timezone.utc),
+                datetime(1995, 1, 1, tzinfo=UTC),
+                datetime(2003, 1, 1, tzinfo=UTC),
             ],
         )
 
@@ -729,10 +729,10 @@ class TestDatesDatetimes(TestBase):
             BlogPost.objects.filter(published__year=1995),
         )
         self.assertEqual(
-            list(qss.datetimes("published", "year", tzinfo=timezone.utc)),
+            list(qss.datetimes("published", "year", tzinfo=UTC)),
             [
-                datetime(1995, 1, 1, tzinfo=timezone.utc),
-                datetime(2003, 1, 1, tzinfo=timezone.utc),
+                datetime(1995, 1, 1, tzinfo=UTC),
+                datetime(2003, 1, 1, tzinfo=UTC),
             ],
         )
 
@@ -741,12 +741,12 @@ class TestDatesDatetimes(TestBase):
         self.assertEqual(
             list(
                 QuerySetSequence(BlogPost.objects.all()).datetimes(
-                    "published", "month", tzinfo=timezone.utc
+                    "published", "month", tzinfo=UTC
                 )
             ),
             [
-                datetime(1995, 2, 1, tzinfo=timezone.utc),
-                datetime(2003, 5, 1, tzinfo=timezone.utc),
+                datetime(1995, 2, 1, tzinfo=UTC),
+                datetime(2003, 5, 1, tzinfo=UTC),
             ],
         )
 
@@ -755,12 +755,12 @@ class TestDatesDatetimes(TestBase):
         self.assertEqual(
             list(
                 QuerySetSequence(BlogPost.objects.all()).datetimes(
-                    "published", "year", order="DESC", tzinfo=timezone.utc
+                    "published", "year", order="DESC", tzinfo=UTC
                 )
             ),
             [
-                datetime(2003, 1, 1, tzinfo=timezone.utc),
-                datetime(1995, 1, 1, tzinfo=timezone.utc),
+                datetime(2003, 1, 1, tzinfo=UTC),
+                datetime(1995, 1, 1, tzinfo=UTC),
             ],
         )
 
@@ -772,19 +772,19 @@ class TestDatesDatetimes(TestBase):
         self.assertEqual(
             list(
                 QuerySetSequence(BlogPost.objects.all()).datetimes(
-                    "published", "year", tzinfo=timezone.utc
+                    "published", "year", tzinfo=UTC
                 )
             ),
             [
-                datetime(1995, 1, 1, tzinfo=timezone.utc),
-                datetime(2003, 1, 1, tzinfo=timezone.utc),
+                datetime(1995, 1, 1, tzinfo=UTC),
+                datetime(2003, 1, 1, tzinfo=UTC),
             ],
         )
 
     def test_datetimes_empty(self):
         """datetimes() over an empty QuerySetSequence returns nothing."""
         self.assertEqual(
-            list(self.empty.datetimes("published", "year", tzinfo=timezone.utc)), []
+            list(self.empty.datetimes("published", "year", tzinfo=UTC)), []
         )
 
     def test_datetimes_no_is_dst(self):
