@@ -199,10 +199,8 @@ Summary of Supported APIs
       -
     * - |aiterator|_
       - |check|
-      - Supports ``chunk_size``. Until an upstream Django bug is fixed,
-        ``values_list()`` (including ``flat=True`` and ordered ``named=True``)
-        raises ``SynchronousOnlyOperation``; ``values()`` and unordered
-        ``named=True`` work.
+      - ``values_list()`` raises ``SynchronousOnlyOperation`` until an upstream Django
+        bug is fixed,
     * - |latest|_
       - |check|
       - If no fields are given, ``get_latest_by`` on each model is required to
