@@ -1,7 +1,5 @@
 import datetime
-from unittest import skipIf
 
-import django
 from django.core.exceptions import SynchronousOnlyOperation
 from django.db import connection
 
