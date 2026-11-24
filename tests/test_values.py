@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.exceptions import SynchronousOnlyOperation
 from django.db import connection
 
 from tests.models import Author, Book
@@ -35,6 +36,39 @@ class TestValues(TestBase):
         with self.assertNumQueries(4):
             data = [it["title"] for it in self.all.values("title")[1:4].iterator()]
         self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    async def test_aiterator(self):
+        """Async iteration should match the sync iteration."""
+        data = [it["title"] async for it in self.all.values("title").aiterator()]
+        self.assertEqual(data, self.TITLES_BY_PK)
+
+    async def test_aiterator_order_by_other_field(self):
+        """Ordering-only fields should be removed from async results."""
+        data = [
+            it async for it in self.all.values("title").order_by("release").aiterator()
+        ]
+        self.assertEqual(
+            [it["title"] for it in data],
+            [
+                "Some Article",
+                "Django Rocks",
+                "Alice in Django-land",
+                "Fiction",
+                "Biography",
+            ],
+        )
+        # Only the requested field is returned.
+        self.assertEqual(data[0], {"title": "Some Article"})
+
+    async def test_aiterator_sliced(self):
+        """Slicing should affect async iteration."""
+        data = [it["title"] async for it in self.all.values("title")[1:4].aiterator()]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    async def test_async_for(self):
+        """async for should fetch and cache the values."""
+        data = [it["title"] async for it in self.all.values("title")]
+        self.assertEqual(data, self.TITLES_BY_PK)
 
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
@@ -186,6 +220,45 @@ class TestValuesList(TestBase):
             data = [it[0] for it in self.all.values_list("title")[1:4].iterator()]
         self.assertEqual(data, self.TITLES_BY_PK[1:4])
 
+    async def test_async_for(self):
+        """async for should work for non-flat values_list()."""
+        data = [it[0] async for it in self.all.values_list("title")]
+        self.assertEqual(data, self.TITLES_BY_PK)
+
+    async def test_async_for_order_by_other_field(self):
+        """Ordering-only fields should be removed from async results."""
+        data = [it async for it in self.all.values_list("title").order_by("release")]
+        self.assertEqual(
+            [it[0] for it in data],
+            [
+                "Some Article",
+                "Django Rocks",
+                "Alice in Django-land",
+                "Fiction",
+                "Biography",
+            ],
+        )
+        # Only the requested field is returned.
+        self.assertEqual(data[0], ("Some Article",))
+
+    async def test_async_for_sliced(self):
+        """Slicing should affect async iteration."""
+        data = [it[0] async for it in self.all.values_list("title")[1:4]]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    async def test_aiterator_raises_synchronous_only_operation(self):
+        """
+        aiterator() mirrors a Django bug for non-flat values_list().
+
+        Django eagerly evaluates non-flat values_list() in the async thread,
+        which raises SynchronousOnlyOperation. QuerySetSequence deliberately
+        does not work around this; the test should be updated when Django
+        fixes it.
+        """
+        with self.assertRaises(SynchronousOnlyOperation):
+            async for _ in self.all.values_list("title").aiterator():
+                pass
+
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""
         with self.assertNumQueries(2):
@@ -272,6 +345,46 @@ class TestFlatValuesList(TestBase):
         """Slicing works with iterator()."""
         with self.assertNumQueries(4):
             data = list(self.all.values_list("title", flat=True)[1:4].iterator())
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    async def test_aiterator_raises_synchronous_only_operation(self):
+        """
+        aiterator() mirrors a Django bug for values_list().
+
+        QuerySetSequence processes flatness itself, so the underlying
+        QuerySet uses Django's non-flat ValuesListIterable, which eagerly
+        evaluates in the async thread. QuerySetSequence deliberately does not
+        work around this; update this test when Django fixes it.
+        """
+        with self.assertRaises(SynchronousOnlyOperation):
+            async for _ in self.all.values_list("title", flat=True).aiterator():
+                pass
+
+    async def test_async_for(self):
+        """async for should fetch and cache the values."""
+        data = [it async for it in self.all.values_list("title", flat=True)]
+        self.assertEqual(data, self.TITLES_BY_PK)
+
+    async def test_async_for_order_by_other_field(self):
+        """Ordering-only fields should be removed from async results."""
+        data = [
+            it
+            async for it in self.all.values_list("title", flat=True).order_by("release")
+        ]
+        self.assertEqual(
+            data,
+            [
+                "Some Article",
+                "Django Rocks",
+                "Alice in Django-land",
+                "Fiction",
+                "Biography",
+            ],
+        )
+
+    async def test_async_for_sliced(self):
+        """Slicing should affect async iteration."""
+        data = [it async for it in self.all.values_list("title", flat=True)[1:4]]
         self.assertEqual(data, self.TITLES_BY_PK[1:4])
 
     def test_foreign_key(self):
@@ -364,6 +477,61 @@ class TestNamedValuesList(TestBase):
         self.assertEqual([value.title for value in values], self.TITLES_BY_PK)
         # There should only be a single field.
         self.assertEqual(values[0]._fields, ("title",))
+
+    async def test_aiterator(self):
+        """Async iteration should match the sync iteration."""
+        data = [
+            it[0] async for it in self.all.values_list("title", named=True).aiterator()
+        ]
+        self.assertEqual(data, self.TITLES_BY_PK)
+
+    async def test_aiterator_order_by_other_field_raises(self):
+        """
+        Ordered aiterator() mirrors a Django bug for values_list().
+
+        Adding ordering-only fields rebuilds the underlying QuerySet with
+        Django's non-flat ValuesListIterable, which eagerly evaluates in the
+        async thread. QuerySetSequence deliberately does not work around
+        this; update this test when Django fixes it.
+        """
+        qss = self.all.values_list("title", named=True).order_by("release")
+        with self.assertRaises(SynchronousOnlyOperation):
+            async for _ in qss.aiterator():
+                pass
+
+    async def test_async_for_order_by_other_field(self):
+        """Ordering-only fields should be removed from async results."""
+        data = [
+            it
+            async for it in self.all.values_list("title", named=True).order_by(
+                "release"
+            )
+        ]
+        self.assertEqual(
+            [it[0] for it in data],
+            [
+                "Some Article",
+                "Django Rocks",
+                "Alice in Django-land",
+                "Fiction",
+                "Biography",
+            ],
+        )
+        # Only the requested field is returned (as a plain tuple when ordered).
+        self.assertEqual(data[0], ("Some Article",))
+
+    async def test_aiterator_sliced(self):
+        """Slicing should affect async iteration."""
+        data = [
+            it[0]
+            async for it in self.all.values_list("title", named=True)[1:4].aiterator()
+        ]
+        self.assertEqual(data, self.TITLES_BY_PK[1:4])
+
+    async def test_async_for(self):
+        """async for should fetch and cache the values."""
+        data = [it[0] async for it in self.all.values_list("title", named=True)]
+        self.assertEqual(data, self.TITLES_BY_PK)
 
     def test_foreign_key(self):
         """Calling values for a foreign key should end up with the ID."""

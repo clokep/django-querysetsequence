@@ -15,6 +15,8 @@ Bugfixes
 Improvements
 ------------
 
+* Support async iteration via ``async for`` and ``aiterator()``.
+   (`#123 <https://github.com/clokep/django-querysetsequence/pull/123>`_)
 * Support more async methods: ``afirst()``, ``alast()``, ``alatest()``,
   ``aearliest()``, ``acontains()``, ``aexplain()``, ``aupdate()``, ``adelete()``.
   (`#117 <https://github.com/clokep/django-querysetsequence/pull/117>`_)
