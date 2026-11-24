@@ -198,8 +198,9 @@ Summary of Supported APIs
       - |check|
       -
     * - |aiterator|_
-      - |xmark|
-      -
+      - |check|
+      - ``values_list()`` raises ``SynchronousOnlyOperation`` until an upstream Django
+        bug is fixed,
     * - |latest|_
       - |check|
       - If no fields are given, ``get_latest_by`` on each model is required to

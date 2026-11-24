@@ -199,17 +199,13 @@ class TestIterator(TestBase):
 
     def test_iterator_chunk_size(self):
         """The chunk size is passed through to each QuerySet."""
-        queryset_iterator = QuerySet.iterator
-        calls = []
-
-        def spy(queryset, chunk_size=None):
-            calls.append(chunk_size)
-            return queryset_iterator(queryset, chunk_size)
-
-        with patch.object(QuerySet, "iterator", spy):
-            data = [it.title for it in self.all.iterator(chunk_size=1)]
+        # Verify chunk_size=1 works
+        data = [it.title for it in self.all.iterator(chunk_size=1)]
         self.assertEqual(data, self.TITLES_BY_PK)
-        self.assertEqual(calls, [1, 1])
+
+        # Verify default chunk_size works
+        data = [it.title for it in self.all.iterator()]
+        self.assertEqual(data, self.TITLES_BY_PK)
 
     def test_iterator_invalid_chunk_size(self):
         """A non-positive chunk size is rejected, as in Django."""
@@ -258,6 +254,262 @@ class TestIterator(TestBase):
         with self.assertNumQueries(1):
             data = [it.title for it in qss]
         self.assertEqual(data, ["Biography", "Fiction"])
+
+
+class TestAsyncIteration(TestBase):
+    """Test async iteration, which should mirror the synchronous iterator."""
+
+    async def _aiterator_titles(self, qss, **kwargs):
+        return [item.title async for item in qss.aiterator(**kwargs)]
+
+    async def test_async_for(self):
+        """async for should yield all items in order."""
+        titles = [item.title async for item in self.all]
+        self.assertEqual(titles, self.TITLES_BY_PK)
+
+    async def test_async_for_caches(self):
+        """async for should fetch everything and cache, like Django."""
+        titles = [item.title async for item in self.all]
+        self.assertEqual(titles, self.TITLES_BY_PK)
+        self.assertIsNotNone(self.all._result_cache)
+
+        # A second pass re-uses the cache.
+        titles2 = [item.title async for item in self.all]
+        self.assertEqual(titles2, self.TITLES_BY_PK)
+        self.assertIsNotNone(self.all._result_cache)
+
+    async def test_aiterator(self):
+        """aiterator() should yield all items in order."""
+        self.assertEqual(await self._aiterator_titles(self.all), self.TITLES_BY_PK)
+
+    async def test_aiterator_ordering(self):
+        """aiterator() should mirror the ordering of the sync iterator."""
+        cases = [
+            (
+                ["title"],
+                [
+                    "Alice in Django-land",
+                    "Biography",
+                    "Django Rocks",
+                    "Fiction",
+                    "Some Article",
+                ],
+            ),
+            (
+                ["-title"],
+                [
+                    "Some Article",
+                    "Fiction",
+                    "Django Rocks",
+                    "Biography",
+                    "Alice in Django-land",
+                ],
+            ),
+            (
+                ["release"],
+                [
+                    "Some Article",
+                    "Django Rocks",
+                    "Alice in Django-land",
+                    "Fiction",
+                    "Biography",
+                ],
+            ),
+            (
+                ["-release"],
+                [
+                    "Biography",
+                    "Fiction",
+                    "Alice in Django-land",
+                    "Django Rocks",
+                    "Some Article",
+                ],
+            ),
+            (["#"], self.TITLES_BY_PK),
+            (
+                ["-#"],
+                [
+                    "Django Rocks",
+                    "Alice in Django-land",
+                    "Some Article",
+                    "Fiction",
+                    "Biography",
+                ],
+            ),
+            (
+                ["#", "title"],
+                [
+                    "Biography",
+                    "Fiction",
+                    "Alice in Django-land",
+                    "Django Rocks",
+                    "Some Article",
+                ],
+            ),
+            (
+                ["-#", "title"],
+                [
+                    "Alice in Django-land",
+                    "Django Rocks",
+                    "Some Article",
+                    "Biography",
+                    "Fiction",
+                ],
+            ),
+            (
+                ["-release", "-#"],
+                [
+                    "Biography",
+                    "Fiction",
+                    "Alice in Django-land",
+                    "Django Rocks",
+                    "Some Article",
+                ],
+            ),
+        ]
+        for fields, expected in cases:
+            with self.subTest(fields=fields):
+                self.assertEqual(
+                    await self._aiterator_titles(self.all.order_by(*fields)),
+                    expected,
+                )
+
+    async def test_aiterator_ordering_ties(self):
+        """Ties should be broken the same way as the sync iterator."""
+        # Make the first Book and the first Article tie on release.
+        await sync_to_async(Book.objects.filter(title="Biography").update)(
+            release=date(1979, 1, 1)
+        )
+        qss = QuerySetSequence(Book.objects.all(), Article.objects.all())
+
+        expected = [
+            # The tie is won by the earlier QuerySet.
+            "Biography",
+            "Some Article",
+            "Django Rocks",
+            "Alice in Django-land",
+            "Fiction",
+        ]
+        self.assertEqual(
+            await self._aiterator_titles(qss.order_by("release")), expected
+        )
+        self.assertEqual(
+            await self._aiterator_titles(qss.order_by("release").reverse()),
+            list(reversed(expected)),
+        )
+
+    async def test_aiterator_reverse(self):
+        """reverse() should affect async iteration."""
+        self.assertEqual(
+            await self._aiterator_titles(self.all.reverse()),
+            [
+                "Django Rocks",
+                "Alice in Django-land",
+                "Some Article",
+                "Fiction",
+                "Biography",
+            ],
+        )
+        self.assertEqual(
+            await self._aiterator_titles(self.all.order_by("title").reverse()),
+            [
+                "Some Article",
+                "Fiction",
+                "Django Rocks",
+                "Biography",
+                "Alice in Django-land",
+            ],
+        )
+
+    async def test_aiterator_slicing(self):
+        """Slicing should affect async iteration."""
+        self.assertEqual(
+            await self._aiterator_titles(self.all[1:4]), self.TITLES_BY_PK[1:4]
+        )
+        self.assertEqual(
+            await self._aiterator_titles(self.all[:2]), self.TITLES_BY_PK[:2]
+        )
+        self.assertEqual(
+            await self._aiterator_titles(self.all.order_by("title")[1:3]),
+            ["Biography", "Django Rocks"],
+        )
+
+    async def test_aiterator_matches_sync(self):
+        """Async iteration should match the sync iterator for many operations."""
+        cases = [
+            self.all,
+            self.all.order_by("title"),
+            self.all.order_by("-title"),
+            self.all.order_by("release"),
+            self.all.order_by("-release"),
+            self.all.order_by("#"),
+            self.all.order_by("-#"),
+            self.all.order_by("#", "title"),
+            self.all.order_by("-#", "title"),
+            self.all.order_by("-release", "-#"),
+            self.all.reverse(),
+            self.all.reverse().order_by("title"),
+            self.all.order_by("title").reverse(),
+            self.all[1:4],
+            self.all.order_by("title")[1:3],
+        ]
+        for qss in cases:
+            with self.subTest(order_by=qss._order_by):
+                expected = await sync_to_async(lambda q=qss: [it.title for it in q])()
+                self.assertEqual(await self._aiterator_titles(qss), expected)
+
+    async def test_aiterator_chunk_size(self):
+        """The chunk size should be passed through to each QuerySet."""
+        # Verify chunk_size=1 works
+        titles = [it.title async for it in self.all.aiterator(chunk_size=1)]
+        self.assertEqual(titles, self.TITLES_BY_PK)
+
+        # Verify default chunk_size works
+        titles = [it.title async for it in self.all.aiterator()]
+        self.assertEqual(titles, self.TITLES_BY_PK)
+
+    async def test_aiterator_invalid_chunk_size(self):
+        """A non-positive chunk size is rejected, as in Django."""
+        with self.assertRaises(ValueError):
+            async for _ in self.all.aiterator(chunk_size=0):
+                pass
+
+    async def test_aiterator_streams_querysets(self):
+        """aiterator() should only touch a QuerySet when it reaches it."""
+        iterator = self.all.aiterator()
+        first = await anext(iterator)
+        self.assertEqual(first.title, self.TITLES_BY_PK[0])
+
+        remaining = [item.title async for item in iterator]
+        self.assertEqual([first.title] + remaining, self.TITLES_BY_PK)
+
+    async def test_aiterator_does_not_fetch_all(self):
+        """aiterator() should stream instead of materializing each QuerySet."""
+        titles = await self._aiterator_titles(self.all)
+        self.assertEqual(titles, self.TITLES_BY_PK)
+        self.assertIsNone(self.all._result_cache)
+        for qs in self.all.get_querysets():
+            self.assertIsNone(qs._result_cache)
+
+    async def test_aiterator_does_not_cache(self):
+        """aiterator() should not populate the result cache."""
+        self.assertEqual(await self._aiterator_titles(self.all), self.TITLES_BY_PK)
+        self.assertIsNone(self.all._result_cache)
+
+        # Repeated calls re-query instead of re-using a cache.
+        self.assertEqual(await self._aiterator_titles(self.all), self.TITLES_BY_PK)
+        self.assertIsNone(self.all._result_cache)
+
+    async def test_aiterator_empty(self):
+        """Async iteration over an empty QuerySetSequence yields nothing."""
+        self.assertEqual(await self._aiterator_titles(self.empty), [])
+        self.assertIsNone(self.empty._result_cache)
+
+    async def test_aiterator_after_iterator(self):
+        """aiterator() should work on an iterator() clone."""
+        self.assertEqual(
+            await self._aiterator_titles(self.all.iterator()), self.TITLES_BY_PK
+        )
 
 
 class TestOperators(TestBase):
@@ -2399,10 +2651,6 @@ class TestNotImplemented(TestCase):
     def test_raw(self):
         with self.assertRaises(NotImplementedError):
             self.all.raw("")
-
-    async def test_aiterator(self):
-        with self.assertRaises(NotImplementedError):
-            await self.all.aiterator()
 
     @skipIf(django.VERSION >= (6, 1), "fetch_mode exists starting on Django 6.1.")
     def test_fetch_mode(self):
