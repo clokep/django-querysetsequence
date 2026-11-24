@@ -51,9 +51,9 @@ def multiply_iterables(it1, it2):
     """
     Element-wise iterables multiplications.
     """
-    assert len(it1) == len(
-        it2
-    ), "Can not element-wise multiply iterables of different length."
+    assert len(it1) == len(it2), (
+        "Can not element-wise multiply iterables of different length."
+    )
     return list(map(mul, it1, it2))
 
 
@@ -123,8 +123,9 @@ class BaseIterable:
                     cls._get_field_names(value2)
                 )
                 raise FieldError(
-                    "Ordering differs between models. Choices are: %s"
-                    % ", ".join(valid_field_names)
+                    "Ordering differs between models. Choices are: {}".format(
+                        ", ".join(valid_field_names)
+                    )
                 )
 
             # By default, order by the pk.
@@ -854,15 +855,14 @@ class QuerySetSequence:
             # Ensure this is being used to filter QuerySets.
             if parts[0] != "#":
                 raise ValueError(
-                    "Keyword '%s' is not a valid keyword to filter over, "
-                    "it must begin with '#'." % kwarg
+                    f"Keyword '{kwarg}' is not a valid keyword to filter over, "
+                    "it must begin with '#'."
                 )
 
             # Don't allow __ multiple times.
             if len(parts) > 2:
                 raise ValueError(
-                    "Keyword '%s' must not contain multiple "
-                    "lookup separators." % kwarg
+                    f"Keyword '{kwarg}' must not contain multiple lookup separators."
                 )
 
             # The actual lookup is the second part.
@@ -932,7 +932,7 @@ class QuerySetSequence:
                 # Any other field lookup is not supported, e.g. date, year, month,
                 # day, week_day, hour, minute, second, isnull, search, regex, and
                 # iregex.
-                raise ValueError("Unsupported lookup '%s'" % lookup)
+                raise ValueError(f"Unsupported lookup '{lookup}'")
 
         # Convert back to a list on Python 3.
         self._queryset_idxs = list(self._queryset_idxs)
@@ -1024,7 +1024,9 @@ class QuerySetSequence:
         clone._iterable_class = (
             NamedValuesListIterable
             if named
-            else FlatValuesListIterable if flat else ValuesListIterable
+            else FlatValuesListIterable
+            if flat
+            else ValuesListIterable
         )
 
         return clone

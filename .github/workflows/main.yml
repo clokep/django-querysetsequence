@@ -21,19 +21,13 @@ jobs:
           python-version: "3.11"
 
       - name: "Install dependencies"
-        run: python -m pip install pyupgrade==3.22.0 flake8==7.5.0 black==26.10.1 isort==9.0.2
+        run: python -m pip install ruff==0.17.6
 
-      - name: "Run pyupgrade"
-        run: pyupgrade --py311-plus **/*.py
+      - name: "Run ruff"
+        run: ruff check .
 
-      - name: "Run flake8"
-        run: flake8
-
-      - name: "Run isort"
-        run: isort --check .
-
-      - name: "Run black"
-        run: black --check .
+      - name: "Run ruff format"
+        run: ruff format --check .
 
   tests:
     name: "Python ${{ matrix.python-version }}"

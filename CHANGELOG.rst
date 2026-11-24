@@ -12,7 +12,7 @@ Bugfixes
 * Fix various errors when slicing and calling ``iterator()`` and add the ``chunk_size``
   argument to ``iterator()``. (`#119 <https://github.com/clokep/django-querysetsequence/pull/119>`_)
 * Fix ordering by related fields when using ``values()``.
-  (`#122 <https://github.com/clokep/django-querysetsequence/pull/122>`_)⁠
+  (`#122 <https://github.com/clokep/django-querysetsequence/pull/122>`_)
 
 Improvements
 ------------
@@ -29,7 +29,7 @@ Improvements
 * Support the ``dates()`` and ``datetimes()`` methods, the dates/datetimes are distinct
   per-QuerySets. (`#115 <https://github.com/clokep/django-querysetsequence/pull/115>`_)
 * Support ``select_for_update()``. (`#116 <https://github.com/clokep/django-querysetsequence/pull/116>`_)
-* Clarified documentation that `distinct()` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
+* Clarified documentation that ``distinct()`` is per-QuerySet. (`113 <https://github.com/clokep/django-querysetsequence/pull/113>`_)
 
 Maintenance
 -----------
@@ -43,6 +43,8 @@ Maintenance
   `#112 <https://github.com/clokep/django-querysetsequence/pull/112>`_)
 * Drop support for Django 4.2 and 5.1. (`#112 <https://github.com/clokep/django-querysetsequence/pull/112>`_)
 * Fix documentation generation. (`#121 <https://github.com/clokep/django-querysetsequence/pull/121>`_)
+* Switch to ruff from black/isort/pyupgrade
+  (`#124 <https://github.com/clokep/django-querysetsequence/pull/124>`_)
 
 0.18 (2025-05-13)
 =================
