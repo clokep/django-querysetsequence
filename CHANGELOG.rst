@@ -11,6 +11,8 @@ Bugfixes
 
 * Fix various errors when slicing and calling ``iterator()`` and add the ``chunk_size``
   argument to ``iterator()``. (`#119 <https://github.com/clokep/django-querysetsequence/pull/119>`_)
+* Fix ordering by related fields when using ``values()``.
+  (`#122 <https://github.com/clokep/django-querysetsequence/pull/122>`_)⁠
 
 Improvements
 ------------
